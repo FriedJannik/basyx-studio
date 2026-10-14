@@ -26,16 +26,19 @@ describe.runIf(testenvAvailable)('LiveAasTarget against the test environment', (
   it('pages through all shells with the cursor', async () => {
     const target = open()
     let cursor: string | undefined
-    let total = 0
+    const ids: string[] = []
     for (let page = 0; page < 10; page++) {
       const result = await target.listShells(25, cursor)
-      total += result.items.length
+      ids.push(...result.items.map(shell => shell.id))
       cursor = result.page.nextCursor ?? undefined
       if (!cursor) {
         break
       }
     }
-    expect(total).toBe(62)
+    // Other test files may add shells meanwhile; the fixtures' 62 are all there, once.
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids.filter(id => id.startsWith('urn:studio:test:aas:paging:'))).toHaveLength(60)
+    expect(ids.length).toBeGreaterThanOrEqual(62)
   })
 
   it('reads nested elements and lists of lists as JSON', async () => {

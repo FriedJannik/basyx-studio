@@ -13,25 +13,26 @@
     </v-empty-state>
 
     <template v-else>
-      <div class="d-flex flex-wrap align-start ga-4 mb-6">
-        <div>
-          <h1 class="text-headline-medium">{{ t('home.title') }}</h1>
-          <p class="text-body-large text-medium-emphasis">{{ t('home.subtitle') }}</p>
-        </div>
+      <PageHeader :subtitle="t('home.subtitle')" :title="t('home.title')">
+        <template #actions>
+          <v-btn-secondary
+            v-if="session.isAdmin"
+            prepend-icon="mdi-plus"
+            :text="t('home.addInfrastructure')"
+            @click="addOpen = true"
+          />
 
-        <v-spacer />
-
-        <v-btn-primary
-          v-if="bridge"
-          :loading="opening"
-          prepend-icon="mdi-folder-open-outline"
-          :text="t('workspace.open')"
-          @click="openPackage"
-        />
-      </div>
+          <v-btn-primary
+            v-if="bridge"
+            :loading="opening"
+            prepend-icon="mdi-folder-open-outline"
+            :text="t('workspace.open')"
+            @click="openPackage"
+          />
+        </template>
+      </PageHeader>
 
       <ProblemAlert v-if="authError" class="mb-4" :error="authErrorProblem" />
-
       <ProblemAlert v-if="openError" class="mb-4" :error="openError" />
 
       <ProblemAlert
@@ -42,20 +43,48 @@
         @retry="targets.refetch()"
       />
 
-      <v-progress-linear v-if="targets.isLoading.value" />
+      <v-card v-if="targets.isPending.value">
+        <v-skeleton-loader type="list-item-avatar-two-line@3" />
+      </v-card>
 
-      <v-row v-else-if="targets.data.value?.items.length">
-        <v-col v-for="target in targets.data.value.items" :key="target.id" cols="12" md="6">
-          <v-card class="h-100" :to="`/targets/${target.id}`">
-            <v-card-item :prepend-icon="targetIcon(target)" :title="target.name" />
+      <v-card v-else-if="items.length > 0">
+        <ListFilterBar
+          v-model:search="search"
+          v-model:selected="selected"
+          :groups="filterGroups"
+          :placeholder="t('home.search')"
+        />
 
-            <v-card-text>
-              <p v-if="target.description" class="text-medium-emphasis mb-3">{{ target.description }}</p>
-              <TargetChips :target="target" />
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+        <v-divider />
+
+        <v-list-records v-if="filtered.length > 0">
+          <template v-for="(target, index) in filtered" :key="target.id">
+            <v-divider v-if="index > 0" />
+
+            <RecordListItem
+              :icon="targetIcon(target)"
+              :subtitle="target.description ?? undefined"
+              :title="target.name"
+              :to="`/targets/${target.id}`"
+            >
+              <template #meta>
+                <TargetChips :target="target" />
+              </template>
+
+              <template #actions>
+                <v-btn
+                  v-tooltip="t('landing.openViewer')"
+                  :aria-label="t('landing.openViewer')"
+                  icon="$aas"
+                  @click.stop.prevent="navigateTo(`/targets/${target.id}/shells`)"
+                />
+              </template>
+            </RecordListItem>
+          </template>
+        </v-list-records>
+
+        <v-card-text v-else class="text-medium-emphasis">{{ t('lists.noMatches') }}</v-card-text>
+      </v-card>
 
       <v-empty-state
         v-else-if="targets.data.value"
@@ -64,9 +93,11 @@
         :title="t('home.noTargets')"
       >
         <template v-if="session.isAdmin" #actions>
-          <v-btn-primary :text="t('home.addInfrastructure')" to="/admin/infrastructures" />
+          <v-btn-primary :text="t('home.addInfrastructure')" @click="addOpen = true" />
         </template>
       </v-empty-state>
+
+      <InfrastructureDialog v-if="session.isAdmin" v-model="addOpen" :existing="null" @saved="added" />
     </template>
   </v-container>
 </template>
@@ -74,10 +105,12 @@
 <script lang="ts" setup>
   import type { Target } from '#shared/contract'
   import type { DesktopBridge } from '~/composables/useDesktopBridge'
+  import type { FilterGroup } from '~/utils/records'
   import { useQuery } from '@pinia/colada'
   import basyxLogo from '~/assets/basyx-logo.svg'
   import { StudioApiError } from '~/composables/useStudioApi'
-  import { targetIcon } from '~/utils/aas'
+  import { securityModeIcons, targetIcon } from '~/utils/aas'
+  import { filterRecords } from '~/utils/records'
 
   const { t } = useI18n()
   const route = useRoute()
@@ -89,6 +122,44 @@
     query: ({ signal }) => api<{ items: Target[] }>('/targets', { signal }),
     enabled: () => !session.needsLogin,
   })
+
+  const items = computed(() => targets.data.value?.items ?? [])
+  const search = ref<string | null>(null)
+  const selected = ref<string[]>([])
+
+  /** Security mode, or `workspace` for a local package. */
+  function kindOf (target: Target): string {
+    return target.securityMode ?? 'workspace'
+  }
+
+  // Filters for the security modes and sign-in states that occur.
+  const filterGroups = computed<FilterGroup[]>(() => [
+    {
+      title: t('home.filters.access'),
+      options: [...new Set(items.value.map(target => kindOf(target)))].map(kind => ({
+        value: `security:${kind}`,
+        title: kind === 'workspace' ? t('workspace.localFile') : t(`security.${kind}`),
+        icon: kind === 'workspace' ? 'mdi-package-variant-closed' : securityModeIcons[kind],
+      })),
+    },
+    {
+      title: t('home.filters.state'),
+      options: [...new Set(items.value.filter(target => target.securityMode).map(target => target.authenticationState))]
+        .map(state => ({ value: `state:${state}`, title: t(`authState.${state}`) })),
+    },
+  ].filter(group => group.options.length > 0))
+
+  // An infrastructure added here becomes a target in this list.
+  const addOpen = ref(false)
+  const invalidate = useInvalidate()
+  async function added () {
+    await invalidate(['targets'], ['admin', 'infrastructures'])
+  }
+
+  const filtered = computed(() => filterRecords(items.value, search.value, selected.value, target => ({
+    text: [target.name, target.description],
+    facets: [`security:${kindOf(target)}`, `state:${target.authenticationState}`],
+  })))
 
   const authError = computed(() => typeof route.query.authError === 'string' ? route.query.authError : null)
   const authErrorProblem = computed(() => new StudioApiError({
@@ -113,7 +184,7 @@
       const grant = await bridge.value?.chooseAasxFile()
       if (grant) {
         const target = await api<Target>('/workspaces', { method: 'POST', body: { fileHandle: grant.handle } })
-        await navigateTo(`/targets/${target.id}`)
+        await navigateTo(`/targets/${target.id}/shells`)
       }
     } catch (error) {
       openError.value = error

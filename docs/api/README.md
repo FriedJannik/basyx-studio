@@ -28,16 +28,15 @@ TypeScript-DTOs von Hand weitergepflegt werden. Öffentliche View- und
 App-Verträge verwenden JSON Schema 2020-12/Ajv; AAS-Daten verwenden generierte
 AAS-Core-Typen und AAS-Core-/Package-Validierung.
 
-## Implementierungsstand (MVP-1)
+## Implementierungsstand (MVP-4)
 
-Für die bereits implementierten Routen ist der Vertrag in `shared/contract`
-(Zod) autoritativ; `openapi.yaml` wird für diese Routen nicht mehr von Hand
-nachgezogen, bis die OpenAPI-Generierung steht. Implementiert sind Context,
-Session, Login/Callback/Logout, Targets inklusive Target-Autorisierung, lesende
-Shell-/Submodel-/Element-Routen und die Infrastruktur-Administration. Die
-Abweichungen vom Draft (u. a. `PUT` statt `PATCH` für Infrastrukturen,
-zusätzliche Route `submodel-refs`) sind im
-[MVP-1-Plan](../development/mvp-1-plan.md#findings-and-deviations) aufgeführt.
+Für die implementierten Routen ist der Vertrag in `shared/contract` (Zod)
+autoritativ. `openapi.yaml` wurde mit MVP-4 für alle implementierten Routen
+nachgezogen (u. a. `PUT` mit `If-Match` für Infrastrukturen, `searches`,
+`shell-availability`, Baum-Ebenen mit Knotenbudget, XML-Ausgabe,
+Registry-Synchronisation); Routen, die nur im Draft existieren, sind als solche
+beschrieben. Die Abweichungen der MVPs stehen in den Plänen unter
+[`docs/development`](../development/).
 
 ## Abgedeckter HTTP-Vertrag
 

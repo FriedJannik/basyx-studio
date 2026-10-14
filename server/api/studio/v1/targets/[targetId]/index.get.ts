@@ -7,6 +7,7 @@ import { defineStudioHandler, routeParam } from '~~/server/utils/handler'
 import { useStudio } from '~~/server/utils/studio'
 import { toTarget } from '~~/server/utils/target'
 
+/** One target with its capabilities. */
 export default defineStudioHandler(async (event): Promise<Target> => {
   const actor = await requireActor(event)
   const studio = await useStudio()

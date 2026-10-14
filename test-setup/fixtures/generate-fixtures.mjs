@@ -2,8 +2,10 @@
 // verifies every environment with AAS Core 3.1 before writing it.
 //
 // Run with: pnpm testenv:fixtures
+// With --large, writes only the `large` profile (pnpm testenv:large), which is
+// generated on demand and not checked in.
 
-import { writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -216,14 +218,55 @@ const securedEnvironment = {
 }
 
 // ---------------------------------------------------------------------------
+// Large profile (MVP-4 definition of done 6, 7 and 10): 2,000 shells, and a
+// submodel of about 5,000 elements with a 1,000-entry list and a path three
+// levels deep
+// ---------------------------------------------------------------------------
+
+const largeIds = {
+  tree: 'urn:studio:large:sm:tree',
+  nameplate: 'urn:studio:large:sm:nameplate',
+}
+const padded = n => String(n).padStart(4, '0')
+
+const largeTreeSubmodel = submodel(largeIds.tree, 'LargeTree', [
+  sml('Entries', 'SubmodelElementCollection', Array.from({ length: 1000 }, (_, i) => smc(undefined, [
+    prop('Index', 'xs:int', String(i)),
+    prop('Name', 'xs:string', `Entry ${padded(i)}`),
+    prop('Reading', 'xs:double', String((i % 97) * 1.5)),
+    smc('Details', [prop('Note', 'xs:string', `Note for entry ${padded(i)}`)]),
+  ]))),
+  smc('Deep', [smc('Level1', [smc('Level2', [smc('Level3', [prop('Leaf', 'xs:string', 'deepest value')])])])]),
+  smc('Readings', Array.from({ length: 50 }, (_, i) => prop(`Reading${String(i).padStart(2, '0')}`, 'xs:double', String(i * 0.5)))),
+], { semanticId: externalRef('urn:studio:test:semantic:large-tree') })
+
+const largeNameplate = submodel(largeIds.nameplate, 'Nameplate', [
+  prop('ManufacturerName', 'xs:string', 'Large Profile Manufacturer'),
+  prop('SerialNumber', 'xs:string', 'LARGE-0001'),
+], { semanticId: externalRef('https://admin-shell.io/idta/nameplate/3/0/Nameplate') })
+
+const largeShells = Array.from({ length: 2000 }, (_, i) => {
+  const n = padded(i + 1)
+  return {
+    ...shell(`urn:studio:large:aas:${n}`, `LargeShell${n}`, `urn:studio:large:asset:${n}`, i === 0 ? [largeIds.tree, largeIds.nameplate] : [largeIds.nameplate], {
+      displayName: [{ language: 'en', text: `Large shell ${n}` }],
+    }),
+    // Every fifth shell is a type, for the kind filter.
+    ...((i + 1) % 5 === 0 ? { assetInformation: { assetKind: 'Type', globalAssetId: `urn:studio:large:asset:${n}` } } : {}),
+  }
+})
+
+// ---------------------------------------------------------------------------
 // Verify and write
 // ---------------------------------------------------------------------------
 
-const outputs = [
-  ['open/studio-edge-cases.json', { assetAdministrationShells: [edgeCasesShell], submodels: [edgeCasesSubmodel, largeSubmodel] }],
-  ['open/studio-paging.json', { assetAdministrationShells: pagingShells }],
-  ['secured/studio-secured-catalog.json', securedEnvironment],
-]
+const outputs = process.argv.includes('--large')
+  ? [['large/studio-large.json', { assetAdministrationShells: largeShells, submodels: [largeTreeSubmodel, largeNameplate] }]]
+  : [
+      ['open/studio-edge-cases.json', { assetAdministrationShells: [edgeCasesShell], submodels: [edgeCasesSubmodel, largeSubmodel] }],
+      ['open/studio-paging.json', { assetAdministrationShells: pagingShells }],
+      ['secured/studio-secured-catalog.json', securedEnvironment],
+    ]
 
 let failed = false
 for (const [relativePath, environment] of outputs) {
@@ -245,6 +288,7 @@ for (const [relativePath, environment] of outputs) {
 
   // Write the canonical AAS Core serialization rather than the hand-written input.
   const canonical = jsonization.toJsonable(parsed.mustValue())
+  mkdirSync(dirname(join(fixturesDir, relativePath)), { recursive: true })
   writeFileSync(join(fixturesDir, relativePath), `${JSON.stringify(canonical, null, 2)}\n`)
   console.log(`wrote ${relativePath}`)
 }

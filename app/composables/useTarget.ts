@@ -12,6 +12,7 @@ export function useTarget (targetId: MaybeRefOrGetter<string>) {
   const query = useQuery({
     key: () => ['targets', toValue(targetId)],
     query: ({ signal }) => api<Target>(`/targets/${toValue(targetId)}`, { signal }),
+    enabled: () => toValue(targetId) !== '',
   })
   const needsAuthorization = computed(() => query.data.value?.authenticationState === 'required')
   return { ...query, needsAuthorization }

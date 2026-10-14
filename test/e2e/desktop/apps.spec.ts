@@ -5,9 +5,10 @@ import { expect, test } from '@playwright/test'
 import { fixturesDirectory, zipDirectory } from '../../apps/support'
 import { chooseFiles, closeStudio, fixture, launchStudio, openPackage, root } from './support'
 
-// MVP-3 in the packaged desktop app: apps installed by the local user run in
-// sandboxed frames on the studio-app: protocol, work on a local AASX package,
-// and a backend app runs in the bundled Deno. Run `pnpm apps:build` first.
+// MVP-3 in the packaged desktop app: apps run in sandboxed frames on the
+// studio-app: protocol and work on a local AASX package (the bundled Digital
+// Nameplate since MVP-4), and a backend app installed by the local user runs
+// in the bundled Deno. Run `pnpm apps:build` first.
 
 let app: ElectronApplication
 let window: Page
@@ -31,32 +32,37 @@ async function install (file: string | { name: string, mimeType: string, buffer:
   await expect(window.getByText(`Installed ${title}`)).toBeVisible()
 }
 
+/** App modules are entries of the navigation rail (MVP-4 layout). */
 async function openModule (title: string) {
-  await window.getByRole('button', { name: 'App modules' }).click()
-  await window.getByText(title, { exact: true }).click()
+  await window.getByRole('link', { name: title }).click()
+  // The overview's frames are gone once the module's route is shown.
+  await expect(window).toHaveURL(/\/apps\//)
+  await expect(window.locator('iframe[sandbox="allow-scripts"]')).toHaveCount(1)
 }
 
 test('runs installed apps on a local package', async () => {
   test.setTimeout(120_000)
   await window.getByRole('link', { name: 'Apps' }).click()
-  await install(join(root, 'examples/apps/dist/nameplate.zip'), 'Digital Nameplate')
   await install(join(root, 'examples/apps/dist/backend-demo.zip'), 'Target Summary')
   await install({ name: 'probe.zip', mimeType: 'application/zip', buffer: Buffer.from(await zipDirectory(join(fixturesDirectory, 'probe'))) }, 'Isolation probe')
 
   const path = join(directory, 'motor.aasx')
   await copyFile(fixture, path)
   await chooseFiles(app, path)
-  await window.getByRole('link', { name: 'Browse' }).click()
+  await window.getByRole('link', { name: 'AAS targets' }).click()
   await openPackage(window)
 
-  // The submodel view, served under studio-app:, edits the package in memory.
-  await window.getByRole('tab', { name: 'Nameplate' }).click()
-  await expect(appFrame().getByText('Industrial Servo Motor DM-3000')).toBeVisible()
+  // The bundled submodel view, served under studio-app:, edits the package in
+  // memory in Studio's edit mode.
+  await window.getByRole('tab', { name: 'Overview' }).click()
+  const nameplate = window.frameLocator('iframe[title="App: Digital Nameplate"]')
+  await expect(nameplate.getByText('Industrial Servo Motor DM-3000')).toBeVisible()
   expect(window.frames().some(frame => frame.url().startsWith('studio-app://app-'))).toBe(true)
-  await appFrame().getByRole('button', { name: 'Edit Serial number' }).click()
-  await appFrame().getByRole('textbox', { name: 'Serial number' }).fill('SN-DESKTOP-APP')
-  await appFrame().getByRole('button', { name: 'Save' }).click()
-  await expect(appFrame().locator('[data-test="notice"]')).toContainText('Serial number saved.')
+  await window.getByRole('button', { name: 'Edit', exact: true }).click()
+  await nameplate.getByRole('button', { name: 'Edit Serial number' }).click()
+  await nameplate.getByRole('textbox', { name: 'Serial number' }).fill('SN-DESKTOP-APP')
+  await nameplate.getByRole('button', { name: 'Save' }).click()
+  await expect(nameplate.locator('[data-test="notice"]')).toContainText('Serial number saved.')
   await expect(window.getByText('Unsaved changes', { exact: true })).toBeVisible()
 
   // The backend runs in the Deno bundled with the app.

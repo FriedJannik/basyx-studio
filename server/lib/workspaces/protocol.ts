@@ -1,7 +1,8 @@
-import type { ElementValueInput, Page, ShellSummary } from '#shared/contract'
+import type { ConceptDescriptionSummary, ElementHit, ElementValueInput, Page, ShellSummary } from '#shared/contract'
 import type { JsonObject } from '../aas/outline'
 import type { Violation } from '../problem'
-import type { ElementSnapshot } from '../targets/aas-target'
+import type { BinaryContent, ElementSnapshot } from '../targets/aas-target'
+import type { InspectedEnvironment, UploadFormat } from './package'
 
 // IPC contract between the Studio Service and the Workspace Worker process.
 
@@ -22,6 +23,13 @@ export interface WorkspaceCalls {
   submodel: (id: string) => JsonObject
   element: (submodelId: string, idShortPath: string) => ElementSnapshot
   setElementValue: (submodelId: string, idShortPath: string, value: ElementValueInput['value'], revision: string) => ElementSnapshot
+  deleteShell: (id: string) => void
+  thumbnail: (shellId: string) => Promise<BinaryContent | null>
+  attachment: (submodelId: string, idShortPath: string) => Promise<BinaryContent>
+  replaceAttachment: (submodelId: string, idShortPath: string, file: BinaryContent, revision: string) => Promise<ElementSnapshot>
+  conceptDescriptions: (limit: number, cursor: string | undefined) => Page<ConceptDescriptionSummary>
+  searchShells: (expression: string, limit: number, cursor: string | undefined) => Page<ShellSummary>
+  searchElements: (text: string, limit: number) => ElementHit[]
 }
 export type WorkspaceMethod = keyof WorkspaceCalls
 
@@ -32,6 +40,8 @@ export type WorkerRequest
     | { op: 'save', workspaceId: string, path?: string }
     | { op: 'close', workspaceId: string }
     | { op: 'list' }
+    /** Validates a file before it is uploaded to a live target; opens nothing. */
+    | { op: 'inspect', bytes: Uint8Array, format: UploadFormat }
 
 export interface WorkerResults {
   open: WorkspaceInfo
@@ -39,6 +49,7 @@ export interface WorkerResults {
   save: WorkspaceInfo
   close: null
   list: WorkspaceInfo[]
+  inspect: InspectedEnvironment
 }
 
 export interface WorkerProblem {

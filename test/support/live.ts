@@ -1,5 +1,6 @@
 import type { InfrastructureRecord } from '~~/server/lib/infrastructures'
 import type { OutboundPolicy } from '~~/server/lib/network/guarded-fetch'
+import { defaultSyncSettings } from '#shared/contract'
 
 // Records and policies for LiveAasTarget tests against the test environment.
 
@@ -8,7 +9,12 @@ export function record (url: string, security: InfrastructureRecord['security'])
     id: 'test',
     name: 'test',
     description: null,
+    template: 'full',
     endpoints: [{ type: 'aasRepository', url }, { type: 'submodelRepository', url }],
+    listSource: 'repository',
+    sync: { ...defaultSyncSettings },
+    serviceProfiles: {},
+    probedAt: null,
     security,
     secretCiphertext: null,
     allowPrivateNetwork: true,

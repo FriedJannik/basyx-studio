@@ -38,8 +38,8 @@ The schema is [`app-manifest.schema.json`](app-manifest.schema.json).
 
 | Contribution | Offered | Context |
 | --- | --- | --- |
-| `submodelViews` | As a tab next to Studio's element tree, for submodels whose semantic ID equals one of `semanticIds` | target, shell, submodel |
-| `modules` with `context: global` | Always, in the *App modules* menu, at `/apps/<installation>/<route>` | — |
+| `submodelViews` | On a shell's *Overview* tab and in the details drawer's *Visualization* mode, for submodels whose semantic ID equals one of `semanticIds` | target, shell, submodel |
+| `modules` with `context: global` | Always, in the navigation rail, at `/apps/<installation>/<route>` | — |
 | `modules` with `context: target` | While a target is open, at `/targets/<target>/apps/<installation>/<route>` | target |
 | `modules` with `context: shell` | While a shell is open | target, shell |
 
@@ -74,7 +74,13 @@ try {
 
 Build the UI with relative URLs (Vite: `base: './'`); it is served under
 `/app/<installation>/`. The frame cannot use cookies, storage, popups, forms or
-network requests outside its own package.
+network requests outside its own package. Without forms, handle buttons with
+click handlers instead of `submit` events.
+
+`studio.context.mode` is Studio's mode, `view` or `edit`. Show edit controls
+only in `edit`, as Studio does; `onContext` reports when the user switches.
+Views on the overview are sized to their content (`fitHeight`), so edit in
+place rather than in dialogs.
 
 ## Backend
 

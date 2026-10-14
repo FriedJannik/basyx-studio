@@ -123,7 +123,7 @@ const examples = fileURLToPath(new URL('../../examples/apps/dist', import.meta.u
 
 // The example apps, after `pnpm apps:build`.
 describe.runIf(existsSync(examples))('example app packages', () => {
-  it.each(['nameplate', 'shell-explorer', 'backend-demo'])('%s is a valid package for hosted and desktop', async name => {
+  it.each(['shell-explorer', 'backend-demo'])('%s is a valid package for hosted and desktop', async name => {
     const bytes = new Uint8Array(await readFile(join(examples, `${name}.zip`)))
     expect(readAppPackage(bytes, 'hosted').manifest.id).toBe(`org.eclipse.basyx.examples.${name}`)
     expect(readAppPackage(bytes, 'desktop').files.length).toBeGreaterThan(1)
@@ -133,5 +133,12 @@ describe.runIf(existsSync(examples))('example app packages', () => {
 describe('the isolation probe', () => {
   it('is a valid package', async () => {
     expect(readAppPackage(await zipDirectory(join(fixturesDirectory, 'probe')), 'hosted').manifest.permissions).toEqual(['studio.aas.read'])
+  })
+})
+
+describe('the test view', () => {
+  it('is a valid package with a nameplate view', async () => {
+    const pkg = readAppPackage(await zipDirectory(join(fixturesDirectory, 'view')), 'hosted')
+    expect(pkg.manifest.contributes.submodelViews?.[0]?.semanticIds).toEqual(['https://admin-shell.io/idta/nameplate/3/0/Nameplate'])
   })
 })

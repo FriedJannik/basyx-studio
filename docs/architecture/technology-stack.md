@@ -16,6 +16,10 @@ proof. A library should earn its place by removing real Studio code or risk.
 | Live AAS client | `basyx-typescript-sdk` | Studio Service | Required; upgrade the prototype to the SDK's AAS Core 3.1 peer version before core feature work |
 | AAS model | `@aas-core-works/aas-core3.1-typescript` | Shared trusted TypeScript code | Required by the current SDK; do not maintain a parallel Studio metamodel |
 | Styling and icons | Vuetify and Material Design Icons | UI | Continue the current stack and shared interaction patterns |
+| Code views | Monaco Editor (`monaco-editor` 0.56, as in the BaSyx AAS Web UI) | UI, loaded on first use | Accepted in MVP-4: JSON, XML and PlantUML views need find, folding and long-line handling, and the advanced query editor checks against the IDTA query schema while typing. MIT, two dependencies (`marked`, `dompurify`), no install scripts |
+| UML diagrams | `@plantuml/core` | UI, loaded on first use | Accepted in MVP-4: renders the Web UI's PlantUML class diagrams in the browser; one package without dependencies (7.8 MB), chosen over Mermaid with 23 dependencies |
+| QR codes | `uqr` (UnJS) | UI | Accepted in MVP-4: encodes the global asset ID; Studio draws the IEC 61406 frame and cut corner itself as SVG. MIT, no dependencies, chosen over `qrcode` (the Web UI's), which needs CSS for the frame |
+| QR scanning | Browser `BarcodeDetector`, `jsqr` as fallback | UI, `jsqr` loaded on first use | Accepted in MVP-4: finds a shell by the QR code on its asset, as the Web UI does. `jsqr` (Apache-2.0, no dependencies) where the browser has no detector, chosen over the unmaintained `html5-qrcode` |
 
 Keep the Studio Service modular inside one deployable until workload, trust, or
 release independence requires extraction. The desktop Workspace Worker and app

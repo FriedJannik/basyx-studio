@@ -3,6 +3,9 @@ import { defineVuetifyConfiguration } from 'vuetify-nuxt-module/custom-configura
 // The single place for Studio's look and feel. Components rely on these
 // defaults instead of repeating props, and on Vuetify utility classes instead
 // of custom CSS (see AGENTS.md and the Vue rules in eslint.config.js).
+//
+// A calm, bordered look (MVP-4 plan, L2): Vuetify's own palette with the BaSyx
+// brand colours, small radii, outlined fields, borders instead of shadows.
 
 // BaSyx brand colours, taken from app/assets/basyx-logo.svg. Light-theme
 // variants are darkened to keep at least 4.5:1 contrast with white (WCAG AA).
@@ -13,52 +16,131 @@ const brand = {
   orangeOnLight: '#A65400',
 }
 
+// Vuetify's status colours, listed so they get on-colours below.
+const status = {
+  light: { error: '#B00020', info: '#2196F3', success: '#4CAF50', warning: '#FB8C00' },
+  dark: { error: '#CF6679', info: '#2196F3', success: '#4CAF50', warning: '#FB8C00' },
+}
+
+function luminance (hex: string): number {
+  const [r, g, b] = [1, 3, 5].map(start => Number.parseInt(hex.slice(start, start + 2), 16) / 255).map(channel => channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
+  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!
+}
+
+/**
+ * Text colours on filled theme colours (`on-primary`, …): white where it
+ * reaches 4.5:1 (WCAG AA), black otherwise. Vuetify's own choice (APCA) puts
+ * white on the bright dark-theme cyan and orange, which is hard to read.
+ */
+function withOnColors (colors: Record<string, string>): Record<string, string> {
+  const onColors = Object.entries(colors).map(([name, hex]) => [`on-${name}`, 1.05 / (luminance(hex) + 0.05) >= 4.5 ? '#FFFFFF' : '#000000'])
+  return { ...colors, ...Object.fromEntries(onColors) }
+}
+
+const field = { variant: 'outlined', density: 'comfortable', hideDetails: 'auto' } as const
+
 export default defineVuetifyConfiguration({
   theme: {
-    // Follows the OS preference; SSR reads it from the Sec-CH-Prefers-Color-Scheme
-    // client hint (nuxt.config.ts: vuetify.moduleOptions.ssrClientHints).
-    defaultTheme: 'system',
+    // An explicit theme, so server rendering and hydration agree: the module
+    // picks light or dark from the color-scheme cookie or the
+    // Sec-CH-Prefers-Color-Scheme client hint (nuxt.config.ts:
+    // vuetify.moduleOptions.ssrClientHints). The user's choice in Settings
+    // (including "system") is applied in app.vue after hydration.
+    defaultTheme: 'light',
     themes: {
       light: {
-        colors: { primary: brand.cyanOnLight, secondary: brand.orangeOnLight },
+        colors: {
+          ...withOnColors({ primary: brand.cyanOnLight, secondary: brand.orangeOnLight, ...status.light }),
+          // Dialog headers, a shade off the card, as in the BaSyx AAS Web UI (DialogCard).
+          'dialog-header': '#F5F5F5',
+        },
       },
       dark: {
-        colors: { primary: brand.cyan, secondary: brand.orange },
+        colors: {
+          ...withOnColors({ primary: brand.cyan, secondary: brand.orange, ...status.dark }),
+          'dialog-header': '#282828',
+        },
       },
     },
   },
+
+  // Below 960 px (md) drawers become temporary and the layout switches to the
+  // phone navigation; Vuetify's default would do this up to 1280 px.
+  display: { mobileBreakpoint: 'md' },
 
   // Virtual components for recurring roles; use them instead of restating props.
   aliases: {
     // The main action of a view or dialog (save, sign in, add, delete).
     VBtnPrimary: 'VBtn',
-    // Pane container of the shell browser: fixed height, scrolling body.
+    // A further action beside the main one, e.g. on the left of a dialog's
+    // actions: bordered and filled, as in the BaSyx AAS Web UI and shadcn.
+    VBtnSecondary: 'VBtn',
+    // Pane container of a full-height page area: fixed height, scrolling body.
     VCardPane: 'VCard',
+    // Records in a bordered card (infrastructures, targets, apps), divided by
+    // v-divider: slim, square rows, and the row icon (RecordListItem) as far
+    // from the left edge as from the top and bottom.
+    VListRecords: 'VList',
   },
 
   defaults: {
     VAppBar: { flat: true, border: 'b', density: 'comfortable' },
-    VBtn: { variant: 'text' },
-    VBtnPrimary: { color: 'primary', variant: 'flat' },
-    VCard: { variant: 'outlined' },
+    VNavigationDrawer: { border: 'e' },
+    VAvatar: { rounded: 'lg' },
+    VBtn: { variant: 'text', rounded: 'lg', class: 'text-none' },
+    VBtnPrimary: { color: 'primary', variant: 'flat', rounded: 'lg', class: 'text-none' },
+    VBtnSecondary: { color: 'surface-light', variant: 'flat', border: true, rounded: 'lg', class: 'text-none' },
+    // One bordered group, divided between its buttons. Only the group is
+    // rounded: the buttons' own rounding (VBtn above) would show at the dividers.
+    VBtnToggle: { density: 'compact', rounded: 'lg', color: 'primary', border: true, divided: true, variant: 'text', VBtn: { rounded: false } },
+    VCard: { flat: true, border: true, rounded: 'lg' },
     VCardPane: {
-      variant: 'outlined',
+      flat: true,
+      border: true,
+      rounded: 'lg',
       height: 'calc(100vh - 190px)',
       minHeight: 320,
       class: 'd-flex flex-column',
     },
-    // Dialog content opens in an overlay and starts from the global defaults.
-    VDialog: { VCard: { variant: 'elevated' } },
-    VList: { color: 'primary' },
-    VListItem: { VBtn: { size: 'small' } },
+    // Overlays keep a shadow so they stand out from the page.
+    // Dialogs use compact fields: forms in dialogs stay short.
+    VDialog: {
+      VCard: { flat: false },
+      VTextField: { density: 'compact' },
+      VSelect: { density: 'compact' },
+      VAutocomplete: { density: 'compact' },
+      VFileInput: { density: 'compact' },
+      VTextarea: { density: 'compact' },
+    },
+    // Menus are dense, as in shadcn: compact rows, slim icons, body-sized text.
+    // Items are inset evenly (pa-1) with a smaller radius (4 px) than the
+    // menu card (8 px), so their highlight follows the card's corners.
+    VMenu: {
+      VCard: { flat: false },
+      VList: { density: 'compact', slim: true, class: 'pa-1 text-body-medium' },
+      VListItem: { minHeight: 36, rounded: true },
+    },
+    // Compact lists throughout: more rows on screen, as in the BaSyx Web UI and shadcn.
+    VList: { color: 'primary', density: 'compact', bgColor: 'transparent' },
+    VListItem: { rounded: 'lg', VBtn: { size: 'small' } },
+    VListRecords: { slim: true, lines: 'two', class: 'py-0', VListItem: { rounded: false, class: 'ps-3' } },
     VChip: { label: true, size: 'small', variant: 'tonal' },
     VAlert: { border: 'start', variant: 'tonal', VBtn: { size: 'small' } },
-    VTextField: { variant: 'outlined', density: 'comfortable' },
-    VSelect: { variant: 'outlined', density: 'comfortable' },
-    VCheckbox: { density: 'compact', color: 'primary' },
+    VTextField: field,
+    VSelect: field,
+    VAutocomplete: field,
+    VFileInput: field,
+    VTextarea: field,
+    VCheckbox: { density: 'compact', color: 'primary', hideDetails: 'auto' },
+    VSwitch: { color: 'primary', inset: true, hideDetails: true, density: 'compact' },
     VProgressLinear: { indeterminate: true, color: 'primary' },
     VBreadcrumbs: { class: 'pa-0' },
-    VTreeview: { density: 'compact', activatable: true, color: 'primary' },
-    VContainer: { maxWidth: 1100, class: 'py-6' },
+    // Items register from props, so closed groups are not rendered: large lists stay fast (MVP-4 plan, T1).
+    VTreeview: { density: 'compact', activatable: true, color: 'primary', itemsRegistration: 'props' },
+    VTooltip: { location: 'bottom', openDelay: 400 },
+    VExpansionPanels: { variant: 'accordion', flat: true },
+    VDataTable: { hover: true, density: 'comfortable' },
+    VTabs: { color: 'primary', density: 'comfortable' },
+    VContainer: { fluid: true, maxWidth: 1280, class: 'pa-2 pa-sm-3 pa-md-4' },
   },
 })

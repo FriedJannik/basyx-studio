@@ -1,18 +1,56 @@
-import type { ElementValueInput, EndpointType, Page, ShellSummary, TargetCapabilities } from '#shared/contract'
+import type {
+  AccessDocument,
+  AccessGrant,
+  ChangeEvent,
+  ChangePage,
+  ConceptDescriptionSummary,
+  EffectiveRights,
+  ElementHit,
+
+  ElementValueInput,
+  ExportFormat,
+  InvitationResult,
+  Invocation,
+  Page,
+  ShellSearch,
+  ShellSearchPage,
+  ShellSummary,
+  TargetCapabilities,
+} from '#shared/contract'
 import type { JsonObject } from '../aas/outline'
-import type { InfrastructureRecord } from '../infrastructures'
-import type { FailureRecorder, OutboundPolicy } from '../network/guarded-fetch'
-import type { AasTarget, ElementSnapshot } from './aas-target'
-import type { TargetAccess } from './credentials'
+import type { SyncPlan, SyncStep } from '../aas/sync'
+import type { FailureRecorder } from '../network/guarded-fetch'
+import type { AasTarget, BinaryContent, ChangesQuery, ElementSnapshot } from './aas-target'
+import type { TargetBase, TargetHttpOptions } from './http'
 import type { types } from '@aas-core-works/aas-core3.1-typescript'
-import { jsonization } from '@aas-core-works/aas-core3.1-typescript'
-import { AasRepositoryClient, Configuration, SubmodelRepositoryClient } from 'basyx-typescript-sdk'
-import { submodelIdOf, toShellSummary } from '../aas/shells'
+import type { Configuration } from 'basyx-typescript-sdk'
+import { types as aasTypes, jsonization } from '@aas-core-works/aas-core3.1-typescript'
+import { AasDiscoveryClient, AasRegistryClient, AasRepositoryClient, ConceptDescriptionRepositoryClient, Lib, SubmodelRegistryClient, SubmodelRepositoryClient } from 'basyx-typescript-sdk'
+import { serviceUrl } from '#shared/contract'
+import { buildShellQuery, escapeRegex, parseSearch } from '#shared/search/expression'
+import {
+  handleFromLocation,
+  invocationBody,
+  invocationOutputs,
+  subjectFilter,
+  toAccessGrants,
+  toChangeEvent,
+  toConceptDescriptionSummary,
+  toEffectiveRights,
+} from '../aas/basyx-go'
+import { checkRawQuery, toSdkQuery } from '../aas/query'
+import { descriptorSummary, submodelIdOf, toShellSummary } from '../aas/shells'
+import { assetLinksOf, shellDescriptor, submodelDescriptor, submodelIdsOf } from '../aas/sync'
+import { elementHits } from '../aas/tree'
 import { withValue } from '../aas/values'
-import { endpointUrl } from '../infrastructures'
-import { createGuardedFetch } from '../network/guarded-fetch'
 import { StudioProblem } from '../problem'
+import { liveCapabilities } from './capabilities'
+import { encodeIdentifier, TargetHttp } from './http'
+import { announcedFeatures } from './profiles'
+import { EndpointResolver } from './resolution'
 import { contentHash, parseRevision, revisionOf } from './revision'
+
+type Jsonable = Parameters<typeof Lib.assetAdministrationShellDescriptorFromJsonable>[0]
 
 type SdkResult<T>
   = | { success: true, data: T, statusCode?: number, etag?: string }
@@ -21,13 +59,18 @@ type SdkResult<T>
 /** Attempts per write when the submodel revision changes between read and write. */
 const writeAttempts = 3
 
-export interface LiveTargetOptions {
-  record: InfrastructureRecord
-  access: TargetAccess
-  policy: OutboundPolicy
-  requestId: string
-  /** Called when the target rejects the credentials (HTTP 401). */
-  onUnauthorized: () => Promise<void>
+/** How long the target may take for an asynchronous operation before giving up. */
+const asyncInvocationTimeout = 'PT60S'
+
+const exportMediaTypes: Record<ExportFormat, string> = {
+  aasx: 'application/asset-administration-shell-package+xml',
+  json: 'application/json',
+  xml: 'application/xml',
+}
+
+export interface LiveTargetOptions extends TargetHttpOptions {
+  /** The shell the request is about, for submodels reached through it. */
+  shellContext?: string
 }
 
 /**
@@ -39,15 +82,57 @@ function toJson (value: types.Class): JsonObject {
   return jsonization.toJsonable(value) as JsonObject
 }
 
-/** Live AAS target backed by `basyx-typescript-sdk`, scoped to one request. */
+function path (idShortPath: string): string {
+  return encodeURIComponent(idShortPath)
+}
+
+/** Maps a value-only operation result to Studio's invocation state. */
+function toInvocation (operation: JsonObject, result: JsonObject, handle: string | null): Invocation {
+  const state = String(result.executionState ?? 'Completed')
+  const messages = Array.isArray(result.messages) ? result.messages as JsonObject[] : []
+  const message = messages.map(entry => entry.text).find(text => typeof text === 'string') as string | undefined
+  if (state === 'Running' || state === 'Initiated') {
+    return { handle, state: 'running', outputs: [], message: message ?? null }
+  }
+  const failed = state !== 'Completed' || result.success === false
+  return { handle, state: failed ? 'failed' : 'completed', outputs: failed ? [] : invocationOutputs(operation, result), message: message ?? (failed ? state : null) }
+}
+
+/**
+ * Live AAS target, scoped to one request. Uses `basyx-typescript-sdk` for
+ * every operation it offers; BaSyx Go endpoints the SDK lacks go through the
+ * same guarded, credentialed HTTP layer (ADR 0022).
+ */
 export class LiveAasTarget implements AasTarget {
-  readonly capabilities: TargetCapabilities = { write: true, persistence: 'immediate' }
+  readonly capabilities: TargetCapabilities
+  readonly #http: TargetHttp
   readonly #aasClient = new AasRepositoryClient()
   readonly #submodelClient = new SubmodelRepositoryClient()
+  readonly #cdClient = new ConceptDescriptionRepositoryClient()
+  readonly #discoveryClient = new AasDiscoveryClient()
+  readonly #registryClient = new AasRegistryClient()
+  readonly #submodelRegistryClient = new SubmodelRegistryClient()
+  readonly #record: LiveTargetOptions['record']
+  readonly #resolver: EndpointResolver
 
-  constructor (private readonly options: LiveTargetOptions) {}
+  constructor (options: LiveTargetOptions) {
+    this.#http = new TargetHttp(options)
+    this.#record = options.record
+    this.#resolver = new EndpointResolver(options.record, this.#http, options.shellContext)
+    this.capabilities = liveCapabilities(options.record)
+  }
 
+  /** The shell list from the list source: the AAS registry's descriptors or the AAS repository (I3). */
   async listShells (limit: number, cursor: string | undefined): Promise<Page<ShellSummary>> {
+    if (this.#listsFromRegistry()) {
+      const data = await this.#call('aasRegistry', configuration =>
+        this.#registryClient.getAllAssetAdministrationShellDescriptors({ configuration, limit, cursor }))
+      const nextCursor = data.pagedResult?.cursor ?? null
+      return {
+        items: data.result.map(descriptor => descriptorSummary(Lib.toJsonableAssetAdministrationShellDescriptor(descriptor) as JsonObject)),
+        page: { nextCursor, hasMore: nextCursor !== null },
+      }
+    }
     const data = await this.#call('aasRepository', configuration =>
       this.#aasClient.getAllAssetAdministrationShells({ configuration, limit, cursor }))
     const nextCursor = data.pagedResult?.cursor ?? null
@@ -58,7 +143,7 @@ export class LiveAasTarget implements AasTarget {
   }
 
   async shell (id: string): Promise<JsonObject> {
-    return toJson(await this.#call('aasRepository', configuration =>
+    return toJson(await this.#call(await this.#shellBase(id), configuration =>
       this.#aasClient.getAssetAdministrationShellById({ configuration, aasIdentifier: id })))
   }
 
@@ -67,7 +152,7 @@ export class LiveAasTarget implements AasTarget {
     const ids: string[] = []
     let cursor: string | undefined
     for (let page = 0; page < 20; page++) {
-      const data = await this.#call('aasRepository', configuration =>
+      const data = await this.#call(await this.#shellBase(shellId), configuration =>
         this.#aasClient.getAllSubmodelReferencesAasRepository({ configuration, aasIdentifier: shellId, limit: 100, cursor }))
       for (const reference of data.result) {
         const id = submodelIdOf(toJson(reference))
@@ -85,12 +170,12 @@ export class LiveAasTarget implements AasTarget {
 
   async submodelMetadata (id: string): Promise<JsonObject> {
     // `$metadata` responses are plain JSON in the SDK (no aas-core instance).
-    return await this.#call('submodelRepository', configuration =>
+    return await this.#call(await this.#submodelBase(id), configuration =>
       this.#submodelClient.getSubmodelByIdMetadata({ configuration, submodelIdentifier: id })) as unknown as JsonObject
   }
 
   async submodel (id: string): Promise<JsonObject> {
-    return toJson(await this.#call('submodelRepository', configuration =>
+    return toJson(await this.#call(await this.#submodelBase(id), configuration =>
       this.#submodelClient.getSubmodelById({ configuration, submodelIdentifier: id })))
   }
 
@@ -107,26 +192,436 @@ export class LiveAasTarget implements AasTarget {
    * retried. Without an ETag the check is all there is (`best_effort`).
    */
   async setElementValue (submodelId: string, idShortPath: string, value: ElementValueInput['value'], revision: string): Promise<ElementSnapshot> {
+    return this.#conditionalWrite(submodelId, idShortPath, revision, async (current, configuration) => {
+      const { instance } = withValue(current.value, value)
+      return this.#submodelClient.patchSubmodelElementByPath({
+        configuration,
+        submodelIdentifier: submodelId,
+        idShortPath,
+        submodelElement: instance,
+        ifMatch: current.etag,
+      })
+    })
+  }
+
+  async deleteShell (id: string): Promise<void> {
+    await this.#call(await this.#shellBase(id), configuration =>
+      this.#aasClient.deleteAssetAdministrationShellById({ configuration, aasIdentifier: id }))
+  }
+
+  /**
+   * Writes the descriptors and asset links of uploaded shells where Studio
+   * keeps the registries and discovery in step (MVP-4 plan, I5). Each
+   * resource reports its outcome; a failure does not undo the upload.
+   */
+  async registerShells (shellIds: string[], plan: SyncPlan): Promise<SyncStep[]> {
+    const steps: SyncStep[] = []
+    if (!plan.registry && !plan.discovery) {
+      return steps
+    }
+    const submodelRegistry = serviceUrl(this.#record, 'submodelRegistry') !== undefined
+    for (const id of shellIds) {
+      const shell = await this.shell(id).catch(() => null)
+      if (!shell) {
+        steps.push({ resource: 'shellDescriptor', id, outcome: 'failed', detail: 'The uploaded shell could not be read.' })
+        continue
+      }
+      if (plan.registry) {
+        steps.push(await this.#syncStep('shellDescriptor', id, 'written', async () => {
+          const descriptor = Lib.assetAdministrationShellDescriptorFromJsonable(shellDescriptor(shell, serviceUrl(this.#record, 'aasRepository')!) as Jsonable).mustValue()
+          const created = await this.#send('aasRegistry', configuration =>
+            this.#registryClient.postAssetAdministrationShellDescriptor({ configuration, assetAdministrationShellDescriptor: descriptor }))
+          // An earlier upload registered it already: replace it.
+          if (!created.success && created.statusCode === 409) {
+            await this.#call('aasRegistry', configuration =>
+              this.#registryClient.putAssetAdministrationShellDescriptorById({ configuration, aasIdentifier: id, assetAdministrationShellDescriptor: descriptor }))
+          } else if (!created.success) {
+            throw await this.#http.problem(created.statusCode, created.recorder)
+          }
+        }))
+        for (const submodelId of submodelRegistry ? submodelIdsOf(shell) : []) {
+          steps.push(await this.#syncStep('submodelDescriptor', submodelId, 'written', async () => {
+            const submodel = await this.submodelMetadata(submodelId)
+            const descriptor = Lib.submodelDescriptorFromJsonable(submodelDescriptor(submodel, serviceUrl(this.#record, 'submodelRepository')!) as Jsonable).mustValue()
+            const created = await this.#send('submodelRegistry', configuration =>
+              this.#submodelRegistryClient.postSubmodelDescriptor({ configuration, submodelDescriptor: descriptor }))
+            if (!created.success && created.statusCode === 409) {
+              await this.#call('submodelRegistry', configuration =>
+                this.#submodelRegistryClient.putSubmodelDescriptorById({ configuration, submodelIdentifier: submodelId, submodelDescriptor: descriptor }))
+            } else if (!created.success) {
+              throw await this.#http.problem(created.statusCode, created.recorder)
+            }
+          }))
+        }
+      }
+      const links = assetLinksOf(shell)
+      if (plan.discovery && links.length > 0) {
+        steps.push(await this.#syncStep('assetLinks', id, 'written', async () => {
+          await this.#call('aasDiscovery', configuration => this.#discoveryClient.postAllAssetLinksById({
+            configuration,
+            aasIdentifier: id,
+            specificAssetId: links.map(link => new aasTypes.SpecificAssetId(link.name, link.value)),
+          }))
+        }))
+      }
+    }
+    return steps
+  }
+
+  /**
+   * Removes the descriptor and asset links of a deleted shell (MVP-4 plan,
+   * I5). Its submodels stay, and so do their descriptors.
+   */
+  async unregisterShell (shellId: string, plan: SyncPlan): Promise<SyncStep[]> {
+    const steps: SyncStep[] = []
+    if (plan.registry) {
+      steps.push(await this.#syncStep('shellDescriptor', shellId, 'removed', () => this.#call('aasRegistry', configuration =>
+        this.#registryClient.deleteAssetAdministrationShellDescriptorById({ configuration, aasIdentifier: shellId }))))
+    }
+    if (plan.discovery) {
+      steps.push(await this.#syncStep('assetLinks', shellId, 'removed', () => this.#call('aasDiscovery', configuration =>
+        this.#discoveryClient.deleteAllAssetLinksById({ configuration, aasIdentifier: shellId }))))
+    }
+    return steps
+  }
+
+  async thumbnail (shellId: string): Promise<BinaryContent | null> {
+    const result = await this.#send(await this.#shellBase(shellId), configuration =>
+      this.#aasClient.getThumbnail({ configuration, aasIdentifier: shellId }))
+    if (!result.success) {
+      if (result.statusCode === 404) {
+        return null
+      }
+      throw await this.#http.problem(result.statusCode, result.recorder)
+    }
+    const blob = result.data as Blob
+    return { bytes: new Uint8Array(await blob.arrayBuffer()), contentType: blob.type || 'application/octet-stream', fileName: null }
+  }
+
+  async attachment (submodelId: string, idShortPath: string): Promise<BinaryContent> {
+    const { value } = await this.#read(submodelId, idShortPath)
+    if (value.modelType !== 'File') {
+      throw new StudioProblem('unsupported_operation', 'Only File elements have an attachment.')
+    }
+    const blob = await this.#call(await this.#submodelBase(submodelId), configuration =>
+      this.#submodelClient.getFileByPath({ configuration, submodelIdentifier: submodelId, idShortPath })) as Blob
+    const location = typeof value.value === 'string' ? value.value : ''
+    return {
+      bytes: new Uint8Array(await blob.arrayBuffer()),
+      contentType: typeof value.contentType === 'string' ? value.contentType : (blob.type || 'application/octet-stream'),
+      fileName: location.split('/').pop() || null,
+    }
+  }
+
+  async replaceAttachment (submodelId: string, idShortPath: string, file: BinaryContent, revision: string): Promise<ElementSnapshot> {
+    return this.#conditionalWrite(submodelId, idShortPath, revision, async (current, configuration) => {
+      if (current.value.modelType !== 'File') {
+        throw new StudioProblem('unsupported_operation', 'Only File elements have an attachment.')
+      }
+      return this.#submodelClient.putFileByPath({
+        configuration,
+        submodelIdentifier: submodelId,
+        idShortPath,
+        fileName: file.fileName ?? 'file',
+        file: new Blob([file.bytes as BlobPart], { type: file.contentType }),
+        ifMatch: current.etag,
+      })
+    })
+  }
+
+  // The SDK's asynchronous value-only invocation does not expose the
+  // `Location` header with the handle, so invocations use the adapter.
+  async invoke (submodelId: string, idShortPath: string, args: Array<{ idShort: string, value: string | null }>, async: boolean): Promise<Invocation> {
+    const operation = await this.#operation(submodelId, idShortPath)
+    const base = `/submodels/${encodeIdentifier(submodelId)}/submodel-elements/${path(idShortPath)}`
+    if (!async) {
+      const result = await this.#http.json<JsonObject>(await this.#submodelBase(submodelId), `${base}/invoke/$value`, {
+        method: 'POST',
+        body: invocationBody(operation, args),
+      })
+      return toInvocation(operation, result, null)
+    }
+    const response = await this.#http.request(await this.#submodelBase(submodelId), `${base}/invoke-async/$value`, {
+      method: 'POST',
+      body: invocationBody(operation, args, asyncInvocationTimeout),
+    })
+    await response.body?.cancel()
+    const handle = handleFromLocation(response.headers.get('location'))
+    if (!handle) {
+      throw new StudioProblem('target_invalid_response', 'The target did not return a handle for the asynchronous invocation.')
+    }
+    return { handle, state: 'running', outputs: [], message: null }
+  }
+
+  async invocation (submodelId: string, idShortPath: string, handle: string): Promise<Invocation> {
+    const operation = await this.#operation(submodelId, idShortPath)
+    const base = `/submodels/${encodeIdentifier(submodelId)}/submodel-elements/${path(idShortPath)}`
+    const submodelBase = await this.#submodelBase(submodelId)
+    const status = await this.#http.json<JsonObject>(submodelBase, `${base}/operation-status/${encodeURIComponent(handle)}`)
+    const state = toInvocation(operation, status, handle)
+    if (state.state !== 'completed') {
+      return state
+    }
+    const result = await this.#http.json<JsonObject>(submodelBase, `${base}/operation-results/${encodeURIComponent(handle)}/$value`)
+    return toInvocation(operation, result, handle)
+  }
+
+  async conceptDescriptions (limit: number, cursor: string | undefined): Promise<Page<ConceptDescriptionSummary>> {
+    const data = await this.#call('conceptDescriptionRepository', configuration =>
+      this.#cdClient.getAllConceptDescriptions({ configuration, limit, cursor }))
+    const nextCursor = data.pagedResult?.cursor ?? null
+    return {
+      items: data.result.map(cd => toConceptDescriptionSummary(toJson(cd))),
+      page: { nextCursor, hasMore: nextCursor !== null },
+    }
+  }
+
+  /**
+   * Shells matching a search, through the AAS Query Language on the service
+   * the capabilities name (`queryTarget`): an expression of the search field
+   * is turned into a query for that service, a raw query is checked first.
+   * An empty expression lists the shells.
+   */
+  async searchShells (search: ShellSearch, limit: number, cursor: string | undefined): Promise<ShellSearchPage> {
+    const target = this.capabilities.queryTarget
+    if (!target) {
+      throw new StudioProblem('query_unsupported')
+    }
+    const json = 'query' in search ? checkRawQuery(search.query, target) : buildShellQuery(target, parseSearch(search.expression))
+    if (!json) {
+      return { ...await this.listShells(limit, cursor), endpoint: target }
+    }
+    const query = toSdkQuery(json)
+    const items: ShellSummary[] = []
+    let nextCursor: string | null
+    if (target === 'registry') {
+      const data = await this.#call('aasRegistry', configuration =>
+        this.#registryClient.queryAssetAdministrationShellDescriptors({ configuration, query, limit, cursor }))
+      if (data.resultType !== 'Identifier') {
+        items.push(...data.result.map(descriptor => descriptorSummary(Lib.toJsonableAssetAdministrationShellDescriptor(descriptor) as JsonObject)))
+      }
+      nextCursor = data.pagedResult?.cursor ?? null
+    } else {
+      const data = await this.#call('aasRepository', configuration =>
+        this.#aasClient.queryAssetAdministrationShells({ configuration, query, limit, cursor }))
+      if (data.resultType !== 'Identifier') {
+        items.push(...data.result.map(shell => toShellSummary(toJson(shell))))
+      }
+      nextCursor = data.pagedResult?.cursor ?? null
+    }
+    return { items, page: { nextCursor, hasMore: nextCursor !== null }, endpoint: target }
+  }
+
+  /**
+   * Submodel elements whose idShort matches a text (case-insensitive), for
+   * the palette. The submodel repository finds the submodels; where the AAS
+   * repository can query, it names the shells they belong to, so the hits can
+   * be opened.
+   */
+  async searchElements (text: string, limit: number): Promise<ElementHit[]> {
+    if (!this.capabilities.elementSearch) {
+      throw new StudioProblem('query_unsupported')
+    }
+    const pattern = `(?i)${escapeRegex(text)}`
+    const data = await this.#call('submodelRepository', configuration => this.#submodelClient.querySubmodels({
+      configuration,
+      query: toSdkQuery({ $condition: { $match: [{ $regex: [{ $field: '$sme#idShort' }, { $strVal: pattern }] }] } }),
+      limit,
+    }))
+    const submodels = data.resultType === 'Identifier' ? [] : data.result.map(submodel => toJson(submodel))
+    const owners = await this.#owners(submodels.map(submodel => String(submodel.id)))
+    return submodels
+      .flatMap(submodel => elementHits(submodel, text, limit, owners.get(String(submodel.id)) ?? null))
+      .slice(0, limit * 2)
+  }
+
+  /**
+   * Shells registered for an asset ID in the discovery service. Shells that
+   * are not registered there are found by their global asset ID.
+   */
+  async lookupShells (assetId: string): Promise<ShellSummary[]> {
+    let ids: string[] = []
+    if (this.capabilities.discovery) {
+      const data = await this.#call('aasDiscovery', configuration =>
+        this.#discoveryClient.getAllAssetAdministrationShellIdsByAssetLink({ configuration, assetIds: [{ name: 'globalAssetId', value: assetId }], limit: 20 }))
+      ids = data.result
+    }
+    if (ids.length === 0) {
+      if (!announcedFeatures(this.#record).query.aasRepository) {
+        return []
+      }
+      const data = await this.#call('aasRepository', configuration => this.#aasClient.queryAssetAdministrationShells({
+        configuration,
+        query: toSdkQuery({ $condition: { $eq: [{ $field: '$aas#assetInformation.globalAssetId' }, { $strVal: assetId }] } }),
+        limit: 20,
+      }))
+      return data.resultType === 'Identifier' ? [] : data.result.map(shell => toShellSummary(toJson(shell)))
+    }
+    const shells = await Promise.allSettled(ids.map(id => this.shell(id)))
+    return shells.filter(result => result.status === 'fulfilled').map(result => toShellSummary(result.value))
+  }
+
+  /**
+   * The SDK's serialization call cannot choose the format (Accept header).
+   * BaSyx Go adds the shell's submodels itself and skips dangling
+   * references, which an explicit `submodelIds` list would fail on.
+   */
+  async exportShell (shellId: string, format: ExportFormat): Promise<BinaryContent> {
+    const response = await this.#http.request('aasEnvironment', '/serialization', {
+      query: {
+        aasIds: encodeIdentifier(shellId),
+        includeConceptDescriptions: true,
+      },
+      headers: { Accept: exportMediaTypes[format] },
+    })
+    return {
+      bytes: new Uint8Array(await response.arrayBuffer()),
+      contentType: exportMediaTypes[format],
+      fileName: null,
+    }
+  }
+
+  async upload (file: BinaryContent): Promise<void> {
+    const form = new FormData()
+    form.append('file', new Blob([file.bytes as BlobPart], { type: file.contentType }), file.fileName ?? 'upload')
+    if (file.fileName) {
+      form.append('fileName', file.fileName)
+    }
+    const response = await this.#http.request('aasEnvironment', '/upload', { method: 'POST', body: form })
+    await response.body?.cancel()
+  }
+
+  async submodelAt (id: string, date: string): Promise<JsonObject> {
+    return this.#http.json<JsonObject>(await this.#submodelBase(id), `/submodels/${encodeIdentifier(id)}/$history`, { query: { date } })
+  }
+
+  /**
+   * Change events, newest first. Without `after`, it pages through the
+   * events since `since` and keeps the newest `limit`; with `after` it returns
+   * only events newer than that event.
+   */
+  async changes (query: ChangesQuery): Promise<ChangePage> {
+    const filter = query.subjects?.length ? subjectFilter(query.subjects) : undefined
+    const collected: ChangeEvent[] = []
+    let cursor: string | undefined
+    for (let page = 0; page < 10; page++) {
+      const data = await this.#http.json<{ records?: JsonObject[], cursor?: string }>('aasRepository', '/events', {
+        query: {
+          limit: 200,
+          presentation: 'COMPACT',
+          filter,
+          cursor,
+          lastEventId: cursor ? undefined : query.after,
+          since: cursor || query.after ? undefined : query.since,
+        },
+      })
+      for (const record of data.records ?? []) {
+        const event = toChangeEvent(record)
+        if (event) {
+          collected.push(event)
+        }
+      }
+      cursor = data.cursor
+      if (!cursor || (data.records ?? []).length === 0) {
+        break
+      }
+    }
+    const items = collected.toReversed().slice(0, query.limit)
+    return { items, lastEventId: collected.at(-1)?.id ?? query.after ?? null }
+  }
+
+  async access (shellId: string): Promise<AccessDocument> {
+    const response = await this.#http.request(await this.#shellBase(shellId), `/shells/${encodeIdentifier(shellId)}/$access`)
+    const document = await response.json() as JsonObject
+    const principal = await this.#http.json<JsonObject>(await this.#shellBase(shellId), '/security/rebac/principal').catch(() => ({} as JsonObject))
+    return {
+      grants: toAccessGrants(document),
+      revision: response.headers.get('etag'),
+      issuer: typeof principal.issuer === 'string' ? principal.issuer : null,
+    }
+  }
+
+  async setAccess (shellId: string, grants: AccessGrant[], revision: string): Promise<AccessDocument> {
+    const response = await this.#http.request(await this.#shellBase(shellId), `/shells/${encodeIdentifier(shellId)}/$access/grants`, {
+      method: 'PUT',
+      body: { grants },
+      headers: { 'If-Match': revision },
+    })
+    await response.body?.cancel()
+    return this.access(shellId)
+  }
+
+  async effectiveRights (shellId: string): Promise<EffectiveRights> {
+    return toEffectiveRights(await this.#http.json<JsonObject>(await this.#shellBase(shellId), `/shells/${encodeIdentifier(shellId)}/$access/effective`))
+  }
+
+  async invite (shellId: string, relation: string, expiresAt: string, maxUses: number): Promise<InvitationResult> {
+    const result = await this.#http.json<JsonObject>(await this.#shellBase(shellId), `/shells/${encodeIdentifier(shellId)}/$access/invitations`, {
+      method: 'POST',
+      body: { relation, expiresAt, maxUses },
+    })
+    if (typeof result.token !== 'string') {
+      throw new StudioProblem('target_invalid_response', 'The target did not return an invitation token.')
+    }
+    return { token: result.token, expiresAt: typeof result.expiresAt === 'string' ? result.expiresAt : expiresAt }
+  }
+
+  async acceptInvitation (token: string): Promise<void> {
+    const response = await this.#http.request('aasRepository', '/security/rebac/invitations/accept', { method: 'POST', body: { token } })
+    await response.body?.cancel()
+  }
+
+  /** The shells that reference the submodels, if the AAS repository can query. */
+  async #owners (submodelIds: string[]): Promise<Map<string, { key: string, label: string }>> {
+    const owners = new Map<string, { key: string, label: string }>()
+    if (submodelIds.length === 0 || !announcedFeatures(this.#record).query.aasRepository) {
+      return owners
+    }
+    const references = submodelIds.map(id => ({ $eq: [{ $field: '$aas#submodels[].keys[].value' }, { $strVal: id }] }))
+    const data = await this.#call('aasRepository', configuration => this.#aasClient.queryAssetAdministrationShells({
+      configuration,
+      query: toSdkQuery({ $condition: references.length === 1 ? references[0]! : { $or: references } }),
+      limit: 100,
+    }))
+    for (const shell of data.resultType === 'Identifier' ? [] : data.result.map(item => toJson(item))) {
+      const summary = toShellSummary(shell)
+      for (const reference of Array.isArray(shell.submodels) ? shell.submodels as JsonObject[] : []) {
+        const id = submodelIdOf(reference)
+        if (id && !owners.has(id)) {
+          owners.set(id, { key: summary.key, label: summary.idShort ?? summary.id })
+        }
+      }
+    }
+    return owners
+  }
+
+  async #operation (submodelId: string, idShortPath: string): Promise<JsonObject> {
+    const { value } = await this.#read(submodelId, idShortPath)
+    if (value.modelType !== 'Operation') {
+      throw new StudioProblem('unsupported_operation', 'Only Operation elements can be invoked.')
+    }
+    return value
+  }
+
+  /** Runs a conditional write based on the revision the user saw, retrying on unrelated submodel changes. */
+  async #conditionalWrite (
+    submodelId: string,
+    idShortPath: string,
+    revision: string,
+    write: (current: { value: JsonObject, etag: string | undefined }, configuration: Configuration) => Promise<SdkResult<unknown>>,
+  ): Promise<ElementSnapshot> {
     const token = parseRevision(revision)
     for (let attempt = 1; ; attempt++) {
       const current = await this.#read(submodelId, idShortPath)
       if (contentHash(current.value) !== token.hash) {
         throw new StudioProblem('revision_conflict')
       }
-      const { instance } = withValue(current.value, value)
-      const result = await this.#send('submodelRepository', configuration =>
-        this.#submodelClient.patchSubmodelElementByPath({
-          configuration,
-          submodelIdentifier: submodelId,
-          idShortPath,
-          submodelElement: instance,
-          ifMatch: current.etag,
-        }))
+      const result = await this.#send(await this.#submodelBase(submodelId), configuration => write(current, configuration))
       if (result.success) {
         return this.element(submodelId, idShortPath)
       }
       if (!result.preconditionFailed) {
-        throw await this.#problem(result.statusCode, result.recorder)
+        throw await this.#http.problem(result.statusCode, result.recorder)
       }
       if (attempt === writeAttempts) {
         throw new StudioProblem('revision_conflict', 'The submodel kept changing while saving. Try again.')
@@ -135,94 +630,50 @@ export class LiveAasTarget implements AasTarget {
   }
 
   async #read (submodelId: string, idShortPath: string): Promise<{ value: JsonObject, etag: string | undefined }> {
-    const result = await this.#send('submodelRepository', configuration =>
-      this.#submodelClient.getSubmodelElementByPath({ configuration, submodelIdentifier: submodelId, idShortPath }))
+    // Blob values are left out unless asked for (AAS API `extent`).
+    const result = await this.#send(await this.#submodelBase(submodelId), configuration =>
+      this.#submodelClient.getSubmodelElementByPath({ configuration, submodelIdentifier: submodelId, idShortPath, extent: 'withBlobValue' }))
     if (!result.success) {
-      throw await this.#problem(result.statusCode, result.recorder)
+      throw await this.#http.problem(result.statusCode, result.recorder)
     }
     return { value: toJson(result.data), etag: result.etag }
   }
 
-  #configuration (type: EndpointType, recorder: FailureRecorder): Configuration {
-    const basePath = endpointUrl(this.options.record, type)
-    if (!basePath) {
-      throw new StudioProblem('target_request_rejected', `The target has no ${type} endpoint.`)
-    }
-    const headers: Record<string, string> = { 'X-Request-ID': this.options.requestId }
-    if (this.options.access.accessToken) {
-      headers.Authorization = `Bearer ${this.options.access.accessToken}`
-    }
-    return new Configuration({
-      basePath,
-      fetchApi: createGuardedFetch(this.options.policy, { recorder, headers }),
-    })
+  #listsFromRegistry (): boolean {
+    return this.#record.listSource === 'registry' && serviceUrl(this.#record, 'aasRegistry') !== undefined
   }
 
-  async #call<T> (type: EndpointType, operation: (configuration: Configuration) => Promise<SdkResult<T>>): Promise<T> {
-    const result = await this.#send(type, operation)
+  async #shellBase (id: string): Promise<TargetBase> {
+    return { url: await this.#resolver.shellBase(id) }
+  }
+
+  async #submodelBase (id: string): Promise<TargetBase> {
+    return { url: await this.#resolver.submodelBase(id) }
+  }
+
+  async #syncStep (resource: SyncStep['resource'], id: string, outcome: 'written' | 'removed', run: () => Promise<unknown>): Promise<SyncStep> {
+    try {
+      await run()
+      return { resource, id, outcome }
+    } catch (error) {
+      // Gone already counts as removed.
+      if (outcome === 'removed' && error instanceof StudioProblem && error.code === 'target_resource_not_found') {
+        return { resource, id, outcome }
+      }
+      return { resource, id, outcome: 'failed', detail: error instanceof StudioProblem ? (error.detail ?? error.title) : 'internal error' }
+    }
+  }
+
+  async #call<T> (base: TargetBase, operation: (configuration: Configuration) => Promise<SdkResult<T>>): Promise<T> {
+    const result = await this.#send(base, operation)
     if (result.success) {
       return result.data
     }
-    throw await this.#problem(result.statusCode, result.recorder)
+    throw await this.#http.problem(result.statusCode, result.recorder)
   }
 
-  async #send<T> (type: EndpointType, operation: (configuration: Configuration) => Promise<SdkResult<T>>): Promise<SdkResult<T> & { recorder: FailureRecorder }> {
+  async #send<T> (base: TargetBase, operation: (configuration: Configuration) => Promise<SdkResult<T>>): Promise<SdkResult<T> & { recorder: FailureRecorder }> {
     const recorder: FailureRecorder = {}
-    return { ...await operation(this.#configuration(type, recorder)), recorder }
-  }
-
-  async #problem (status: number | undefined, recorder: FailureRecorder): Promise<StudioProblem> {
-    const failure = recorder.failure
-    if (failure) {
-      switch (failure.kind) {
-        case 'blocked': {
-          return new StudioProblem('target_blocked', failure.message)
-        }
-        case 'too_large': {
-          return new StudioProblem('target_invalid_response', failure.message)
-        }
-        case 'timeout': {
-          return new StudioProblem('target_unreachable', `The target did not answer in time (${failure.message}).`)
-        }
-        default: {
-          return new StudioProblem('target_unreachable', failure.message)
-        }
-      }
-    }
-    const mode = this.options.record.security.mode
-    switch (status) {
-      case 401: {
-        await this.options.onUnauthorized()
-        if (mode === 'deployment_client_credentials') {
-          return new StudioProblem('target_credentials_rejected')
-        }
-        return new StudioProblem('target_auth_required', mode === 'unsecured'
-          ? 'The target requires authentication, but it is configured as unsecured.'
-          : 'The target rejected the authorization. Authorize this target again.')
-      }
-      case 403: {
-        return new StudioProblem('target_forbidden')
-      }
-      case 428: {
-        return new StudioProblem('target_request_rejected', 'The target requires a revision (If-Match) for this write.')
-      }
-      case 404: {
-        return new StudioProblem('target_resource_not_found')
-      }
-      case 400: {
-        return new StudioProblem('target_request_rejected')
-      }
-      case undefined:
-      case 0: {
-        return new StudioProblem('target_unreachable')
-      }
-      default: {
-        if (status >= 500) {
-          return new StudioProblem('target_error', `The target answered with HTTP ${status}.`)
-        }
-        // The SDK reports undeserializable payloads with its own code.
-        return new StudioProblem('target_invalid_response', `Unexpected answer (HTTP ${status}).`)
-      }
-    }
+    return { ...await operation(this.#http.configuration(base, recorder)), recorder }
   }
 }

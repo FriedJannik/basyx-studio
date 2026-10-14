@@ -1,3 +1,4 @@
+import type { ClientCertificate } from '../network/guarded-fetch'
 import * as oidc from 'openid-client'
 import { createGuardedFetch, NetworkFailure } from '../network/guarded-fetch'
 
@@ -7,6 +8,8 @@ export interface OidcClientSettings {
   /** Absent for public clients (desktop, RFC 8252), which rely on PKCE alone. */
   clientSecret: string | undefined
   allowPrivateNetwork: boolean
+  /** The target's TLS client certificate, for IdPs behind mutual TLS. */
+  clientCertificate?: ClientCertificate
 }
 
 export interface TokenSet {
@@ -28,7 +31,8 @@ export class OidcError extends Error {
 const clients = new Map<string, Promise<oidc.Configuration>>()
 
 function cacheKey (settings: OidcClientSettings): string {
-  return JSON.stringify([settings.issuer, settings.clientId, settings.clientSecret ?? null, settings.allowPrivateNetwork])
+  // The certificate by its identity only, never by its key material.
+  return JSON.stringify([settings.issuer, settings.clientId, settings.clientSecret ?? null, settings.allowPrivateNetwork, settings.clientCertificate?.identity ?? null])
 }
 
 function toOidcError (error: unknown): OidcError {
@@ -73,6 +77,7 @@ async function discover (settings: OidcClientSettings): Promise<oidc.Configurati
     allowPrivateNetwork: settings.allowPrivateNetwork,
     timeoutMs: 10_000,
     maxResponseBytes: 1_000_000,
+    ...(settings.clientCertificate ? { clientCertificate: settings.clientCertificate } : {}),
   })
   const idpFetch: oidc.CustomFetch = (url, options) => guardedFetch(url, options as RequestInit)
   const insecure = issuer.protocol === 'http:'

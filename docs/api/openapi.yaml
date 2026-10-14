@@ -35,7 +35,7 @@ info:
     appRpc: Sandboxed app and widget calls use the separate versioned Studio SDK postMessage/capability RPC contract.
     workspaceWorker: Package parsing and serialization use an internal versioned local worker contract.
     marketplace: Publisher, build, signing, catalogue storage, and OCI distribution are independent marketplace service contracts.
-    downstreamAas: BaSyx repository, registry, discovery, file server, and orchestration APIs are BFF implementation details accessed through basyx-typescript-sdk.
+    downstreamAas: BaSyx repository, registry, discovery, file server, and orchestration APIs are BFF implementation details accessed through basyx-typescript-sdk; BaSyx Go endpoints outside the AAS API (upload, serialization, history, event feed, ReBAC) use a separate BFF client (ADR 0022).
   x-requirement-sources:
     - ../requirements.md
     - ../architecture/overview.md
@@ -67,6 +67,7 @@ tags:
   - name: Targets
   - name: Infrastructures
   - name: AAS
+  - name: Preferences
   - name: Workspaces
   - name: Copies
   - name: Views
@@ -168,21 +169,54 @@ paths:
         '204': { description: Session ended }
         default: { $ref: '#/components/responses/Problem' }
 
+  /me/preferences:
+    get:
+      tags: [Preferences]
+      operationId: getPreferences
+      summary: Get the signed-in user's preferences
+      description: Stored by Studio per user. Recently opened shells are kept per target, so a target never shows another target's shells.
+      x-requirements: [PROD-001, DATA-020]
+      responses:
+        '200':
+          description: Preferences, with defaults for unset fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Preferences' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [Preferences]
+      operationId: replacePreferences
+      summary: Replace the signed-in user's preferences
+      description: Invalid preferences are refused with `invalid_request` and `violations`. Older clients may send recently opened shells as bare keys; they are stored with a `null` title.
+      x-requirements: [PROD-001, DATA-020]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Preferences' }
+      responses:
+        '200':
+          description: Stored preferences
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Preferences' }
+        default: { $ref: '#/components/responses/Problem' }
+
   /targets:
     get:
       tags: [Targets]
       operationId: listTargets
       summary: List all infrastructures and local workspaces visible to the current user
+      description: Open AASX workspaces come first, then the live infrastructures. The list is not paged.
       x-requirements: [DATA-002, DATA-003, DATA-011, UX-001, UX-004]
-      parameters:
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
-          description: Target page with independent health and authentication state
+          description: Targets with their capabilities and independent authentication state
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/TargetPage' }
+              schema: { $ref: '#/components/schemas/TargetList' }
         default: { $ref: '#/components/responses/Problem' }
 
   /targets/{targetId}:
@@ -190,6 +224,7 @@ paths:
       tags: [Targets]
       operationId: getTarget
       summary: Get sanitized target capabilities, permissions, and status
+      description: Capabilities are derived from the service profiles stored at the last probe, the template, the target kind, and the security mode (ADR 0021); feature code branches on them, never on the target kind.
       x-requirements: [DATA-002, DATA-003, DATA-016]
       parameters:
         - $ref: '#/components/parameters/TargetId'
@@ -263,72 +298,84 @@ paths:
       tags: [Infrastructures]
       operationId: listInfrastructures
       summary: List Studio-managed live infrastructure configurations
+      description: Administrators only. The list is not paged.
       x-requirements: [DATA-002, SEC-006]
-      parameters:
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: Sanitized infrastructure configurations
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/InfrastructurePage' }
+              schema: { $ref: '#/components/schemas/InfrastructureList' }
         default: { $ref: '#/components/responses/Problem' }
     post:
       tags: [Infrastructures]
       operationId: createInfrastructure
       summary: Validate, probe, and register a live AAS infrastructure
-      description: Endpoint URLs are accepted only in this authorized administration flow. Credentials are referenced through server-side secret storage or an OS-protected native handle; raw secrets are not part of this contract.
+      description: |
+        Administrators only. Endpoint URLs are accepted only in this authorized
+        administration flow and must fit the template (ADR 0020). Every endpoint
+        is probed at `/description`; an unreachable endpoint fails the request
+        with `infrastructure_unreachable`, and the profiles reported are stored
+        with the infrastructure (ADR 0021). Client secrets are deployment secret
+        references (`env:`, `file:`) in hosted Studio and are stored encrypted on
+        the desktop; they are never returned.
       x-requirements: [DEP-001, DEP-003, DATA-002, SEC-003, SEC-004, SEC-007, SEC-008]
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/InfrastructureCreateRequest' }
+            schema: { $ref: '#/components/schemas/InfrastructureInput' }
       responses:
         '201':
           description: Infrastructure registered and available as a target
           headers:
-            Location: { $ref: '#/components/headers/Location' }
+            ETag: { $ref: '#/components/headers/ETag' }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Infrastructure' }
         '422': { $ref: '#/components/responses/Unprocessable' }
         default: { $ref: '#/components/responses/Problem' }
 
-  /infrastructures/{targetId}:
+  /infrastructures/{infrastructureId}:
+    parameters:
+      - $ref: '#/components/parameters/InfrastructureId'
     get:
       tags: [Infrastructures]
       operationId: getInfrastructure
       summary: Get one sanitized infrastructure configuration
       x-requirements: [DATA-002, SEC-006]
-      parameters:
-        - $ref: '#/components/parameters/TargetId'
       responses:
         '200':
           description: Infrastructure
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Infrastructure' }
         '404': { $ref: '#/components/responses/NotFound' }
         default: { $ref: '#/components/responses/Problem' }
-    patch:
+    put:
       tags: [Infrastructures]
       operationId: updateInfrastructure
-      summary: Validate, probe, and update infrastructure metadata or security configuration
+      summary: Validate, probe, and replace an infrastructure configuration
+      description: |
+        Replaces the whole configuration, probes it again and stores the new
+        profiles. `If-Match` carries the revision that was read as `"<revision>"`;
+        without it the request fails with `invalid_request`, with a stale one
+        with `revision_conflict`. Omit `security.clientSecret` to keep the stored
+        secret; omit `clientCertificate` to keep the stored client certificate,
+        or send `null` to remove it.
       x-requirements: [DATA-002, SEC-003, SEC-007, SEC-008]
       parameters:
-        - $ref: '#/components/parameters/TargetId'
         - $ref: '#/components/parameters/CsrfToken'
         - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
         content:
-          application/merge-patch+json:
-            schema: { $ref: '#/components/schemas/InfrastructureUpdateRequest' }
+          application/json:
+            schema: { $ref: '#/components/schemas/InfrastructureInput' }
       responses:
         '200':
           description: Updated infrastructure
@@ -346,27 +393,25 @@ paths:
       summary: Remove an infrastructure configuration without changing its AAS data
       x-requirements: [DATA-002, UX-003]
       parameters:
-        - $ref: '#/components/parameters/TargetId'
         - $ref: '#/components/parameters/CsrfToken'
-        - $ref: '#/components/parameters/IfMatch'
       responses:
         '204': { description: Configuration removed }
-        '409': { $ref: '#/components/responses/Conflict' }
-        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '404': { $ref: '#/components/responses/NotFound' }
         default: { $ref: '#/components/responses/Problem' }
 
-  /infrastructures/{targetId}/probe:
+  /infrastructures/{infrastructureId}/probe:
     post:
       tags: [Infrastructures]
       operationId: probeInfrastructure
-      summary: Refresh connectivity, service, metamodel, and capability information
+      summary: Probe every endpoint again and store the service profiles it reports
+      description: Reads `/description` of each endpoint. The profiles replace the stored ones, so capabilities follow what the services announce now (ADR 0021). Unreachable endpoints are reported, not refused.
       x-requirements: [DATA-002, SEC-008]
       parameters:
-        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/InfrastructureId'
         - $ref: '#/components/parameters/CsrfToken'
       responses:
         '200':
-          description: Bounded probe result
+          description: Probe result per endpoint
           content:
             application/json:
               schema: { $ref: '#/components/schemas/InfrastructureProbeResult' }
@@ -377,19 +422,22 @@ paths:
       tags: [AAS]
       operationId: listShells
       summary: List shell summaries on one target
-      x-requirements: [PROD-001, PROD-002, PROD-005, DATA-001, DATA-003, DATA-016]
+      description: |
+        Reads the list source of the infrastructure (ADR 0020): AAS descriptors
+        from the AAS registry or shells from the AAS repository, cursor-paged
+        by the service. Registry entries may point to shells that cannot be
+        opened; `shell-availability` tells which.
+      x-requirements: [PROD-001, PROD-002, PROD-005, DATA-001, DATA-003, DATA-016, DATA-017]
       parameters:
         - $ref: '#/components/parameters/TargetId'
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/IdShortFilter'
-        - $ref: '#/components/parameters/SemanticIdFilter'
       responses:
         '200':
           description: Shell page
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AasResourcePage' }
+              schema: { $ref: '#/components/schemas/ShellSummaryPage' }
         default: { $ref: '#/components/responses/Problem' }
     post:
       tags: [AAS]
@@ -411,18 +459,111 @@ paths:
         '422': { $ref: '#/components/responses/Unprocessable' }
         default: { $ref: '#/components/responses/Problem' }
 
-  /targets/{targetId}/shells/{resourceKey}:
+  /targets/{targetId}/shell-availability:
+    post:
+      tags: [AAS]
+      operationId: getShellAvailability
+      summary: Tell whether listed shells can be opened
+      description: |
+        The UI asks for the rows in view (the Web UI's online/offline marker).
+        `blocked` means the registry points to an endpoint outside the
+        infrastructure, which Studio never contacts (`descriptor_endpoint_blocked`,
+        ADR 0020). A POST because the keys can be long; nothing is changed.
+      x-requirements: [PROD-001, DATA-017, SEC-008]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ShellAvailabilityRequest' }
+      responses:
+        '200':
+          description: Status per requested key
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ShellAvailability' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/searches:
+    post:
+      tags: [AAS]
+      operationId: searchTarget
+      summary: Search shells by expression or AAS query, or submodel elements by text
+      description: |
+        Shells (`scope: shells`) are searched with the search field's
+        `expression` (free text plus `field:value`, `field=value`,
+        `field!=value`, `-field:value` and quoted values over `id`, `idShort`,
+        `assetKind`, `assetType`, `globalAssetId`, `specificAssetId`) or a raw
+        AAS Query Language `query` from the advanced dialog. Live targets run
+        both as queries on the service named by the `queryTarget` capability
+        (ADR 0024); an empty expression lists the shells. A raw query is
+        checked first: at most 64 KiB, valid against the IDTA-01002-3 schema,
+        no `$select`, and only the roots of the queried service (`$aas` on the
+        repository, `$aasdesc` and `$smdesc` on the registry); otherwise
+        `query_invalid` with `violations`. AASX workspaces evaluate expressions
+        themselves and refuse raw queries. Without query support the request
+        fails with `query_unsupported` and the UI filters the loaded rows.
+
+        Elements (`scope: elements`, the palette) are searched by idShort text,
+        case-insensitive, where the `elementSearch` capability is set; the
+        result is not paged. A POST because queries are JSON; nothing is changed.
+      x-requirements: [PROD-001, DATA-001, DATA-003, DATA-019]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SearchRequest' }
+      responses:
+        '200':
+          description: Matching shells (cursor-paged) or elements
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - { $ref: '#/components/schemas/ShellSearchPage' }
+                  - { $ref: '#/components/schemas/ElementSearchResult' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/lookup:
+    get:
+      tags: [AAS]
+      operationId: lookupShellsByAssetId
+      summary: Find the shells of an asset by its asset ID
+      description: Looks the global asset ID up in the AAS discovery where the infrastructure has one; without discovery or without a match, queries the AAS repository where it announces queries, otherwise returns no shells. At most 20 shells. Backs `?globalAssetId=` deep links and the palette's asset-ID lookup.
+      x-requirements: [PROD-001, DATA-001, DATA-017]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - name: assetId
+          in: query
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 2000 }
+      responses:
+        '200':
+          description: Shells of the asset
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ShellSummaryList' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/shells/{shellKey}:
     parameters:
       - $ref: '#/components/parameters/TargetId'
-      - $ref: '#/components/parameters/ResourceKey'
+      - $ref: '#/components/parameters/ShellKey'
     get:
       tags: [AAS]
       operationId: getShell
-      summary: Read one shell with its target-scoped revision
+      summary: Read one shell
       x-requirements: [PROD-001, PROD-002, PROD-005, DATA-001, DATA-009]
       responses:
-        '200': { $ref: '#/components/responses/AasResource' }
-        '304': { description: Not modified }
+        '200':
+          description: The shell as AAS JSON
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ShellDetail' }
         default: { $ref: '#/components/responses/Problem' }
     put:
       tags: [AAS]
@@ -446,14 +587,192 @@ paths:
       tags: [AAS]
       operationId: deleteShell
       summary: Delete one shell after explicit UI confirmation
-      x-requirements: [PROD-001, DATA-009, UX-003]
+      description: |
+        Needs the `deleteShells` capability. Its submodels stay in the submodel
+        repository. Where the server does not keep its registries and discovery
+        in step and the effective sync mode is `autoCreate`, Studio then removes
+        the shell's descriptor and asset links and reports each step; a failed
+        step does not undo the delete (ADR 0020).
+      x-requirements: [PROD-001, DATA-020, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200':
+          description: Shell deleted, with the registry and discovery steps Studio took
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeleteResult' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/shells/{shellKey}/submodel-refs:
+    get:
+      tags: [AAS]
+      operationId: listSubmodelRefs
+      summary: List the submodels a shell references, with whether each can be read
+      description: Submodels are resolved through the submodel registry where there is one. `blocked` marks a descriptor endpoint outside the infrastructure, which Studio never contacts (ADR 0020).
+      x-requirements: [PROD-001, DATA-001, DATA-017]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/ShellKey'
+      responses:
+        '200':
+          description: Submodel references in the shell's order
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SubmodelRefList' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/shells/{shellKey}/thumbnail:
+    get:
+      tags: [AAS]
+      operationId: getShellThumbnail
+      summary: Stream the shell's default thumbnail
+      description: Needs the `files` capability. Images are served inline and may be cached privately for five minutes.
+      x-requirements: [PROD-001, DATA-003]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/ShellKey'
+      responses:
+        '200':
+          description: Thumbnail image
+          content:
+            image/*:
+              schema: { type: string, format: binary }
+        '204': { description: The shell has no thumbnail }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/shells/{shellKey}/export:
+    get:
+      tags: [AAS]
+      operationId: exportShell
+      summary: Download a shell with its submodels and concept descriptions
+      description: Needs the `export` capability.
+      x-requirements: [PROD-001, DATA-003]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/ShellKey'
+        - name: format
+          in: query
+          required: true
+          schema: { type: string, enum: [aasx, json, xml] }
+      responses:
+        '200':
+          description: Serialized shell as an attachment named after its idShort
+          headers:
+            Content-Disposition:
+              schema: { type: string }
+          content:
+            application/asset-administration-shell-package+xml:
+              schema: { type: string, format: binary }
+            application/json:
+              schema: { type: string, format: binary }
+            application/xml:
+              schema: { type: string, format: binary }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/shells/{shellKey}/rights:
+    get:
+      tags: [AAS]
+      operationId: getShellRights
+      summary: Get the signed-in user's rights on a shell
+      description: Lets the UI hide actions that would be refused. Without the `sharing` capability the target decides per request and every right is `true`.
+      x-requirements: [PROD-001, SEC-005]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/ShellKey'
+      responses:
+        '200':
+          description: Effective rights
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EffectiveRights' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/shells/{shellKey}/access:
+    parameters:
+      - $ref: '#/components/parameters/TargetId'
+      - $ref: '#/components/parameters/ShellKey'
+    get:
+      tags: [AAS]
+      operationId: getShellAccess
+      summary: Get who has access to a shell (ReBAC grants)
+      description: Needs the `sharing` capability. The revision is also returned as `ETag`.
+      x-requirements: [SEC-005, DATA-018]
+      responses:
+        '200':
+          description: Grants with their revision
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccessDocument' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [AAS]
+      operationId: replaceShellAccess
+      summary: Replace the grants of a shell as the signed-in user
+      description: Needs the `sharing` capability. Without `If-Match` the request fails with `precondition_required`.
+      x-requirements: [SEC-005, DATA-018]
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
         - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccessGrantsInput' }
       responses:
-        '204': { description: Shell deleted }
-        '409': { $ref: '#/components/responses/Conflict' }
+        '200':
+          description: Updated grants
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccessDocument' }
         '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '428': { $ref: '#/components/responses/PreconditionRequired' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/shells/{shellKey}/access/invitations:
+    post:
+      tags: [AAS]
+      operationId: createShellInvitation
+      summary: Create an invitation that grants a relation on the shell to whoever accepts it
+      description: Needs the `sharing` capability.
+      x-requirements: [SEC-005, DATA-018]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/ShellKey'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InvitationInput' }
+      responses:
+        '200':
+          description: Invitation token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InvitationResult' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/invitations:
+    post:
+      tags: [AAS]
+      operationId: acceptInvitation
+      summary: Accept a sharing invitation for the signed-in user
+      description: Needs the `sharing` capability.
+      x-requirements: [SEC-005, DATA-018]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InvitationAcceptRequest' }
+      responses:
+        '204': { description: Invitation accepted }
         default: { $ref: '#/components/responses/Problem' }
 
   /targets/{targetId}/submodels:
@@ -498,17 +817,37 @@ paths:
         '422': { $ref: '#/components/responses/Unprocessable' }
         default: { $ref: '#/components/responses/Problem' }
 
-  /targets/{targetId}/submodels/{resourceKey}:
+  /targets/{targetId}/submodels/{submodelKey}:
     parameters:
       - $ref: '#/components/parameters/TargetId'
-      - $ref: '#/components/parameters/ResourceKey'
+      - $ref: '#/components/parameters/SubmodelKey'
     get:
       tags: [AAS]
       operationId: getSubmodel
-      summary: Read one submodel with revision metadata
-      x-requirements: [PROD-001, PROD-002, DATA-001, DATA-009]
+      summary: Read a submodel's metadata, or the whole submodel as JSON or AAS XML
+      description: |
+        `content=metadata` (the default) returns the submodel without its
+        elements; `content=full` the whole submodel. `format=xml` returns the
+        whole submodel as AAS XML (aas-core `xmlization`) as an attachment.
+        With `at` the submodel is read as it was at that point in time; this
+        needs the `history` capability.
+      x-requirements: [PROD-001, DATA-001, DATA-018]
+      parameters:
+        - name: content
+          in: query
+          schema: { type: string, enum: [metadata, full], default: metadata }
+        - name: format
+          in: query
+          schema: { type: string, enum: [json, xml], default: json }
+        - $ref: '#/components/parameters/PointInTime'
       responses:
-        '200': { $ref: '#/components/responses/AasResource' }
+        '200':
+          description: Submodel
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SubmodelDetail' }
+            application/xml:
+              schema: { type: string, format: binary }
         default: { $ref: '#/components/responses/Problem' }
     put:
       tags: [AAS]
@@ -542,26 +881,38 @@ paths:
         '412': { $ref: '#/components/responses/PreconditionFailed' }
         default: { $ref: '#/components/responses/Problem' }
 
-  /targets/{targetId}/submodels/{resourceKey}/elements:
+  /targets/{targetId}/submodels/{submodelKey}/elements:
     get:
       tags: [AAS]
       operationId: listSubmodelElements
-      summary: List child elements without exposing downstream repository URLs
-      x-requirements: [PROD-001, PROD-004, DATA-001, DATA-016]
+      summary: Tree nodes below the submodel or one of its elements, within a node budget
+      description: |
+        Returns the children of the submodel, or of `parentElementKey`, with as
+        many complete levels below them as fit into `budget` nodes, breadth
+        first; the first level is always complete. A node with `hasChildren`
+        and without `children` has further levels, which the UI requests when
+        it is opened. With `at` the levels are read as they were at that point
+        in time; this needs the `history` capability. One request per level
+        would cost a full submodel read on BaSyx Go each, so small submodels
+        arrive in one request (MVP-4 plan, Phase E measurements).
+      x-requirements: [PROD-001, DATA-001, DATA-016, DATA-018]
       parameters:
         - $ref: '#/components/parameters/TargetId'
-        - $ref: '#/components/parameters/ResourceKey'
+        - $ref: '#/components/parameters/SubmodelKey'
         - name: parentElementKey
           in: query
           schema: { $ref: '#/components/schemas/ResourceKey' }
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/PointInTime'
+        - name: budget
+          in: query
+          description: Maximum number of nodes in the response, except that the first level is always complete.
+          schema: { type: integer, minimum: 1, maximum: 5000, default: 2000 }
       responses:
         '200':
-          description: Element page
+          description: Tree nodes
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AasResourcePage' }
+              schema: { $ref: '#/components/schemas/TreeNodeList' }
         default: { $ref: '#/components/responses/Problem' }
     post:
       tags: [AAS]
@@ -570,7 +921,7 @@ paths:
       x-requirements: [PROD-001, PROD-004, DATA-007, DATA-009]
       parameters:
         - $ref: '#/components/parameters/TargetId'
-        - $ref: '#/components/parameters/ResourceKey'
+        - $ref: '#/components/parameters/SubmodelKey'
         - $ref: '#/components/parameters/CsrfToken'
         - $ref: '#/components/parameters/IfMatch'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -588,21 +939,33 @@ paths:
   /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}:
     parameters:
       - $ref: '#/components/parameters/TargetId'
-      - name: submodelKey
-        in: path
-        required: true
-        schema: { $ref: '#/components/schemas/ResourceKey' }
-      - name: elementKey
-        in: path
-        required: true
-        schema: { $ref: '#/components/schemas/ResourceKey' }
+      - $ref: '#/components/parameters/SubmodelKey'
+      - $ref: '#/components/parameters/ElementKey'
     get:
       tags: [AAS]
       operationId: getSubmodelElement
-      summary: Read one target-scoped submodel element
-      x-requirements: [PROD-001, PROD-002, DATA-001, DATA-009]
+      summary: Read one target-scoped submodel element as JSON or AAS XML
+      description: |
+        JSON returns the element with its revision for writes and its
+        `ancestors` for opening its path in the tree. `format=xml` returns the
+        element as AAS XML as an attachment; operation variable groups have no
+        XML of their own (`unsupported_operation`). With `at` the element is
+        read as it was at that point in time, without a revision; this needs
+        the `history` capability.
+      x-requirements: [PROD-001, DATA-001, DATA-009, DATA-018]
+      parameters:
+        - $ref: '#/components/parameters/PointInTime'
+        - name: format
+          in: query
+          schema: { type: string, enum: [json, xml], default: json }
       responses:
-        '200': { $ref: '#/components/responses/AasResource' }
+        '200':
+          description: Element
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ElementDetail' }
+            application/xml:
+              schema: { type: string, format: binary }
         default: { $ref: '#/components/responses/Problem' }
     put:
       tags: [AAS]
@@ -635,23 +998,151 @@ paths:
         '412': { $ref: '#/components/responses/PreconditionFailed' }
         default: { $ref: '#/components/responses/Problem' }
 
+  /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/value:
+    put:
+      tags: [AAS]
+      operationId: setSubmodelElementValue
+      summary: Set the value of a Property or MultiLanguageProperty
+      description: '`If-Match` carries the element revision the user edited (ADR 0013). Operation variables cannot be edited separately.'
+      x-requirements: [PROD-004, DATA-007, DATA-009, UX-006]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/SubmodelKey'
+        - $ref: '#/components/parameters/ElementKey'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ElementValueInput' }
+      responses:
+        '200':
+          description: The element after the write, with its new revision
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ElementDetail' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '428': { $ref: '#/components/responses/PreconditionRequired' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/attachment:
+    parameters:
+      - $ref: '#/components/parameters/TargetId'
+      - $ref: '#/components/parameters/SubmodelKey'
+      - $ref: '#/components/parameters/ElementKey'
+    get:
+      tags: [AAS]
+      operationId: getElementAttachment
+      summary: Stream the content of a File element
+      description: Needs the `files` capability. Images and PDFs are shown inline in a sandbox, everything else downloads; `download` forces a download.
+      x-requirements: [PROD-001, DATA-003]
+      parameters:
+        - name: download
+          in: query
+          allowEmptyValue: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: File content
+          headers:
+            Content-Disposition:
+              schema: { type: string }
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [AAS]
+      operationId: replaceElementAttachment
+      summary: Replace the content of a File element
+      description: Needs the `files` capability. The request body is the file itself; its media type comes from `Content-Type`, its name from `fileName`. Files above the upload limit (100 MiB by default) are refused with `invalid_request`.
+      x-requirements: [DATA-003, DATA-009, UX-006]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/FileName'
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: { type: string, format: binary }
+      responses:
+        '200':
+          description: The File element after the write, with its new revision
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ElementDetail' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '428': { $ref: '#/components/responses/PreconditionRequired' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/invocations:
+    post:
+      tags: [AAS]
+      operationId: invokeOperationElement
+      summary: Invoke an Operation element synchronously or asynchronously
+      description: Needs the `operations` capability. An asynchronous invocation returns a `handle` to poll.
+      x-requirements: [PROD-001, DATA-003, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/SubmodelKey'
+        - $ref: '#/components/parameters/ElementKey'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InvocationInput' }
+      responses:
+        '200':
+          description: Invocation state, with outputs once completed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Invocation' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/invocations/{handle}:
+    get:
+      tags: [AAS]
+      operationId: getOperationInvocation
+      summary: Poll an asynchronous invocation
+      description: Needs the `operations` capability.
+      x-requirements: [PROD-001, DATA-003]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/SubmodelKey'
+        - $ref: '#/components/parameters/ElementKey'
+        - name: handle
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[\w.~-]{1,200}$' }
+      responses:
+        '200':
+          description: Invocation state, with outputs once completed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Invocation' }
+        default: { $ref: '#/components/responses/Problem' }
+
   /targets/{targetId}/concept-descriptions:
     get:
       tags: [AAS]
       operationId: listConceptDescriptions
       summary: List concept descriptions where supported by the target
+      description: Needs the `conceptDescriptions` capability.
       x-requirements: [DATA-003, DATA-012]
       parameters:
         - $ref: '#/components/parameters/TargetId'
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/IdShortFilter'
       responses:
         '200':
           description: Concept description page
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AasResourcePage' }
+              schema: { $ref: '#/components/schemas/ConceptDescriptionSummaryPage' }
         default: { $ref: '#/components/responses/Problem' }
     post:
       tags: [AAS]
@@ -715,11 +1206,79 @@ paths:
         '412': { $ref: '#/components/responses/PreconditionFailed' }
         default: { $ref: '#/components/responses/Problem' }
 
+  /targets/{targetId}/changes:
+    get:
+      tags: [AAS]
+      operationId: listChanges
+      summary: Read recent change events of shells, submodels, and assets
+      description: Needs the `changeFeed` capability, which is set only where the server announces its event feed profile (ADR 0021). Newest first; `after` reads newer events than the last one seen.
+      x-requirements: [PROD-001, DATA-018]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - name: after
+          in: query
+          description: Only events newer than this event ID.
+          schema: { type: string, maxLength: 200 }
+        - name: since
+          in: query
+          description: Only events after this time; ignored with `after`.
+          schema: { type: string, format: date-time }
+        - name: subjects
+          in: query
+          description: Only events about these identifiers (a shell and its submodels); repeat the parameter for several.
+          explode: true
+          schema:
+            type: array
+            maxItems: 200
+            items: { type: string, maxLength: 2000 }
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Change events
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChangePage' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/uploads:
+    post:
+      tags: [AAS]
+      operationId: uploadAasFile
+      summary: Add the content of an AASX, JSON, or XML file to the target
+      description: |
+        Needs the `upload` capability. The request body is the file itself; the
+        format is taken from the `fileName` extension or `Content-Type`. The
+        Workspace Worker checks the file first (DATA-006), so the target only
+        receives well-formed AAS content within the upload limit (100 MiB by
+        default; larger files are refused with `invalid_request`). Where the
+        server does not keep its registries and discovery in step and the
+        effective sync mode is `autoCreate`, Studio then writes descriptors and
+        asset links for the added shells and reports each step (ADR 0020).
+      x-requirements: [PROD-001, DATA-006, DATA-020]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/FileName'
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: { type: string, format: binary }
+      responses:
+        '201':
+          description: Shells added, with the registry and discovery steps Studio took
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UploadResult' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
   /targets/{targetId}/operation-invocations:
     post:
       tags: [AAS]
       operationId: invokeAasOperation
       summary: Invoke an explicitly selected AAS operation where supported
+      description: Implemented in MVP-4 per Operation element as `…/elements/{elementKey}/invocations`; this target-wide form remains a draft for view bindings.
       x-requirements: [DATA-003, VIEW-004, VIEW-008, UX-003]
       parameters:
         - $ref: '#/components/parameters/TargetId'
@@ -1623,6 +2182,7 @@ paths:
       tags: [Apps, Operations]
       operationId: removeAppInstallation
       summary: Remove an installation without executing app code in the Studio Service
+      description: Apps shipped with Studio (`bundled`, ADR 0023) cannot be removed and are refused with `forbidden`.
       x-requirements: [APP-004, APP-005, APP-010, UX-003]
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
@@ -1794,12 +2354,17 @@ paths:
     get:
       tags: [Apps]
       operationId: listAppContributions
-      summary: Modules of the installed apps, and the submodel views for a submodel's semantic ID, with the reason for each match
+      summary: Modules of the installed apps, and the submodel views for submodel semantic IDs, with the reason for each match
       x-requirements: [APP-003]
       parameters:
         - name: semanticId
           in: query
-          schema: { type: string, maxLength: 2048 }
+          description: Submodel semantic IDs; submodel views are returned only for given IDs. Repeat the parameter for several submodels, for example a shell's overview (MVP-4).
+          explode: true
+          schema:
+            type: array
+            maxItems: 100
+            items: { type: string, minLength: 1, maxLength: 2048 }
       responses:
         '200':
           description: Applicable contributions
@@ -1979,6 +2544,40 @@ components:
       required: true
       description: Opaque, URL-safe, target-scoped resource key returned by Studio. It prevents arbitrary AAS identifiers and downstream URLs from being interpreted as routing input.
       schema: { $ref: '#/components/schemas/ResourceKey' }
+    InfrastructureId:
+      name: infrastructureId
+      in: path
+      required: true
+      description: ID of a live infrastructure; the same value is its target ID.
+      schema: { $ref: '#/components/schemas/TargetId' }
+    ShellKey:
+      name: shellKey
+      in: path
+      required: true
+      description: Resource key of a shell, as returned in `ShellSummary.key`.
+      schema: { $ref: '#/components/schemas/ResourceKey' }
+    SubmodelKey:
+      name: submodelKey
+      in: path
+      required: true
+      description: Resource key of a submodel, as returned in `SubmodelRef.key`.
+      schema: { $ref: '#/components/schemas/ResourceKey' }
+    ElementKey:
+      name: elementKey
+      in: path
+      required: true
+      description: Resource key of a submodel element or operation variable, as returned in `TreeNode.key`.
+      schema: { $ref: '#/components/schemas/ResourceKey' }
+    PointInTime:
+      name: at
+      in: query
+      description: Point in time (ISO 8601 with offset) for a historic version; needs the `history` capability.
+      schema: { type: string, format: date-time }
+    FileName:
+      name: fileName
+      in: query
+      description: Name of the uploaded file, without path separators.
+      schema: { type: string, minLength: 1, maxLength: 255 }
     WorkspaceId:
       name: workspaceId
       in: path
@@ -2155,7 +2754,11 @@ components:
     TargetId:
       $ref: '#/components/schemas/OpaqueId'
     ResourceKey:
-      $ref: '#/components/schemas/OpaqueId'
+      type: string
+      minLength: 1
+      maxLength: 4000
+      pattern: '^[A-Za-z0-9_-]+$'
+      description: Opaque, URL-safe, target-scoped key (base64url of an AAS identifier or element locator). Clients use keys only as returned by Studio.
     WorkspaceId:
       $ref: '#/components/schemas/OpaqueId'
     CopyPlanId:
@@ -2330,107 +2933,111 @@ components:
           maxLength: 2048
     TargetKind:
       type: string
-      enum: [infrastructure, local_aasx]
-    TargetAvailability:
-      type: string
-      enum: [available, authentication_required, unavailable, insufficient_permission, incompatible]
-    TargetHealthStatus:
-      type: string
-      enum: [healthy, degraded, unavailable, unknown]
-    TargetHealth:
-      type: object
-      additionalProperties: false
-      required: [status]
-      properties:
-        status: { $ref: '#/components/schemas/TargetHealthStatus' }
-        checkedAt: { $ref: '#/components/schemas/Timestamp' }
-        reasonCode: { type: string, maxLength: 100 }
-        message: { type: string, maxLength: 500 }
+      enum: [live, workspace]
+      description: '`live` is a configured infrastructure, `workspace` an AASX package opened in the desktop app.'
     TargetAuthenticationState:
       type: string
-      enum: [not_required, connected, authentication_required, refreshing, failed]
-    TargetCapabilityName:
-      type: string
-      enum:
-        - shells.list
-        - shells.create
-        - shells.update
-        - shells.delete
-        - submodels.list
-        - submodels.create
-        - submodels.update
-        - submodels.delete
-        - conceptDescriptions.read
-        - conceptDescriptions.write
-        - operations.invoke
-        - files.read
-        - files.write
-        - revisions
-        - semanticIndex
-        - crossTargetCopySource
-        - crossTargetCopyDestination
-        - localPackageSave
-        - localPackageExport
-        - events
-    CapabilityLimit:
-      type: object
-      additionalProperties: false
-      required: [name, value]
-      properties:
-        name: { type: string, maxLength: 100 }
-        value: { type: integer, minimum: 0 }
-        unit: { type: string, maxLength: 50 }
+      enum: [not_required, authenticated, required]
     TargetCapabilities:
       type: object
       additionalProperties: false
-      required: [supported]
+      description: What a target supports. Feature code branches on capabilities, never on the target kind. Optional server features are `true` only where the server announces them in its service profiles (ADR 0021).
+      required: [write, persistence, deleteShells, files, operations, conceptDescriptions, search, queryTarget, elementSearch, discovery, export, upload, history, changeFeed, sharing, listSource]
       properties:
-        supported:
-          type: array
-          uniqueItems: true
-          items: { $ref: '#/components/schemas/TargetCapabilityName' }
-        aasMetamodelVersions:
-          type: array
-          uniqueItems: true
-          items: { type: string, maxLength: 100 }
-        limits:
-          type: array
-          maxItems: 100
-          items: { $ref: '#/components/schemas/CapabilityLimit' }
-    TargetCounts:
+        write: { type: boolean }
+        persistence:
+          type: string
+          enum: [immediate, explicit_save]
+          description: '`immediate` writes reach the source on apply (live targets); `explicit_save` keeps applied changes until the user saves (workspaces).'
+        deleteShells: { type: boolean }
+        files:
+          type: boolean
+          description: Read File elements and thumbnails, and replace File contents.
+        operations: { type: boolean }
+        conceptDescriptions: { type: boolean }
+        search:
+          type: string
+          enum: [query, expression, filter]
+          description: How shells are searched (ADR 0024). `query` runs the AAS Query Language on the server, `expression` is evaluated by Studio (workspaces), `filter` only filters the loaded list.
+        queryTarget:
+          type: [string, 'null']
+          enum: [registry, repository, null]
+          description: 'Where shell queries run with `search: query`; raw queries use that service''s roots.'
+        elementSearch:
+          type: boolean
+          description: Submodel elements can be searched (the palette).
+        discovery:
+          type: boolean
+          description: Find shells by asset ID through an AAS discovery.
+        export:
+          type: boolean
+          description: Download a shell with its submodels as AASX, JSON, or XML.
+        upload:
+          type: boolean
+          description: Add the content of an AASX, JSON, or XML file.
+        history:
+          type: boolean
+          description: Read submodels and shells as they were at a point in time.
+        changeFeed:
+          type: boolean
+          description: Read the change events of shells, submodels, and assets.
+        sharing:
+          type: boolean
+          description: Grant other users access to a shell (BaSyx Go ReBAC, as the signed-in user).
+        listSource:
+          type: string
+          enum: [registry, repository]
+          description: Where the shell list comes from; registry entries may point to shells that cannot be opened.
+    TargetWorkspaceState:
       type: object
       additionalProperties: false
+      required: [fileName, unsavedChanges]
       properties:
-        shells: { type: integer, minimum: 0 }
-        submodels: { type: integer, minimum: 0 }
-        services: { type: integer, minimum: 0 }
+        fileName: { type: string }
+        unsavedChanges: { type: boolean }
+    SyncMode:
+      type: string
+      enum: [autoCreate, dontCreate]
+      description: Whether Studio writes registry descriptors and discovery asset links after uploads and removes them after deletes, where the server does not (ADR 0020).
     Target:
       type: object
       additionalProperties: false
-      required: [id, kind, name, availability, authenticationState, health, capabilities, permissions, active]
+      required: [id, kind, name, description, securityMode, authenticationState, capabilities, workspace, registrySync]
       properties:
         id: { $ref: '#/components/schemas/TargetId' }
         kind: { $ref: '#/components/schemas/TargetKind' }
-        name: { type: string, minLength: 1, maxLength: 200 }
-        description: { type: string, maxLength: 1000 }
-        environment: { type: string, maxLength: 100 }
-        availability: { $ref: '#/components/schemas/TargetAvailability' }
+        name: { type: string }
+        description: { type: [string, 'null'] }
+        securityMode:
+          description: Downstream security mode of a live target; `null` for workspaces.
+          oneOf:
+            - { $ref: '#/components/schemas/InfrastructureSecurityMode' }
+            - { type: 'null' }
         authenticationState: { $ref: '#/components/schemas/TargetAuthenticationState' }
-        health: { $ref: '#/components/schemas/TargetHealth' }
         capabilities: { $ref: '#/components/schemas/TargetCapabilities' }
-        permissions: { $ref: '#/components/schemas/PermissionSet' }
-        counts: { $ref: '#/components/schemas/TargetCounts' }
-        revision: { $ref: '#/components/schemas/Revision' }
-        active: { type: boolean }
-    TargetPage:
+        workspace:
+          description: State of a desktop AASX workspace; `null` for live targets.
+          oneOf:
+            - { $ref: '#/components/schemas/TargetWorkspaceState' }
+            - { type: 'null' }
+        registrySync:
+          description: The infrastructure's sync default and whether users may choose their own (preference `syncOverrides`); `null` where the server keeps registries and discovery in step itself, or has none.
+          oneOf:
+            - type: object
+              additionalProperties: false
+              required: [studioDefault, userOverride]
+              properties:
+                studioDefault: { $ref: '#/components/schemas/SyncMode' }
+                userOverride: { type: boolean }
+            - { type: 'null' }
+    TargetList:
       type: object
       additionalProperties: false
-      required: [items, page]
+      required: [items]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/Target' }
-        page: { $ref: '#/components/schemas/PageInfo' }
     ActivateTargetRequest:
       type: object
       additionalProperties: false
@@ -2451,10 +3058,21 @@ components:
       type: string
       enum: [delegated_user, deployment_client_credentials, unsecured]
       description: '`unsecured` is allowed only for explicitly configured trusted local development and still uses the same authorization, endpoint-validation, and audit controls.'
+    InfrastructureTemplate:
+      type: string
+      enum: [full, mono-all, mono-repo, identifiable]
+      description: |
+        How an infrastructure is deployed, as in the BaSyx AAS Web UI (ADR 0020):
+        `full` gives every service its own URL; `mono-all` serves every service
+        from one AAS environment URL; `mono-repo` serves the repositories from an
+        AAS environment, with registries and discovery on their own URLs;
+        `identifiable` is an AAS repository only, whose submodels are reached
+        through the shells that reference them.
     InfrastructureEndpointType:
       type: string
-      enum: [aasRepository, submodelRepository, aasRegistry, submodelRegistry, discovery, aasxFileServer, orchestration]
-    InfrastructureEndpointInput:
+      enum: [aasEnvironment, aasRegistry, submodelRegistry, aasDiscovery, aasRepository, submodelRepository, conceptDescriptionRepository]
+      description: An `aasEnvironment` serves every service the template assigns to it that has no endpoint of its own, plus the environment-only operations (serialization, upload).
+    InfrastructureEndpoint:
       type: object
       additionalProperties: false
       required: [type, url]
@@ -2463,115 +3081,742 @@ components:
         url:
           type: string
           format: uri
-          maxLength: 4096
-          writeOnly: true
-          description: Accepted only from an authorized administrator and revalidated by SSRF defenses on redirects and DNS changes.
-    InfrastructureEndpointSummary:
+          maxLength: 2000
+          description: HTTP(S) base URL. Accepted only from an authorized administrator and revalidated by SSRF defenses on redirects and DNS changes.
+    InfrastructureSyncSettings:
       type: object
       additionalProperties: false
-      required: [type, configured]
       properties:
-        type: { $ref: '#/components/schemas/InfrastructureEndpointType' }
-        configured: { type: boolean }
-        displayOrigin:
-          type: string
-          maxLength: 500
-          description: Optional role-sanitized origin; never includes credentials, query strings, or internal routing detail not authorized for the viewer.
-    CredentialReference:
-      type: string
-      minLength: 1
-      maxLength: 500
-      writeOnly: true
-      description: Reference to a deployment secret or OS-protected native credential handle. It is never returned by Studio.
-    InfrastructureCreateRequest:
+        serverSyncsRegistry:
+          type: boolean
+          default: true
+          description: The server keeps its registries in step with its repositories (BaSyx Go registry integration).
+        serverSyncsDiscovery:
+          type: boolean
+          default: true
+          description: The server keeps the discovery's asset links in step with its shells.
+        studioDefault:
+          allOf:
+            - { $ref: '#/components/schemas/SyncMode' }
+          default: autoCreate
+          description: Where the server does not, Studio writes descriptors and asset links after uploads and deletes, or not.
+        userOverride:
+          type: boolean
+          default: false
+          description: Whether users may choose differently for themselves.
+    SecretInput:
+      description: A deployment secret reference (`env:NAME`, `file:/path`; required in hosted Studio) or a value that the desktop Studio stores encrypted with a key held in the OS credential store.
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [ref]
+          properties:
+            ref: { type: string, pattern: '^(?:env:[A-Z_][A-Z0-9_]*|file:/\S+)$' }
+        - type: object
+          additionalProperties: false
+          required: [value]
+          properties:
+            value: { type: string, minLength: 1, maxLength: 4096, writeOnly: true }
+    SecretSummary:
       type: object
       additionalProperties: false
-      required: [name, securityMode, endpoints]
+      required: [kind, ref]
+      properties:
+        kind: { type: string, enum: [env, file, stored] }
+        ref:
+          type: [string, 'null']
+          description: The reference for env and file secrets; never the secret value.
+    ClientCertificateInput:
+      description: |
+        A TLS client certificate (mutual TLS) as a PKCS#12 bundle (ADR 0025):
+        a file reference with an optional passphrase reference (hosted and
+        desktop), or an uploaded bundle with its passphrase that the desktop
+        Studio stores encrypted (rejected in hosted Studio). The bundle must open
+        with the passphrase, contain a key and a matching certificate, and be
+        valid now; problems are violations on `clientCertificate`.
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [ref]
+          properties:
+            ref: { type: string, pattern: '^file:/\S+$' }
+            passphraseRef: { type: string, pattern: '^(?:env:[A-Z_][A-Z0-9_]*|file:/\S+)$' }
+        - type: object
+          additionalProperties: false
+          required: [value]
+          properties:
+            value: { type: string, format: byte, maxLength: 131072, writeOnly: true, description: The .p12/.pfx file, base64-encoded. }
+            passphrase: { type: string, maxLength: 4096, default: '', writeOnly: true }
+    ClientCertificateSummary:
+      type: object
+      additionalProperties: false
+      description: The stored client certificate; never the bundle, key or passphrase.
+      required: [kind, ref, passphraseRef, subject, issuer, notAfter]
+      properties:
+        kind: { type: string, enum: [file, stored] }
+        ref: { type: [string, 'null'], description: The bundle's path for file certificates. }
+        passphraseRef: { type: [string, 'null'], description: The passphrase reference for file certificates. }
+        subject: { type: string }
+        issuer: { type: string }
+        notAfter: { $ref: '#/components/schemas/Timestamp' }
+    OidcClientSettings:
+      type: object
+      required: [issuer, clientId, scopes]
+      properties:
+        issuer: { type: string, format: uri, maxLength: 2000 }
+        clientId: { type: string, minLength: 1, maxLength: 500 }
+        scopes:
+          type: array
+          maxItems: 20
+          items: { type: string }
+    InfrastructureSecurityInput:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [mode]
+          properties:
+            mode: { const: unsecured }
+        - allOf:
+            - { $ref: '#/components/schemas/OidcClientSettings' }
+            - type: object
+              required: [mode]
+              properties:
+                mode: { const: deployment_client_credentials }
+                clientSecret:
+                  allOf:
+                    - { $ref: '#/components/schemas/SecretInput' }
+                  description: Required on create; omit on update to keep the stored secret.
+        - allOf:
+            - { $ref: '#/components/schemas/OidcClientSettings' }
+            - type: object
+              required: [mode]
+              properties:
+                mode: { const: delegated_user }
+                clientSecret:
+                  allOf:
+                    - { $ref: '#/components/schemas/SecretInput' }
+                  description: Confidential hosted clients only; desktop clients are public (RFC 8252).
+                desktopLoopbackHost:
+                  type: string
+                  enum: ['127.0.0.1', localhost]
+                  default: '127.0.0.1'
+                  description: Loopback host registered at the IdP for the desktop client.
+    InfrastructureSecuritySummary:
+      oneOf:
+        - type: object
+          required: [mode]
+          properties:
+            mode: { const: unsecured }
+        - allOf:
+            - { $ref: '#/components/schemas/OidcClientSettings' }
+            - type: object
+              required: [mode, clientSecret]
+              properties:
+                mode: { const: deployment_client_credentials }
+                clientSecret:
+                  oneOf:
+                    - { $ref: '#/components/schemas/SecretSummary' }
+                    - { type: 'null' }
+        - allOf:
+            - { $ref: '#/components/schemas/OidcClientSettings' }
+            - type: object
+              required: [mode, clientSecret, desktopLoopbackHost]
+              properties:
+                mode: { const: delegated_user }
+                clientSecret:
+                  oneOf:
+                    - { $ref: '#/components/schemas/SecretSummary' }
+                    - { type: 'null' }
+                desktopLoopbackHost: { type: string, enum: ['127.0.0.1', localhost] }
+    InfrastructureInput:
+      type: object
+      additionalProperties: false
+      required: [name, endpoints, security]
+      description: The template decides which endpoint types are allowed and which are required; violations are reported per endpoint (ADR 0020).
       properties:
         name: { type: string, minLength: 1, maxLength: 200 }
-        description: { type: string, maxLength: 1000 }
-        environment: { type: string, maxLength: 100 }
-        securityMode: { $ref: '#/components/schemas/InfrastructureSecurityMode' }
+        description: { type: [string, 'null'], maxLength: 2000 }
+        template:
+          allOf:
+            - { $ref: '#/components/schemas/InfrastructureTemplate' }
+          default: full
         endpoints:
           type: array
           minItems: 1
-          maxItems: 20
-          items: { $ref: '#/components/schemas/InfrastructureEndpointInput' }
-        oidcIssuer:
+          maxItems: 7
+          description: Each endpoint type at most once.
+          items: { $ref: '#/components/schemas/InfrastructureEndpoint' }
+        listSource:
           type: string
-          format: uri
-          maxLength: 4096
-          writeOnly: true
-        clientId:
-          type: string
-          maxLength: 500
-          writeOnly: true
-        credentialReference: { $ref: '#/components/schemas/CredentialReference' }
-        visibility: { $ref: '#/components/schemas/AccessRuleSet' }
-    InfrastructureUpdateRequest:
+          enum: [registry, repository]
+          default: registry
+          description: Where the shell list comes from when both an AAS registry and an AAS repository are there. There is no automatic fallback.
+        sync:
+          allOf:
+            - { $ref: '#/components/schemas/InfrastructureSyncSettings' }
+          default: {}
+        security: { $ref: '#/components/schemas/InfrastructureSecurityInput' }
+        clientCertificate:
+          oneOf:
+            - { $ref: '#/components/schemas/ClientCertificateInput' }
+            - { type: 'null' }
+          description: Presented on every HTTPS connection for this infrastructure, including its IdP, in every access mode. Omit on update to keep the stored certificate; `null` removes it.
+        allowPrivateNetwork:
+          type: boolean
+          default: false
+          description: Permit loopback and private-network addresses; subject to the deployment policy.
+    ServiceProfiles:
       type: object
-      additionalProperties: false
-      minProperties: 1
-      properties:
-        name: { type: string, minLength: 1, maxLength: 200 }
-        description: { type: string, maxLength: 1000 }
-        environment: { type: string, maxLength: 100 }
-        securityMode: { $ref: '#/components/schemas/InfrastructureSecurityMode' }
-        endpoints:
-          type: array
-          minItems: 1
-          maxItems: 20
-          items: { $ref: '#/components/schemas/InfrastructureEndpointInput' }
-        oidcIssuer: { type: string, format: uri, maxLength: 4096, writeOnly: true }
-        clientId: { type: string, maxLength: 500, writeOnly: true }
-        credentialReference: { $ref: '#/components/schemas/CredentialReference' }
-        visibility: { $ref: '#/components/schemas/AccessRuleSet' }
+      description: The `/description` profiles of each endpoint at the last probe, per endpoint type; `null` where the endpoint did not answer with them.
+      propertyNames: { $ref: '#/components/schemas/InfrastructureEndpointType' }
+      additionalProperties:
+        type: [array, 'null']
+        items: { type: string }
     Infrastructure:
       type: object
       additionalProperties: false
-      required: [id, kind, name, availability, authenticationState, health, capabilities, permissions, active, securityMode, endpoints]
+      required: [id, name, description, template, endpoints, listSource, sync, serviceProfiles, probedAt, announced, security, clientCertificate, allowPrivateNetwork, revision, createdAt, updatedAt]
       properties:
         id: { $ref: '#/components/schemas/TargetId' }
-        kind: { type: string, const: infrastructure }
-        name: { type: string, minLength: 1, maxLength: 200 }
-        description: { type: string, maxLength: 1000 }
-        environment: { type: string, maxLength: 100 }
-        availability: { $ref: '#/components/schemas/TargetAvailability' }
-        authenticationState: { $ref: '#/components/schemas/TargetAuthenticationState' }
-        health: { $ref: '#/components/schemas/TargetHealth' }
-        capabilities: { $ref: '#/components/schemas/TargetCapabilities' }
-        permissions: { $ref: '#/components/schemas/PermissionSet' }
-        counts: { $ref: '#/components/schemas/TargetCounts' }
-        revision: { $ref: '#/components/schemas/Revision' }
-        active: { type: boolean }
-        securityMode: { $ref: '#/components/schemas/InfrastructureSecurityMode' }
+        name: { type: string }
+        description: { type: [string, 'null'] }
+        template: { $ref: '#/components/schemas/InfrastructureTemplate' }
         endpoints:
           type: array
-          items: { $ref: '#/components/schemas/InfrastructureEndpointSummary' }
-        visibility: { $ref: '#/components/schemas/AccessRuleSet' }
+          items: { $ref: '#/components/schemas/InfrastructureEndpoint' }
+        listSource: { type: string, enum: [registry, repository] }
+        sync:
+          allOf:
+            - { $ref: '#/components/schemas/InfrastructureSyncSettings' }
+          required: [serverSyncsRegistry, serverSyncsDiscovery, studioDefault, userOverride]
+        serviceProfiles: { $ref: '#/components/schemas/ServiceProfiles' }
+        probedAt:
+          type: [string, 'null']
+          format: date-time
+          description: When the profiles were read; `null` before the first successful probe.
+        announced:
+          type: object
+          additionalProperties: false
+          required: [history, changeFeed, rebac]
+          description: The optional features the services announce in their profiles.
+          properties:
+            history: { type: boolean }
+            changeFeed: { type: boolean }
+            rebac: { type: boolean }
+        security: { $ref: '#/components/schemas/InfrastructureSecuritySummary' }
+        clientCertificate:
+          oneOf:
+            - { $ref: '#/components/schemas/ClientCertificateSummary' }
+            - { type: 'null' }
+        allowPrivateNetwork: { type: boolean }
+        revision:
+          type: integer
+          description: Sent back as `If-Match` (`"<revision>"`) when replacing the configuration; also returned as `ETag`.
         createdAt: { $ref: '#/components/schemas/Timestamp' }
         updatedAt: { $ref: '#/components/schemas/Timestamp' }
-    InfrastructurePage:
+    InfrastructureList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Infrastructure' }
+    InfrastructureProbeResult:
+      type: object
+      additionalProperties: false
+      required: [checkedAt, endpoints]
+      properties:
+        checkedAt: { $ref: '#/components/schemas/Timestamp' }
+        endpoints:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [type, reachable, status, latencyMs, error, profiles]
+            properties:
+              type: { $ref: '#/components/schemas/InfrastructureEndpointType' }
+              reachable:
+                type: boolean
+                description: The endpoint answered `/description` below HTTP 500.
+              status: { type: [integer, 'null'] }
+              latencyMs: { type: [number, 'null'] }
+              error: { type: [string, 'null'] }
+              profiles:
+                type: [array, 'null']
+                items: { type: string }
+                description: The service profiles from `/description`, if it answered with them.
+    LangString:
+      type: object
+      additionalProperties: false
+      required: [language, text]
+      properties:
+        language: { type: string }
+        text: { type: string }
+    ShellSummary:
+      type: object
+      additionalProperties: false
+      required: [key, id, idShort, displayName, description, assetKind, globalAssetId, thumbnail, thumbnailUrl]
+      properties:
+        key: { $ref: '#/components/schemas/ResourceKey' }
+        id: { type: string }
+        idShort: { type: [string, 'null'] }
+        displayName:
+          type: array
+          items: { $ref: '#/components/schemas/LangString' }
+        description:
+          type: array
+          items: { $ref: '#/components/schemas/LangString' }
+        assetKind: { type: [string, 'null'] }
+        globalAssetId: { type: [string, 'null'] }
+        thumbnail:
+          type: boolean
+          description: Whether the asset information names a default thumbnail.
+        thumbnailUrl:
+          type: [string, 'null']
+          description: The thumbnail's address when it is an external http(s) URL, which the client loads directly; `null` otherwise.
+    ShellSummaryPage:
       type: object
       additionalProperties: false
       required: [items, page]
       properties:
         items:
           type: array
-          items: { $ref: '#/components/schemas/Infrastructure' }
+          items: { $ref: '#/components/schemas/ShellSummary' }
         page: { $ref: '#/components/schemas/PageInfo' }
-    InfrastructureProbeResult:
+    ShellSummaryList:
       type: object
       additionalProperties: false
-      required: [health, capabilities, checkedAt, findings]
+      required: [items]
       properties:
-        health: { $ref: '#/components/schemas/TargetHealth' }
-        capabilities: { $ref: '#/components/schemas/TargetCapabilities' }
-        checkedAt: { $ref: '#/components/schemas/Timestamp' }
-        findings:
+        items:
           type: array
-          maxItems: 200
-          items: { $ref: '#/components/schemas/Diagnostic' }
+          items: { $ref: '#/components/schemas/ShellSummary' }
+    ShellDetail:
+      type: object
+      additionalProperties: false
+      required: [key, shell]
+      properties:
+        key: { $ref: '#/components/schemas/ResourceKey' }
+        shell: { $ref: '#/components/schemas/AasModelPayload' }
+    ShellAvailabilityRequest:
+      type: object
+      additionalProperties: false
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items: { $ref: '#/components/schemas/ResourceKey' }
+    ShellAvailability:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [key, status]
+            properties:
+              key: { $ref: '#/components/schemas/ResourceKey' }
+              status: { type: string, enum: [available, forbidden, not_found, blocked, unreachable] }
+    SearchRequest:
+      type: object
+      additionalProperties: false
+      description: Give either `expression` or `query`. Elements are searched by text only (`expression`).
+      properties:
+        scope: { type: string, enum: [shells, elements], default: shells }
+        expression:
+          type: string
+          maxLength: 2000
+          description: The search field's expression; empty lists all shells.
+        query:
+          type: object
+          description: A raw AAS Query Language query (IDTA-01002-3) from the advanced dialog; at most 64 KiB.
+          unevaluatedProperties: true
+        limit: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        cursor: { type: string, maxLength: 4000 }
+      oneOf:
+        - required: [expression]
+        - required: [query]
+    ShellSearchPage:
+      type: object
+      additionalProperties: false
+      required: [items, page, endpoint]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ShellSummary' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+        endpoint:
+          type: string
+          enum: [registry, repository, workspace]
+          description: Which service answered.
+    ElementHit:
+      type: object
+      additionalProperties: false
+      required: [shellKey, shellLabel, submodelKey, submodelLabel, elementKey, label, modelType, path]
+      properties:
+        shellKey:
+          oneOf:
+            - { $ref: '#/components/schemas/ResourceKey' }
+            - { type: 'null' }
+        shellLabel: { type: [string, 'null'] }
+        submodelKey: { $ref: '#/components/schemas/ResourceKey' }
+        submodelLabel: { type: string }
+        elementKey: { $ref: '#/components/schemas/ResourceKey' }
+        label: { type: string }
+        modelType: { type: string }
+        path: { type: string }
+    ElementSearchResult:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ElementHit' }
+    SubmodelRef:
+      type: object
+      additionalProperties: false
+      required: [key, submodelId, idShort, semanticId, status]
+      properties:
+        key: { $ref: '#/components/schemas/ResourceKey' }
+        submodelId: { type: string }
+        idShort: { type: [string, 'null'] }
+        semanticId: { type: [string, 'null'] }
+        status:
+          type: string
+          enum: [available, forbidden, not_found, blocked, error]
+          description: '`blocked`: the registry points to an endpoint outside the infrastructure, which Studio never contacts.'
+    SubmodelRefList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/SubmodelRef' }
+    SubmodelDetail:
+      type: object
+      additionalProperties: false
+      required: [key, submodel]
+      properties:
+        key: { $ref: '#/components/schemas/ResourceKey' }
+        submodel:
+          allOf:
+            - { $ref: '#/components/schemas/AasModelPayload' }
+          description: The submodel as AAS JSON; without `submodelElements` for `content=metadata`.
+    TreeNode:
+      type: object
+      additionalProperties: false
+      required: [key, label, modelType, variableGroup, semanticId, preview, hasChildren, valueType]
+      properties:
+        key: { $ref: '#/components/schemas/ResourceKey' }
+        label:
+          type: string
+          description: idShort, `[index]` for list items, or the variable group name.
+        modelType:
+          type: string
+          description: AAS modelType, or `OperationVariables` for a synthetic variable group.
+        variableGroup:
+          type: [string, 'null']
+          enum: [input, output, inoutput, null]
+        semanticId: { type: [string, 'null'] }
+        preview: { type: [string, 'null'] }
+        hasChildren: { type: boolean }
+        valueType:
+          type: [string, 'null']
+          description: Value type of a Property or Range (`xs:double`, …).
+        children:
+          type: array
+          description: Loaded children; absent with `hasChildren` when they follow on demand.
+          items: { $ref: '#/components/schemas/TreeNode' }
+    TreeNodeList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/TreeNode' }
+    ElementDetail:
+      type: object
+      additionalProperties: false
+      required: [key, path, value, revision, concurrency, ancestors]
+      properties:
+        key: { $ref: '#/components/schemas/ResourceKey' }
+        path:
+          type: string
+          description: Human-readable path, for example `Level1.Items[2]` or `Calibrate@input.Offset`.
+        value:
+          description: The element as AAS JSON, or the variables of an operation variable group.
+        revision:
+          type: [string, 'null']
+          description: Opaque revision for writes, sent back as `If-Match`; `null` when the element cannot be written, for example an operation variable or a historic version.
+        concurrency:
+          type: [string, 'null']
+          enum: [strong, best_effort, null]
+          description: '`strong`: the source checks the revision atomically; `best_effort`: Studio compares against a fresh read just before writing (ADR 0013).'
+        ancestors:
+          type: array
+          description: The elements above it, from the submodel's top level down, for opening its path in the tree.
+          items:
+            type: object
+            additionalProperties: false
+            required: [key, label]
+            properties:
+              key: { $ref: '#/components/schemas/ResourceKey' }
+              label: { type: string }
+    ElementValueInput:
+      type: object
+      additionalProperties: false
+      required: [value]
+      properties:
+        value:
+          description: A Property value (a string, or `null` to clear it) or all language strings of a MultiLanguageProperty.
+          oneOf:
+            - { type: [string, 'null'], maxLength: 1000000 }
+            - type: array
+              maxItems: 200
+              items:
+                type: object
+                additionalProperties: false
+                required: [language, text]
+                properties:
+                  language: { type: string, minLength: 1, maxLength: 64 }
+                  text: { type: string, maxLength: 1000000 }
+    SyncStep:
+      type: object
+      additionalProperties: false
+      required: [resource, id, outcome]
+      description: The outcome of one descriptor or asset-link write after an upload or delete (ADR 0020).
+      properties:
+        resource: { type: string, enum: [shellDescriptor, submodelDescriptor, assetLinks] }
+        id: { type: string }
+        outcome: { type: string, enum: [written, removed, failed] }
+        detail: { type: string }
+    UploadResult:
+      type: object
+      additionalProperties: false
+      required: [shells, sync]
+      properties:
+        shells:
+          type: array
+          description: The shells the file added.
+          items: { $ref: '#/components/schemas/ShellSummary' }
+        sync:
+          type: array
+          description: Descriptors and asset links Studio wrote; empty where the server keeps them itself.
+          items: { $ref: '#/components/schemas/SyncStep' }
+    DeleteResult:
+      type: object
+      additionalProperties: false
+      required: [sync]
+      properties:
+        sync:
+          type: array
+          description: Descriptor and asset links Studio removed; empty where the server keeps them itself.
+          items: { $ref: '#/components/schemas/SyncStep' }
+    InvocationInput:
+      type: object
+      additionalProperties: false
+      required: [arguments]
+      properties:
+        arguments:
+          type: array
+          maxItems: 100
+          description: Values of the input and in-out variables, as typed by the user.
+          items:
+            type: object
+            additionalProperties: false
+            required: [idShort, value]
+            properties:
+              idShort: { type: string, minLength: 1, maxLength: 128 }
+              value: { type: [string, 'null'], maxLength: 100000 }
+        async: { type: boolean, default: false }
+    Invocation:
+      type: object
+      additionalProperties: false
+      required: [handle, state, outputs, message]
+      properties:
+        handle:
+          type: [string, 'null']
+          description: Handle of an asynchronous invocation, to poll its state.
+        state: { type: string, enum: [running, completed, failed] }
+        outputs:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [idShort, valueType, value]
+            properties:
+              idShort: { type: string }
+              valueType: { type: [string, 'null'] }
+              value: {}
+        message: { type: [string, 'null'] }
+    ConceptDescriptionSummary:
+      type: object
+      additionalProperties: false
+      required: [id, idShort, preferredName, definition, dataType, unit]
+      properties:
+        id: { type: string }
+        idShort: { type: [string, 'null'] }
+        preferredName:
+          type: array
+          items: { $ref: '#/components/schemas/LangString' }
+        definition:
+          type: array
+          items: { $ref: '#/components/schemas/LangString' }
+        dataType: { type: [string, 'null'] }
+        unit: { type: [string, 'null'] }
+    ConceptDescriptionSummaryPage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ConceptDescriptionSummary' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+    ChangeEvent:
+      type: object
+      additionalProperties: false
+      required: [id, time, action, entity, subject, subjectKey]
+      properties:
+        id: { type: string }
+        time: { $ref: '#/components/schemas/Timestamp' }
+        action: { type: string, enum: [created, updated, deleted] }
+        entity: { type: string, enum: [aas, submodel, asset] }
+        subject:
+          type: string
+          description: The AAS or submodel identifier.
+        subjectKey:
+          allOf:
+            - { $ref: '#/components/schemas/ResourceKey' }
+          description: The resource key of the subject, to link to it.
+    ChangePage:
+      type: object
+      additionalProperties: false
+      required: [items, lastEventId]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ChangeEvent' }
+        lastEventId:
+          type: [string, 'null']
+          description: Pass as `after` to read newer events.
+    AccessGrant:
+      type: object
+      additionalProperties: false
+      required: [relation, subjectType, issuer, subject]
+      properties:
+        relation:
+          type: string
+          pattern: '^[a-z][\w-]{0,63}$'
+          description: The share dialog offers `viewer`, `editor`, `executor`, and `owner`; the target defines which it accepts.
+        subjectType: { type: string, enum: [user, group] }
+        issuer: { type: string, minLength: 1, maxLength: 2000 }
+        subject: { type: string, minLength: 1, maxLength: 500 }
+    AccessGrantsInput:
+      type: object
+      additionalProperties: false
+      required: [grants]
+      properties:
+        grants:
+          type: array
+          maxItems: 500
+          items: { $ref: '#/components/schemas/AccessGrant' }
+    AccessDocument:
+      type: object
+      additionalProperties: false
+      required: [grants, revision, issuer]
+      properties:
+        grants:
+          type: array
+          items: { $ref: '#/components/schemas/AccessGrant' }
+        revision:
+          type: [string, 'null']
+          description: Opaque revision; send it back as `If-Match` when replacing the grants.
+        issuer:
+          type: [string, 'null']
+          description: Issuer of the signed-in user, for new grants.
+    EffectiveRights:
+      type: object
+      additionalProperties: false
+      required: [read, update, delete, execute, manage]
+      properties:
+        read: { type: boolean }
+        update: { type: boolean }
+        delete: { type: boolean }
+        execute: { type: boolean }
+        manage: { type: boolean }
+    InvitationInput:
+      type: object
+      additionalProperties: false
+      required: [relation]
+      properties:
+        relation: { type: string, pattern: '^[a-z][\w-]{0,63}$' }
+        expiresInDays: { type: integer, minimum: 1, maximum: 90, default: 7 }
+        maxUses: { type: integer, minimum: 1, maximum: 100, default: 1 }
+    InvitationResult:
+      type: object
+      additionalProperties: false
+      required: [token, expiresAt]
+      properties:
+        token: { type: string }
+        expiresAt: { $ref: '#/components/schemas/Timestamp' }
+    InvitationAcceptRequest:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties:
+        token: { type: string, minLength: 8, maxLength: 500, pattern: '^[\w.~-]+$' }
+    RecentShell:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [key, title]
+          properties:
+            key: { $ref: '#/components/schemas/ResourceKey' }
+            title:
+              type: [string, 'null']
+              maxLength: 500
+              description: The title the shell had when it was opened.
+        - allOf:
+            - { $ref: '#/components/schemas/ResourceKey' }
+          description: Older entries are a bare key; Studio stores them with a `null` title and returns objects only.
+    Preferences:
+      type: object
+      additionalProperties: false
+      description: Per-user settings stored by Studio. Every field has a default, so a client may send only what it knows.
+      properties:
+        recent:
+          type: object
+          description: Recently opened shells per target ID, newest first.
+          propertyNames: { maxLength: 100 }
+          additionalProperties:
+            type: array
+            maxItems: 50
+            items: { $ref: '#/components/schemas/RecentShell' }
+          default: {}
+        valueLanguage:
+          type: string
+          pattern: '^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})?$'
+          default: en
+          description: Preferred language of multi-language values.
+        theme: { type: string, enum: [system, light, dark], default: system }
+        autoRefresh: { type: boolean, default: true }
+        refreshIntervalSeconds: { type: integer, minimum: 1, maximum: 300, default: 5 }
+        syncOverrides:
+          type: object
+          description: Registry and discovery sync per infrastructure ID, honored only where the infrastructure lets users choose (`Target.registrySync.userOverride`, ADR 0020).
+          propertyNames: { maxLength: 100 }
+          additionalProperties: { $ref: '#/components/schemas/SyncMode' }
+          default: {}
     AasModelPayload:
       type: object
       description: Authoritative AAS model JSON. The route implementation must bind this placeholder to schemas generated from the pinned AAS Core 3.1 model and validate it with AAS Core/package tooling; this draft deliberately does not recreate the metamodel.
@@ -3681,7 +4926,7 @@ components:
       description: An installation from a developer-mode package (MVP-3).
       type: object
       additionalProperties: false
-      required: [id, appId, version, title, description, publisher, digest, unsigned, permissions, submodelViews, modules, backend, installedAt, installedBy]
+      required: [id, appId, version, title, description, publisher, digest, unsigned, bundled, permissions, submodelViews, modules, backend, installedAt, installedBy]
       properties:
         id: { type: string, pattern: '^app-[0-9a-f]{16}$' }
         appId: { $ref: '#/components/schemas/AppId' }
@@ -3694,6 +4939,9 @@ components:
         publisher: { type: string, maxLength: 128 }
         digest: { type: string, pattern: '^sha256:[0-9a-f]{64}$' }
         unsigned: { type: boolean }
+        bundled:
+          type: boolean
+          description: Shipped with Studio and installed at startup; cannot be uninstalled (ADR 0023).
         permissions:
           type: array
           items: { $ref: '#/components/schemas/AppCapabilityName' }
@@ -3704,7 +4952,7 @@ components:
         installedBy: { type: string }
     AppContributionBase:
       type: object
-      required: [installationId, appId, appTitle, id, title, entryUrl, permissions, unsigned]
+      required: [installationId, appId, appTitle, id, title, entryUrl, permissions, unsigned, bundled]
       properties:
         installationId: { type: string }
         appId: { $ref: '#/components/schemas/AppId' }
@@ -3718,6 +4966,7 @@ components:
           type: array
           items: { $ref: '#/components/schemas/AppCapabilityName' }
         unsigned: { type: boolean }
+        bundled: { type: boolean }
     AppContributions:
       type: object
       additionalProperties: false
@@ -3761,11 +5010,17 @@ components:
           oneOf:
             - { $ref: '#/components/schemas/TargetId' }
             - { type: 'null' }
+        shellId:
+          type: [string, 'null']
+          maxLength: 4000
+          description: The shell the frame shows, if any; some infrastructures reach submodels only through it (template `identifiable`, MVP-4).
         method:
           enum:
             - studio.ui.getContext
             - studio.ui.notify
             - studio.ui.navigate
+            - studio.ui.setHeight
+            - studio.ui.openFile
             - studio.aas.listShells
             - studio.aas.getShell
             - studio.aas.listSubmodels
@@ -3774,7 +5029,7 @@ components:
             - studio.aas.setElementValue
             - studio.backend.call
         params:
-          description: Method parameters as defined by `@basyx/studio-sdk` (`studio-sdk/0`).
+          description: Method parameters as defined by `@basyx/studio-sdk` (`studio-sdk/0`). The context returned by `studio.ui.getContext` includes Studio's `mode` (`view` or `edit`); apps show edit controls only in `edit` (MVP-4, UX-006).
     AppCallResult:
       type: object
       additionalProperties: false
@@ -3951,33 +5206,97 @@ components:
     ProblemViolation:
       type: object
       additionalProperties: false
-      required: [code, message]
+      required: [path, message]
       properties:
-        code: { type: string, maxLength: 100 }
+        path:
+          type: string
+          maxLength: 2000
+          description: Location of the finding, for example a field path or a JSON pointer into a query.
         message: { type: string, maxLength: 2000 }
-        field: { type: string, maxLength: 500 }
-        jsonPointer: { type: string, maxLength: 2000 }
+    ProblemCode:
+      type: string
+      description: |
+        Stable problem code; the UI branches on these codes, never on HTTP status
+        codes or message texts. HTTP status per code: `unauthenticated` 401;
+        `forbidden`, `csrf_rejected`, `target_forbidden`, `app_unsigned_disabled`,
+        `app_permission_not_declared` 403; `invalid_request`,
+        `target_request_rejected` 400; `not_found`, `target_resource_not_found`,
+        `app_not_found` 404; `target_auth_required`, `workspace_unsaved_changes`,
+        `app_already_installed` 409; `revision_conflict` 412;
+        `precondition_required` 428; `unsupported_operation`,
+        `validation_failed`, `endpoint_rejected`, `infrastructure_unreachable`,
+        `query_invalid`, `query_unsupported`, `package_rejected`,
+        `app_package_rejected`, `app_incompatible`,
+        `client_certificate_invalid` 422; `internal_error` 500;
+        `target_credentials_rejected`, `target_unreachable`, `target_blocked`,
+        `descriptor_endpoint_blocked`, `target_error`,
+        `target_invalid_response`, `target_client_certificate_required`,
+        `target_client_certificate_rejected`, `app_backend_failed` 502;
+        `app_backend_unavailable` 503.
+
+        MVP-4 added `descriptor_endpoint_blocked` (a registry descriptor points
+        to an endpoint outside the infrastructure, which Studio never contacts),
+        `query_invalid` (a raw query failed its checks; findings in
+        `violations`) and `query_unsupported` (the target cannot run queries or
+        element searches).
+
+        Client certificates (ADR 0025) added
+        `target_client_certificate_required` (the target or its IdP requires a
+        TLS client certificate that Studio did not present or the target did
+        not accept), `target_client_certificate_rejected` (a TLS alert rejected
+        the certificate, e.g. unknown CA, expired or revoked) and
+        `client_certificate_invalid` (the stored certificate cannot be used,
+        e.g. an unreadable file, wrong passphrase or expiry).
+      enum:
+        - unauthenticated
+        - forbidden
+        - csrf_rejected
+        - invalid_request
+        - not_found
+        - revision_conflict
+        - precondition_required
+        - unsupported_operation
+        - validation_failed
+        - internal_error
+        - endpoint_rejected
+        - infrastructure_unreachable
+        - target_auth_required
+        - target_credentials_rejected
+        - target_forbidden
+        - target_resource_not_found
+        - target_request_rejected
+        - target_unreachable
+        - target_blocked
+        - descriptor_endpoint_blocked
+        - query_invalid
+        - query_unsupported
+        - target_error
+        - target_invalid_response
+        - target_client_certificate_required
+        - target_client_certificate_rejected
+        - client_certificate_invalid
+        - workspace_unsaved_changes
+        - package_rejected
+        - app_package_rejected
+        - app_incompatible
+        - app_already_installed
+        - app_unsigned_disabled
+        - app_not_found
+        - app_permission_not_declared
+        - app_backend_unavailable
+        - app_backend_failed
     Problem:
       type: object
       additionalProperties: false
-      required: [type, title, status, code, requestId, correlationId, retryable]
+      description: The implemented routes return `type` (`about:blank`), `title`, `status`, `code`, `detail`, `requestId`, `retryable`, and `violations`; the other fields are part of the draft.
+      required: [type, title, status, code, requestId, retryable]
       properties:
         type: { type: string, format: uri-reference }
         title: { type: string, maxLength: 200 }
         status: { type: integer, minimum: 400, maximum: 599 }
         detail: { type: string, maxLength: 4000 }
         instance: { type: string, format: uri-reference }
-        code:
-          type: string
-          maxLength: 100
-          examples:
-            - target_authentication_required
-            - revision_conflict
-            - target_capability_unsupported
-            - aas_model_invalid
-            - package_archive_path_traversal
-            - binding_ambiguous
-            - app_signature_invalid
+        code: { $ref: '#/components/schemas/ProblemCode' }
         requestId: { type: string, maxLength: 200 }
         correlationId: { type: string, maxLength: 200 }
         retryable: { type: boolean }

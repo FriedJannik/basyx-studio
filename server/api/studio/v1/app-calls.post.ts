@@ -53,6 +53,7 @@ export default defineStudioHandler(async (event): Promise<AppCallResult> => {
       actor,
       installation: await getInstallation(studio, input.installationId),
       targetId: input.targetId ?? null,
+      shellId: input.shellId ?? null,
       method: input.method,
       params: input.params,
     }

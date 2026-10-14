@@ -5,7 +5,7 @@
     </v-card-item>
 
     <v-card-text>
-      <p>{{ t('target.authorizeText') }}</p>
+      <p class="my-0">{{ t('target.authorizeText') }}</p>
       <ProblemAlert v-if="error" class="mt-4" :error="error" />
 
       <v-alert v-if="waiting" class="mt-4" type="info">

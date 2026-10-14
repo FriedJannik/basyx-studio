@@ -28,6 +28,12 @@ changes one, add a new ADR with `Supersedes` and mark the old record
 | [0017](0017-app-origin-and-content-security-policy.md) | Accepted | Sandboxed frames on a separate apps origin or `studio-app:` protocol, strict CSP |
 | [0018](0018-capability-bridge-and-authorization.md) | Accepted | `studio-sdk/0` MessagePort bridge; manifest permissions plus the user's own rights |
 | [0019](0019-backend-app-runner.md) | Accepted | Deno process per backend, deny-by-default, short-lived capability tokens |
+| [0020](0020-infrastructure-templates-registries-and-sync.md) | Accepted | Infrastructure templates, registry resolution under the base-URL rule, sync after writes |
+| [0021](0021-feature-detection-from-service-profiles.md) | Accepted | Optional features from the stored `/description` profiles, never from probing |
+| [0022](0022-basyx-go-endpoints-outside-the-sdk.md) | Accepted | The SDK for standard endpoints; a guarded raw layer for BaSyx Go-specific ones |
+| [0023](0023-bundled-first-party-apps.md) | Accepted | Four first-party apps shipped with Studio on the app platform |
+| [0024](0024-aas-query-language-through-the-bff.md) | Accepted | Web UI search syntax and checked raw queries, run through the BFF |
+| [0025](0025-client-certificates-for-infrastructures.md) | Accepted | PKCS#12 client certificates per infrastructure, presented by the Studio Service on every HTTPS request |
 
 ## Template
 

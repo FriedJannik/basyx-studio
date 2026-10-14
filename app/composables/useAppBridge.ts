@@ -1,8 +1,9 @@
 import type { AppCallResult, AppContext, AppContributionInfo, Problem } from '#shared/contract'
 import type { Ref } from 'vue'
 import { useQueryCache } from '@pinia/colada'
-import { appHelloSchema, appMethodNameSchema, appMethodParamsSchemas, appProtocol, appRequestMessageSchema } from '#shared/contract'
+import { apiBasePath, appHelloSchema, appMethodNameSchema, appMethodParamsSchemas, appProtocol, appRequestMessageSchema } from '#shared/contract'
 import { StudioApiError } from '~/composables/useStudioApi'
+import { resourceKey } from '~/utils/aas'
 
 export interface AppBridgeOptions {
   contribution: () => AppContributionInfo
@@ -32,6 +33,8 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
   const notifications = useNotificationsStore()
   const label = useLocalizedLabel()
   const connected = ref(false)
+  /** Content height the app asked for (`studio.ui.setHeight`), or `null`. */
+  const height = ref<number | null>(null)
 
   let port: MessagePort | null = null
   let handedOut = false
@@ -58,16 +61,29 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
       respond({ type: 'response', id, result: options.context() })
       return
     }
+    if (method.data === 'studio.ui.setHeight') {
+      // Only sizes the app's own frame; needs no permission or round trip.
+      const parsedHeight = appMethodParamsSchemas['studio.ui.setHeight'].safeParse(params)
+      if (parsedHeight.success) {
+        height.value = parsedHeight.data.height
+      }
+      respond({ type: 'response', id, result: null })
+      return
+    }
     const contribution = options.contribution()
     try {
       const { result } = await api<AppCallResult>('/app-calls', {
         method: 'POST',
-        body: { installationId: contribution.installationId, targetId: options.targetId, method: method.data, params },
+        body: { installationId: contribution.installationId, targetId: options.targetId, shellId: options.context().shell?.id ?? null, method: method.data, params },
       })
       // Studio authorized the call; UI methods are carried out here.
       if (method.data === 'studio.ui.notify') {
         const notice = appMethodParamsSchemas['studio.ui.notify'].parse(params)
         notifications.notify({ text: `${label(contribution.appTitle)}: ${notice.message}`, color: notice.level })
+      } else if (method.data === 'studio.ui.openFile' && options.targetId) {
+        const file = appMethodParamsSchemas['studio.ui.openFile'].parse(params)
+        const url = `${apiBasePath}/targets/${options.targetId}/submodels/${resourceKey(file.submodelId)}/elements/${resourceKey(file.idShortPath)}/attachment${file.download ? '?download' : ''}`
+        window.open(url, '_blank', 'noopener')
       } else if (method.data === 'studio.ui.navigate' && contribution.kind === 'module') {
         options.onNavigate(appMethodParamsSchemas['studio.ui.navigate'].parse(params).subPath)
       } else if (method.data === 'studio.aas.setElementValue' && options.targetId) {
@@ -136,5 +152,5 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
   })
 
   /** Bind to the frame's `load` event. */
-  return { connected, onLoad }
+  return { connected, height, onLoad }
 }

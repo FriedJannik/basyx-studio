@@ -255,6 +255,15 @@ async function createWindow (url: string, launchSecret?: string): Promise<void> 
   const win = new BrowserWindow({
     show: false,
     title: 'BaSyx Studio',
+    // Packaged builds take the icon from electron-builder (build/icon.*);
+    // the development window runs the stock Electron and needs it here.
+    ...(app.isPackaged ? {} : { icon: developmentIcon() }),
+    // Room for the navigation rail, the shell list and the shell page; below
+    // 960 px Studio switches to its phone layout.
+    width: 1440,
+    height: 900,
+    minWidth: 1024,
+    minHeight: 640,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -384,8 +393,16 @@ function guardUnsavedWorkspaces (win: BrowserWindow): void {
   })
 }
 
+/** Studio's icon for the development window, which runs the stock Electron. */
+function developmentIcon (): string {
+  return join(app.getAppPath(), 'build', 'icon.png')
+}
+
 async function start (): Promise<void> {
   registerDesktopBridge()
+  if (!app.isPackaged && process.platform === 'darwin') {
+    app.dock?.setIcon(developmentIcon())
+  }
 
   const devServerUrl = process.env.VITE_DEV_SERVER_URL
 

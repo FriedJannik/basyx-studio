@@ -1,10 +1,26 @@
 /**
- * src/styles/settings.scss
- *
- * Configures SASS variables and Vuetify overwrites
+ * Vuetify Sass settings: the few look-and-feel values that Vuetify exposes
+ * only as Sass variables. Everything else is in vuetify.config.ts.
  */
 
-// https://vuetifyjs.com/features/sass-variables/`
-// @use 'vuetify/settings' with (
-//   $color-pack: false
-// );
+@use 'vuetify/settings' with (
+  // Field outlines like every other border (MVP-4 look, L2): the common
+  // border opacity instead of 0.38, so fields do not stand out.
+  $field-outline-opacity: var(--v-border-opacity),
+  // Body-sized text in fields, as in lists, buttons and menus.
+  $field-font-size: 0.875rem,
+  $input-font-size: 0.875rem,
+  // Compact fields as tall as compact buttons and toggles (36 px).
+  $input-density: ('default': 0, 'comfortable': -2, 'compact': -5),
+  // Body-sized list and tree rows (14 px titles, 12 px subtitles): denser
+  // lists throughout, as in the BaSyx Web UI and shadcn.
+  $list-item-title-font-size: 0.875rem,
+  $list-item-title-line-height: 1.25rem,
+  $list-item-title-letter-spacing: 0.0178571429em,
+  $list-item-subtitle-font-size: 0.75rem,
+  // Card titles at title-medium (16 px) instead of title-large (22 px): close
+  // to their 14 px subtitles, so the two read as one block, as in shadcn.
+  $card-title-font-size: 1rem,
+  $card-title-line-height: 1.5rem,
+  $card-title-letter-spacing: 0.009375em,
+);

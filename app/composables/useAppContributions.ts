@@ -7,16 +7,21 @@ const refreshIntervalMs = 30_000
 
 /**
  * Contributions of the installed apps: modules always, and submodel views for
- * a submodel's semantic ID. Apps are installed at runtime, so the list is
- * refetched on window focus and periodically while the page is visible.
+ * submodel semantic IDs (one submodel, or all submodels of a shell for its
+ * overview). Apps are installed at runtime, so the list is refetched on
+ * window focus and periodically while the page is visible.
  */
-export function useAppContributions (semanticId: MaybeRefOrGetter<string | null | undefined> = null) {
+export function useAppContributions (semanticIds: MaybeRefOrGetter<string | string[] | null | undefined> = null) {
   const api = useStudioApi()
   const session = useSessionStore()
+  const ids = computed(() => {
+    const value = toValue(semanticIds)
+    return [...new Set(value === null || value === undefined ? [] : (Array.isArray(value) ? value : [value]))].toSorted()
+  })
   const query = useQuery({
-    key: () => ['app-contributions', toValue(semanticId) ?? ''],
+    key: () => ['app-contributions', ...ids.value],
     query: ({ signal }) => api<AppContributions>('/app-contributions', {
-      query: { semanticId: toValue(semanticId) ?? undefined },
+      query: { semanticId: ids.value },
       signal,
     }),
     enabled: () => session.session !== null,

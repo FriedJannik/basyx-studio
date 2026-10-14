@@ -9,11 +9,48 @@
     "localUser": "Local user",
     "administrator": "Administrator",
     "apps": "Apps",
-    "appModules": "App modules"
+    "appModules": "App modules",
+    "toggleShellList": "Show or hide the shell list",
+    "target": "Target",
+    "targetNamed": "Target: {name}",
+    "view": "View",
+    "edit": "Edit",
+    "account": "Account"
+  },
+  "qr": {
+    "title": "QR code of the asset",
+    "show": "Show the QR code of the global asset ID",
+    "alt": "QR code of {id}",
+    "download": "Download SVG",
+    "copyId": "Copy ID"
+  },
+  "scan": {
+    "title": "Scan a QR code",
+    "subtitle": "Opens the shell of the asset it names",
+    "button": "Scan the QR code of an asset",
+    "lookingUp": "Looking up the asset…",
+    "read": "Read: {value}",
+    "none": "No shell of this target describes this asset.",
+    "choose": "Shells of this asset",
+    "again": "Scan again",
+    "fromImage": "Choose image",
+    "noCamera": "This browser offers no camera here (it needs HTTPS). Choose an image of the code instead.",
+    "cameraDenied": "The camera is not available or access was denied. Choose an image of the code instead.",
+    "noCode": "No QR code was found in the image."
+  },
+  "lists": {
+    "noMatches": "Nothing matches the search and filters.",
+    "filters": "{n} filter | {n} filters",
+    "filtersApplied": "{n} filter applied, remove it | {n} filters applied, remove them"
   },
   "home": {
     "title": "AAS targets",
     "subtitle": "Choose an infrastructure to browse its Asset Administration Shells.",
+    "search": "Search targets",
+    "filters": {
+      "access": "Access",
+      "state": "State"
+    },
     "signInTitle": "Sign in to BaSyx Studio",
     "signInText": "Studio accesses your AAS infrastructures on your behalf. Sign in with your organization's account to continue.",
     "noTargets": "No infrastructures are configured yet.",
@@ -44,6 +81,8 @@
     "assetKind": "Asset kind"
   },
   "shell": {
+    "showIdentifiers": "Show identifiers",
+    "hideIdentifiers": "Hide identifiers",
     "submodels": "Submodels",
     "elements": "Elements",
     "details": "Details",
@@ -54,10 +93,49 @@
     "refStatus": {
       "forbidden": "No access",
       "not_found": "Not found",
+      "blocked": "Endpoint outside this infrastructure",
       "error": "Unavailable"
     },
     "copyJson": "Copy JSON",
-    "tree": "Tree"
+    "tree": "Tree",
+    "export": "Export",
+    "more": "More actions",
+    "delete": "Delete shell",
+    "deleteTitle": "Delete shell?",
+    "deleteText": "This removes {name} from the infrastructure. Its {count} submodels stay in the submodel repository.",
+    "deleted": "{name} deleted",
+    "assetKind": "Asset kind: {kind}",
+    "assetType": "Asset type",
+    "submodelCount": "no submodels | {count} submodel | {count} submodels",
+    "identifier": "AAS identifier",
+    "globalAssetId": "Global asset ID",
+    "tabs": {
+      "submodels": "Submodels",
+      "overview": "Overview",
+      "changes": "Changes",
+      "json": "JSON"
+    },
+    "filterElements": "Filter elements",
+    "autoRefresh": "Auto-refresh",
+    "autoRefreshOn": "Auto-refresh is on: values are re-read every {seconds} s",
+    "autoRefreshOff": "Auto-refresh is off",
+    "expandAll": "Expand all",
+    "expandCapped": "Expanded the first {count} elements; open deeper levels one by one.",
+    "showMore": "Show {count} more ({remaining} not shown)",
+    "collapseAll": "Collapse all",
+    "jsonLabel": "AAS 3.1 · JSON serialization",
+    "formats": {
+      "aasx": "AASX package",
+      "json": "JSON",
+      "xml": "XML"
+    },
+    "unavailable": {
+      "forbidden": "You do not have access to this submodel.",
+      "not_found": "The referenced submodel does not exist.",
+      "error": "The submodel could not be loaded.",
+      "absent": "Not present at this time."
+    },
+    "deletedSyncFailed": "{name} was deleted; {count} registry or discovery entry could not be removed. | {name} was deleted; {count} registry or discovery entries could not be removed."
   },
   "editor": {
     "title": "Value",
@@ -83,7 +161,7 @@
     "open": "Open AASX file",
     "save": "Save",
     "saveAs": "Save as…",
-    "close": "Close",
+    "close": "Close package",
     "closeTitle": "Close {name}?",
     "closeText": "The package has unsaved changes. They are lost if you close it now.",
     "closeWithoutSaving": "Close without saving",
@@ -102,7 +180,7 @@
     "not_found": "This item does not exist (anymore).",
     "revision_conflict": "Someone else changed this item. Reload it and try again.",
     "precondition_required": "The request did not say which revision it is based on.",
-    "unsupported_operation": "This cannot be changed here.",
+    "unsupported_operation": "This is not supported here.",
     "validation_failed": "The value is not valid.",
     "workspace_unsaved_changes": "The package has unsaved changes.",
     "package_rejected": "The package cannot be opened.",
@@ -116,8 +194,14 @@
     "target_request_rejected": "The infrastructure rejected the request.",
     "target_unreachable": "The infrastructure could not be reached.",
     "target_blocked": "The request was blocked by Studio's network policy.",
+    "descriptor_endpoint_blocked": "The registry points to an endpoint outside this infrastructure's services, so Studio does not contact it.",
+    "query_invalid": "The query is not valid for this target.",
+    "query_unsupported": "This infrastructure cannot run queries; Studio filters the loaded shells instead.",
     "target_error": "The infrastructure reported an error.",
     "target_invalid_response": "The infrastructure returned an invalid response.",
+    "target_client_certificate_required": "The infrastructure requires a TLS client certificate. Add one in the infrastructure's settings.",
+    "target_client_certificate_rejected": "The infrastructure rejected the client certificate. Check that it is issued by the right CA and still valid.",
+    "client_certificate_invalid": "The client certificate configured for this infrastructure cannot be used.",
     "network": "Studio could not be reached.",
     "requestId": "Request ID",
     "retry": "Retry",
@@ -133,6 +217,7 @@
   "admin": {
     "title": "Infrastructures",
     "subtitle": "AAS infrastructures available to Studio users. Endpoints are probed before they are saved.",
+    "search": "Search infrastructures",
     "add": "Add infrastructure",
     "edit": "Edit infrastructure",
     "delete": "Delete",
@@ -140,15 +225,12 @@
     "probe": "Check connection",
     "probeOk": "All endpoints reachable",
     "probeFailed": "Some endpoints are unreachable",
+    "probeOkText": "{name}: the endpoint answered. | {name}: all {count} endpoints answered.",
+    "probeFailedText": "{name}: no answer from {endpoints}",
     "save": "Save",
     "cancel": "Cancel",
     "name": "Name",
     "description": "Description",
-    "endpoints": "Endpoints",
-    "aasRepository": "AAS repository URL",
-    "submodelRepository": "Submodel repository URL",
-    "conceptDescriptionRepository": "Concept description repository URL (optional)",
-    "sameUrlHint": "For a BaSyx AAS environment, use the same URL for all repositories.",
     "allowPrivateNetwork": "Allow loopback and private-network addresses",
     "security": "Security",
     "securityMode": "Access mode",
@@ -162,16 +244,105 @@
     "clientSecretValueHint": "Stored encrypted with a key from your operating system's credential store. Leave empty to keep the current secret.",
     "loopbackHost": "Desktop loopback host",
     "loopbackHostHint": "127.0.0.1 for Keycloak and other RFC 8252 providers; localhost for Microsoft Entra ID.",
+    "clientCertificate": "Client certificate (mTLS)",
+    "clientCertificateHelp": "For infrastructures that require a TLS client certificate. Studio presents it on every connection to the endpoints and the identity provider, in every access mode. For signing in through the browser, also import the certificate into your system's keychain.",
+    "clientCertificateIssuer": "Issued by {issuer} · valid until {date}",
+    "clientCertificateRemove": "Remove client certificate",
+    "clientCertificateFile": "Certificate bundle (.p12, .pfx)",
+    "clientCertificateFileHint": "The certificate with its private key. Stored encrypted with a key from your operating system's credential store.",
+    "clientCertificateFileReplaceHint": "Choose a bundle to replace the current certificate.",
+    "clientCertificatePassphrase": "Bundle passphrase",
+    "clientCertificateRef": "Certificate bundle reference",
+    "clientCertificateRefHint": "file:/path/to/bundle.p12 on the Studio Service's host. Leave empty to keep the current certificate.",
+    "clientCertificatePassphraseRef": "Passphrase reference",
+    "clientCertificatePassphraseRefHint": "env:VARIABLE_NAME or file:/run/secrets/name. Leave empty for a bundle without passphrase.",
+    "clientCertificateTooLarge": "The file is too large for a certificate bundle.",
     "modeHelp": {
       "unsecured": "No credentials. Only for infrastructures without access control.",
       "deployment_client_credentials": "Studio authenticates with its own service account (client credentials). Every user sees what this account may see.",
       "delegated_user": "Each user authorizes the infrastructure with their own account (authorization code with PKCE)."
     },
     "revision": "Revision",
-    "noInfrastructures": "No infrastructures configured."
+    "noInfrastructures": "No infrastructures configured.",
+    "deployment": "Deployment",
+    "sharingNote": "Sharing needs your own account as access mode: with other modes, the infrastructure cannot tell users apart.",
+    "template": "Template",
+    "templates": {
+      "full": {
+        "title": "Separate services",
+        "short": "Every service has its own URL",
+        "help": "Registries, discovery and repositories each have their own URL. You need an AAS repository or registry and a submodel repository or registry."
+      },
+      "mono-all": {
+        "title": "AAS environment",
+        "short": "One URL serves everything",
+        "help": "One base URL serves repositories, registries and discovery, as the BaSyx AAS environment does. Enables export and upload."
+      },
+      "mono-repo": {
+        "title": "AAS environment with separate registries",
+        "short": "One URL for the repositories, own URLs for registries and discovery",
+        "help": "The AAS environment serves the repositories; registries and discovery run as separate services. Enables export and upload."
+      },
+      "identifiable": {
+        "title": "AAS repository only",
+        "short": "Submodels through their shells",
+        "help": "Only an AAS repository; submodels are read through the shells that reference them."
+      }
+    },
+    "endpointTypes": {
+      "aasEnvironment": "AAS environment URL",
+      "aasRegistry": "AAS registry URL",
+      "submodelRegistry": "Submodel registry URL",
+      "aasDiscovery": "Discovery URL",
+      "aasRepository": "AAS repository URL",
+      "submodelRepository": "Submodel repository URL",
+      "conceptDescriptionRepository": "Concept description repository URL"
+    },
+    "endpointHints": {
+      "aasEnvironment": "Base URL without /shells, e.g. https://aas.example.com/api",
+      "aasRegistry": "Lists shells by their descriptors.",
+      "submodelRegistry": "Finds where submodels are served.",
+      "aasDiscovery": "Finds shells by asset ID. Optional.",
+      "aasRepository": "Serves the shells.",
+      "submodelRepository": "Serves the submodels.",
+      "conceptDescriptionRepository": "Serves concept descriptions. Optional."
+    },
+    "oneOf": "Enter at least one of: {types}",
+    "listSource": "Shell list",
+    "listSources": {
+      "registry": "From the registry",
+      "repository": "From the repository"
+    },
+    "listSourceHelp": {
+      "registry": "Shows the shells the registry knows. An empty or outdated registry shows as such.",
+      "repository": "Shows the shells stored in the AAS repository."
+    },
+    "sync": "Registry and discovery entries",
+    "serverSyncsRegistry": "The server keeps its registries up to date",
+    "serverSyncsDiscovery": "The server keeps discovery up to date",
+    "studioDefault": "Where the server does not",
+    "studioDefaultHint": "Applies when shells are uploaded or deleted in Studio.",
+    "syncModes": {
+      "autoCreate": "Studio creates and removes the entries",
+      "dontCreate": "Studio leaves them alone"
+    },
+    "userOverride": "Users may choose differently in their settings",
+    "announced": {
+      "history": "History",
+      "changeFeed": "Change feed",
+      "rebac": "Access control (ReBAC)"
+    },
+    "announcedHints": {
+      "history": "The services keep earlier versions, so Studio can show shells and submodels as they were at a point in time.",
+      "changeFeed": "The services report changes, so Studio can show what changed recently.",
+      "rebac": "The services check access per user and shell (relationship-based access control), so shells can be shared."
+    },
+    "probedAt": "Checked {time}"
   },
   "apps": {
     "title": "Apps",
+    "search": "Search apps",
+    "uploaded": "Uploaded",
     "subtitle": "Apps add submodel views and modules to Studio. They run isolated from Studio and can only do what their permissions and your own rights allow.",
     "install": "Install app",
     "installHint": "Developer mode: an app package (.zip) with studio-app.json at its root.",
@@ -195,6 +366,8 @@
     "notInstalled": "This app module is not installed (anymore).",
     "needsShell": "Open a shell to use this module.",
     "connecting": "Starting the app…",
+    "notStarted": "The app did not start",
+    "notStartedText": "It did not connect to Studio within 15 seconds. Its files may be unreachable, or it may have failed.",
     "frameTitle": "App: {name}",
     "permission": {
       "studio_aas_read": "Read AAS data you have access to",
@@ -202,6 +375,377 @@
       "studio_ui_notifications": "Show notifications",
       "studio_ui_navigation": "Change its own page address",
       "studio_backend": "Run server-side code (isolated)"
+    },
+    "bundled": "Included",
+    "bundledHint": "Shipped with Studio and kept up to date with it.",
+    "backendHint": "Runs code on the Studio server, isolated from Studio and other apps.",
+    "permissions": "Permissions: {list}",
+    "filters": "Kind"
+  },
+  "nav": {
+    "targets": "AAS targets",
+    "targetsShort": "Targets",
+    "dashboard": "Home",
+    "dashboardShort": "Home",
+    "shells": "Shells",
+    "shellsShort": "Shells",
+    "concepts": "Concept descriptions",
+    "conceptsShort": "Concepts"
+  },
+  "common": {
+    "copy": "Copy",
+    "copyLabel": "Copy {label}",
+    "copied": "{label} copied to the clipboard",
+    "value": "Value",
+    "clipboardUnavailable": "The clipboard is not available",
+    "cancel": "Cancel",
+    "close": "Close"
+  },
+  "time": {
+    "now": "just now",
+    "minutes": "{count} min ago",
+    "hours": "{count} h ago",
+    "days": "{count} d ago"
+  },
+  "palette": {
+    "search": "Search targets and actions…",
+    "searchTarget": "Search shells, elements, actions…",
+    "placeholder": "Search actions…",
+    "placeholderTarget": "Search shells, elements, asset IDs, actions…",
+    "empty": "No results for “{query}”",
+    "emptyText": "Try an idShort, an identifier or an action like “theme”.",
+    "navigate": "navigate",
+    "open": "open",
+    "results": "no results | {count} result | {count} results",
+    "lookup": "Find shells of asset “{assetId}”",
+    "groups": {
+      "actions": "Actions",
+      "shells": "Shells",
+      "elements": "Submodel elements",
+      "recent": "Recently opened",
+      "discovery": "Asset ID"
+    },
+    "actions": {
+      "theme": "Switch between light and dark theme",
+      "targets": "Go to AAS targets",
+      "settings": "Open settings",
+      "mode": "Switch between view and edit mode",
+      "refresh": "Turn auto-refresh on or off",
+      "dashboard": "Go to the target's home page",
+      "concepts": "Go to concept descriptions",
+      "infrastructures": "Manage infrastructures"
     }
+  },
+  "capabilities": {
+    "export": "Export",
+    "exportHint": "Download shells as AASX, JSON or XML (AAS environment).",
+    "upload": "Upload",
+    "uploadHint": "Add AASX, JSON or XML files (AAS environment).",
+    "search": "Search",
+    "searchHint": "The list search runs on the server, with the AAS Query Language where the infrastructure announces it.",
+    "elementSearch": "Element search",
+    "elementSearchHint": "Search finds submodel elements, not only shells.",
+    "discovery": "Discovery",
+    "discoveryHint": "Find shells by asset ID.",
+    "history": "History",
+    "historyHint": "Show submodels as they were at a point in time.",
+    "changeFeed": "Change feed",
+    "changeFeedHint": "Shows recent changes of shells, submodels and assets.",
+    "sharing": "Sharing",
+    "sharingHint": "Grant others access to a shell. Needs relationship-based access control and your own account."
+  },
+  "shells": {
+    "all": "All",
+    "instances": "Instances",
+    "types": "Types",
+    "type": "Type",
+    "none": "No shells found",
+    "noneText": "Try another search, or search the whole target with ⌘K.",
+    "reset": "Reset search",
+    "refreshOn": "Auto-refresh every {seconds} s",
+    "refreshOff": "Auto-refresh off",
+    "availability": {
+      "available": "Available",
+      "forbidden": "No access to this shell",
+      "not_found": "The registry lists this shell, but it was not found",
+      "blocked": "The registry points outside this infrastructure",
+      "unreachable": "The shell's server cannot be reached"
+    },
+    "localOnly": "Filters the loaded shells only: this infrastructure announces no query endpoint.",
+    "query": {
+      "title": "Advanced query",
+      "active": "AAS query",
+      "registry": "Runs on the AAS registry",
+      "repository": "Runs on the AAS repository",
+      "text": "An AAS Query Language query (IDTA-01002-3) as JSON. Fields start with {roots}; $select is not supported.",
+      "label": "Query",
+      "fromSearch": "From the search",
+      "apply": "Search",
+      "invalidJson": "Not valid JSON: {message}",
+      "notObject": "A query is a JSON object with $condition.",
+      "edit": "Edit the advanced query"
+    },
+    "search": "Search shells",
+    "filters": {
+      "count": "{count} filter | {count} filters",
+      "show": "Show the applied filter | Show the {count} applied filters",
+      "applied": "Applied filters",
+      "remove": "Remove {filter}",
+      "add": "Add this filter",
+      "typeValue": "Type a value",
+      "spaceToAdd": "Press Space or Enter to add the filter",
+      "howToMatch": "How should {field} match?",
+      "enterValue": "Enter the {field}",
+      "byField": "Filter by field"
+    },
+    "operators": {
+      "contains": "contains",
+      "equals": "equals",
+      "not-equals": "excludes"
+    },
+    "fields": {
+      "id": "Identifier",
+      "idShort": "idShort",
+      "assetKind": "Asset kind",
+      "assetType": "Asset type",
+      "globalAssetId": "Global asset ID",
+      "specificAssetId": "Specific asset ID"
+    }
+  },
+  "viewer": {
+    "headline": "Pick a shell to explore",
+    "title": "Select an Asset Administration Shell from the list",
+    "text": "Browse submodels, inspect live values and download documents. Press ⌘K to search the whole target.",
+    "browse": "Browse shells",
+    "search": "Search",
+    "recent": "Recently opened",
+    "assetNotFound": "No shell was found for the asset ID {assetId}.",
+    "assetShells": "Shells of this asset"
+  },
+  "history": {
+    "now": "Now",
+    "pick": "Show the state as of",
+    "pickHint": "Now. Choose a date to see an earlier state",
+    "readOnly": "Read-only view of the state on {date}.",
+    "backToNow": "Back to now"
+  },
+  "details": {
+    "up": "Up to {name}",
+    "pathMenu": "Path of the selection",
+    "submodel": "Submodel",
+    "valueOf": "Value · {type}",
+    "refreshEvery": "Every {seconds} s",
+    "paused": "Paused",
+    "sessionHistory": "Last {count} values read in this session · not stored on the server",
+    "range": "Range · {type}",
+    "elements": "no elements | {count} element | {count} elements",
+    "noFile": "No file",
+    "preview": "Open",
+    "download": "Download",
+    "replace": "Replace",
+    "replaceTitle": "Replace the file of {name}",
+    "chooseFile": "File",
+    "replaced": "The file of {name} was replaced.",
+    "copyPath": "Copy path",
+    "path": "Path",
+    "metadata": "Metadata",
+    "description": "Description",
+    "noDescription": "No description provided for this element.",
+    "qualifiers": "Qualifiers",
+    "noQualifiers": "No qualifiers.",
+    "nothing": "Nothing selected",
+    "nothingText": "Select an element in the tree to inspect it.",
+    "identifier": "Identifier",
+    "semanticId": "Semantic ID",
+    "valueType": "Value type",
+    "contentType": "Content type",
+    "version": "Version",
+    "children": "Children",
+    "idShortPath": "idShortPath",
+    "idShort": "idShort",
+    "displayName": "Display name",
+    "kind": "Kind",
+    "category": "Category",
+    "variableGroup": "Operation variables",
+    "widen": "Widen",
+    "narrow": "Narrow",
+    "modes": {
+      "details": "Details",
+      "visualization": "Visualization",
+      "json": "JSON",
+      "xml": "XML",
+      "uml": "UML",
+      "jsonLabel": "AAS JSON",
+      "xmlLabel": "AAS XML (aas-core)",
+      "diagram": "Diagram",
+      "source": "PlantUML",
+      "copySource": "Copy the PlantUML source",
+      "rendering": "Drawing the diagram…",
+      "umlFailed": "The diagram could not be drawn",
+      "umlAlt": "UML class diagram of {name}",
+      "fitWidth": "Fit to width",
+      "actualSize": "Actual size"
+    },
+    "blob": "Blob · {type}",
+    "blobEmpty": "No content",
+    "bytes": "{size} bytes",
+    "references": "References",
+    "first": "First",
+    "second": "Second",
+    "observed": "Observed",
+    "openReferenced": "Open the referenced element",
+    "noReference": "No reference",
+    "entityType": "Entity type",
+    "capability": "A capability describes what the asset can do; it has no value."
+  },
+  "operation": {
+    "inputs": "Input variables",
+    "noInputs": "No input variables.",
+    "async": "Run asynchronously",
+    "invoke": "Invoke",
+    "notAllowed": "You cannot invoke this operation here.",
+    "completed": "Completed",
+    "running": "Running…",
+    "failed": "Failed"
+  },
+  "share": {
+    "share": "Share",
+    "title": "Share {name}",
+    "subtitle": "Relationship-based access control · experimental",
+    "subject": "User or group",
+    "subjectPlaceholder": "e.g. maintenance-team",
+    "user": "User",
+    "group": "Group",
+    "role": "Role",
+    "add": "Add",
+    "withAccess": "People and groups with access",
+    "nobody": "Nobody else has access yet.",
+    "remove": "Remove access",
+    "inheritance": "Grants apply to this shell. Submodels inherit them only through an approved inheritance link.",
+    "invite": "Copy invitation link",
+    "invitationLink": "Invitation link",
+    "done": "Done",
+    "saved": "Access saved",
+    "conflict": "Access was changed in the meantime. Please review and save again.",
+    "relations": {
+      "viewer": "Viewer",
+      "viewerHint": "Read",
+      "editor": "Editor",
+      "editorHint": "Read and change",
+      "executor": "Executor",
+      "executorHint": "Read and invoke operations",
+      "owner": "Owner",
+      "ownerHint": "Full control and sharing",
+      "other": "{relation}",
+      "otherHint": "Relation defined by the infrastructure"
+    }
+  },
+  "overview": {
+    "none": "No views for this shell",
+    "noneText": "No installed app offers a view for this shell's submodels. Use the Submodels tab to browse the structure.",
+    "reason": "{app} · {submodel}"
+  },
+  "changes": {
+    "title": "Changes",
+    "subtitle": "Changes of this shell and its submodels",
+    "none": "No changes",
+    "noneText": "Events are kept only for the retention period of the infrastructure.",
+    "aas": {
+      "created": "Shell {name} created",
+      "updated": "Shell {name} updated",
+      "deleted": "Shell {name} deleted"
+    },
+    "submodel": {
+      "created": "Submodel {name} created",
+      "updated": "Submodel {name} updated",
+      "deleted": "Submodel {name} deleted"
+    },
+    "asset": {
+      "created": "Asset information created",
+      "updated": "Asset information updated",
+      "deleted": "Asset information deleted"
+    },
+    "times": "{count} time | {count} times",
+    "since": "since {time}",
+    "feedLimits": "The infrastructure's event feed names the changed shell or submodel, not the element or who changed it."
+  },
+  "landing": {
+    "subtitle": "AAS infrastructure",
+    "upload": "Upload",
+    "openViewer": "Open shells",
+    "status": "Connection and features",
+    "dashboardTitle": "Dashboard coming soon",
+    "dashboardText": "This page will show what happens on the infrastructure. Until then, open the shells to browse the content."
+  },
+  "upload": {
+    "title": "Upload AAS content",
+    "into": "Into {name}",
+    "drop": "Drop an .aasx, .json or .xml file here",
+    "browse": "Browse files",
+    "or": "or",
+    "hint": "The file is checked before it is added. Content with the same identifiers is replaced.",
+    "upload": "Upload",
+    "added": "No shells were added. | Added {count} shell. | Added {count} shells."
+  },
+  "concepts": {
+    "title": "Concept descriptions",
+    "subtitle": "Semantic definitions referenced by submodel elements",
+    "search": "Search by name, ID or definition",
+    "concept": "Concept",
+    "dataType": "Data type",
+    "unit": "Unit",
+    "source": "Source",
+    "copyId": "Copy ID",
+    "id": "ID",
+    "definition": "Definition",
+    "noDefinition": "No definition.",
+    "truncated": "Showing the first {count} concept descriptions."
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Appearance and live data, saved for your account",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "valueLanguage": "Language of multi-language values",
+    "refresh": "Auto-refresh",
+    "refreshSubtitle": "Values are re-read; infrastructures do not push changes",
+    "refreshOpen": "Re-read open submodels",
+    "refreshHint": "While a shell is open and the window is visible",
+    "interval": "Interval",
+    "seconds": "{count} s",
+    "infrastructuresSubtitle": "Manage the infrastructures available in Studio",
+    "sync": "Registry and discovery",
+    "syncSubtitle": "After uploads and deletes, Studio can write shell and submodel descriptors and asset links on infrastructures whose servers do not do it themselves.",
+    "syncDefault": "Infrastructure default ({mode})",
+    "syncModes": {
+      "autoCreate": "Create and remove entries",
+      "dontCreate": "Leave them unchanged"
+    }
+  },
+  "invite": {
+    "title": "Accept invitation",
+    "text": "Someone shared a shell on {name} with you. Accept the invitation to get access with your account.",
+    "accept": "Accept",
+    "accepted": "You now have access.",
+    "open": "Open shells"
+  },
+  "sync": {
+    "failedTitle": "{count} registry or discovery entry could not be updated | {count} registry or discovery entries could not be updated",
+    "failedText": "The change itself was made. Update these entries later, or ask an administrator.",
+    "done": "Registry and discovery updated ({count} entry). | Registry and discovery updated ({count} entries).",
+    "resources": {
+      "shellDescriptor": "Shell descriptor {id}",
+      "submodelDescriptor": "Submodel descriptor {id}",
+      "assetLinks": "Asset links of {id}"
+    }
+  },
+  "code": {
+    "find": "Find (⌘F)",
+    "wrap": "Wrap lines",
+    "noWrap": "Do not wrap lines",
+    "loadFailed": "The code view could not be loaded"
   }
 }

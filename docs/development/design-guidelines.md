@@ -110,6 +110,29 @@ writes.
   shells, and similar lists.
 - Use skeletons for predictable loading layouts and explicit empty/error states.
 
+## Viewer (MVP-4)
+
+- Layout: app bar, navigation rail, the shell list drawer, the shell's header
+  card with tabs (*Submodels*, *Overview*, *Changes*, *JSON*), the element tree
+  with inline values, and the details drawer on the right. From 1145 px the
+  details drawer sits beside the tree; below, it is temporary. Phones get the
+  bottom navigation, temporary drawers and a full-screen palette.
+- Look: Studio's colours, small radii (at most 8 px), outlined fields, borders
+  instead of shadows. All of it lives in `vuetify.config.ts` defaults and
+  aliases.
+- The details drawer shows the selection in modes: *Details*, *Visualization*
+  (app views), *JSON*, *XML* and *UML*. The mode and the selection are in the
+  URL, so links reproduce what the user saw.
+- Edit controls appear only in edit mode, in Studio and in apps; view mode
+  never offers a change.
+- Long lists stay responsive: the shell list is virtual, tree levels show 200
+  children and a *Show more* row, and closed tree groups are not rendered.
+- Search uses the BaSyx Web UI's syntax, shows its filters as chips and says
+  when it only filters the loaded rows.
+- Say what a server does not provide instead of leaving gaps: a feature that
+  is not announced is absent, empty columns are hidden, and limits of the data
+  (for example, an event feed without authors) are stated once.
+
 ## Graphical view builder
 
 - Keep authoring and runtime modes visually distinct.

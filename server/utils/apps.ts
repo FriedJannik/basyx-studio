@@ -27,6 +27,8 @@ export interface AppCall {
   installation: AppInstallationRecord
   /** The target the frame or token is bound to. */
   targetId: string | null
+  /** The shell the frame shows, if any. */
+  shellId?: string | null
   method: AppMethodName
   params: unknown
 }
@@ -85,6 +87,7 @@ export async function performAppCall (event: RequestEvent, call: AppCall): Promi
     operation: method,
     read: !isWriteMethod(method),
     appInstallationId: installation.id,
+    shellId: call.shellId ?? undefined,
   })
   if (!isWriteMethod(method)) {
     return executeAasMethod(opened.target, method, params as never)

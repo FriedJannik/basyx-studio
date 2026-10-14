@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { useRuntimeConfig } from 'nuxt/server'
 import { BackendRunner } from '../lib/apps/runner'
+import { installBundledApp } from '../lib/apps/store'
 import { capabilityTokenKey } from '../lib/apps/tokens'
 import { loadStudioConfig } from '../lib/config'
 import { SecretCipher } from '../lib/crypto/cipher'
@@ -13,12 +14,15 @@ import { ensureDesktopSession } from '../lib/sessions'
 import { CredentialBroker } from '../lib/targets/credentials'
 import { WorkspaceWorkerClient } from '../lib/workspaces/client'
 import { WorkspaceManager } from '../lib/workspaces/manager'
+import { loadBundledApps } from '../nitro/bundled-apps'
 import { loadMigrationsFromAssets } from '../nitro/migration-assets'
 
 export interface StudioRuntime extends StudioDeps {
   broker: CredentialBroker
   /** Desktop AASX workspaces; `null` when hosted or the worker is missing. */
   workspaces: WorkspaceManager | null
+  /** Checks uploads in the Workspace Worker process (ADR 0014); `null` when the worker is missing. */
+  inspector: WorkspaceWorkerClient | null
   /** Backend apps in Deno; `null` when apps are disabled. */
   backends: BackendRunner | null
   /** Signs the capability tokens of backend app calls. */
@@ -37,6 +41,20 @@ function workspaceWorkerEntry (configured: string): string | null {
   return entry && existsSync(entry) ? entry : null
 }
 
+/** Installs or updates the apps shipped with this build; a broken package never blocks startup. */
+async function installBundledApps (deps: StudioDeps): Promise<void> {
+  for (const { name, bytes } of await loadBundledApps()) {
+    try {
+      const outcome = await installBundledApp(deps, bytes)
+      if (outcome !== 'unchanged') {
+        console.info(`[studio] bundled app ${name}: ${outcome}`)
+      }
+    } catch (error) {
+      console.error(`[studio] bundled app ${name} was not installed: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+}
+
 let runtime: Promise<StudioRuntime> | undefined
 
 async function initialize (): Promise<StudioRuntime> {
@@ -53,14 +71,21 @@ async function initialize (): Promise<StudioRuntime> {
     if (config.deploymentMode === 'desktop') {
       await ensureDesktopSession(deps)
     }
+    if (config.apps.baseUrl) {
+      await installBundledApps(deps)
+    }
     let workspaces: WorkspaceManager | null = null
-    if (config.deploymentMode === 'desktop') {
-      const entry = workspaceWorkerEntry(String(runtimeConfig.workspaceWorker ?? ''))
-      if (entry) {
-        workspaces = new WorkspaceManager(new WorkspaceWorkerClient({ entry }))
-      } else {
-        console.warn('[studio] the Workspace Worker was not found; AASX workspaces are unavailable')
+    let inspector: WorkspaceWorkerClient | null = null
+    const entry = workspaceWorkerEntry(String(runtimeConfig.workspaceWorker ?? ''))
+    if (entry) {
+      // Desktop shares one worker for workspaces and upload checks; hosted
+      // Studio starts it only to check uploads.
+      inspector = new WorkspaceWorkerClient({ entry })
+      if (config.deploymentMode === 'desktop') {
+        workspaces = new WorkspaceManager(inspector)
       }
+    } else {
+      console.warn('[studio] the Workspace Worker was not found; AASX workspaces and uploads are unavailable')
     }
     const backends = config.apps.baseUrl
       ? new BackendRunner({
@@ -74,11 +99,13 @@ async function initialize (): Promise<StudioRuntime> {
       ...deps,
       broker: new CredentialBroker(deps),
       workspaces,
+      inspector,
       backends,
       capabilityKey: capabilityTokenKey(config.dataKey),
       close: async () => {
         backends?.dispose()
         workspaces?.dispose()
+        inspector?.close()
         await handle.close()
       },
     }

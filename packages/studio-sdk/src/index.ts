@@ -47,6 +47,10 @@ export class StudioClient {
     notify: (message: string, level: Methods['studio.ui.notify']['params']['level'] = 'info') => this.call('studio.ui.notify', { message, level }),
     /** Changes the module's sub-path in Studio's URL (nested routes). */
     navigate: (subPath: string) => this.call('studio.ui.navigate', { subPath }),
+    /** Sizes the frame to a content height; see `fitHeight` to follow the document. */
+    setHeight: (height: number) => this.call('studio.ui.setHeight', { height: Math.ceil(height) }),
+    /** Opens a File element's content in a new tab; `download` saves it instead. */
+    openFile: (submodelId: string, idShortPath: string, download = false) => this.call('studio.ui.openFile', { submodelId, idShortPath, download }),
   }
 
   readonly backend = {
@@ -157,4 +161,24 @@ export function applyTheme (theme: ThemeTokens, root: HTMLElement = document.doc
 /** Picks the text for a locale from a localized label, falling back to English and then to any language. */
 export function localized (text: Record<string, string>, locale: string): string {
   return text[locale] ?? text[locale.split('-', 1)[0]!] ?? text.en ?? Object.values(text)[0] ?? ''
+}
+
+/**
+ * Keeps the frame as tall as an element (the document by default), for views
+ * that Studio embeds next to others, e.g. on a shell's overview. Returns a
+ * function that stops following.
+ */
+export function fitHeight (client: StudioClient, element: HTMLElement = document.documentElement): () => void {
+  let last = -1
+  const update = () => {
+    const height = Math.ceil(element.getBoundingClientRect().height)
+    if (height !== last) {
+      last = height
+      void client.ui.setHeight(height)
+    }
+  }
+  const observer = new ResizeObserver(update)
+  observer.observe(element)
+  update()
+  return () => observer.disconnect()
 }

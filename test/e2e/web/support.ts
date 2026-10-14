@@ -38,11 +38,11 @@ export async function studioApi (page: Page) {
   }
 }
 
-/** Removes every installed app, so each test starts from a known state. */
+/** Removes every installed app except those shipped with Studio, so each test starts from a known state. */
 export async function uninstallAllApps (page: Page): Promise<void> {
   const api = await studioApi(page)
-  const list = await (await api.get('/app-installations')).json() as { items: Array<{ id: string }> }
-  for (const item of list.items) {
+  const list = await (await api.get('/app-installations')).json() as { items: Array<{ id: string, bundled: boolean }> }
+  for (const item of list.items.filter(item => !item.bundled)) {
     expect((await api.delete(`/app-installations/${item.id}`)).status()).toBe(204)
   }
 }
@@ -55,7 +55,7 @@ export async function installApp (page: Page, bytes: Uint8Array): Promise<string
 }
 
 /** Registers a target, replacing one with the same name left over from an earlier run. */
-async function registerTarget (page: Page, name: string, url: string, security: unknown): Promise<string> {
+async function registerTarget (page: Page, name: string, url: string, security: unknown, environment = false): Promise<string> {
   const api = await studioApi(page)
   const existing = await (await api.get('/infrastructures')).json() as { items: Array<{ id: string, name: string }> }
   for (const item of existing.items.filter(item => item.name === name)) {
@@ -63,7 +63,9 @@ async function registerTarget (page: Page, name: string, url: string, security: 
   }
   const response = await api.post('/infrastructures', {
     name,
-    endpoints: [{ type: 'aasRepository', url }, { type: 'submodelRepository', url }],
+    template: environment ? 'mono-all' : 'full',
+    endpoints: environment ? [{ type: 'aasEnvironment', url }] : [{ type: 'aasRepository', url }, { type: 'submodelRepository', url }],
+    listSource: 'repository',
     security,
     allowPrivateNetwork: true,
   })
@@ -73,6 +75,16 @@ async function registerTarget (page: Page, name: string, url: string, security: 
 
 export function registerOpenTarget (page: Page, name: string): Promise<string> {
   return registerTarget(page, name, openTargetUrl, { mode: 'unsecured' })
+}
+
+/** The open target as an AAS environment: export, upload, element search, history and change feed. */
+export function registerOpenEnvironment (page: Page, name: string): Promise<string> {
+  return registerTarget(page, name, openTargetUrl, { mode: 'unsecured' }, true)
+}
+
+/** Switches the shell browser between view and edit mode. */
+export async function setMode (page: Page, mode: 'View' | 'Edit'): Promise<void> {
+  await page.getByRole('button', { name: mode, exact: true }).click()
 }
 
 /** The secured target, accessed with Studio's service account (client credentials). */

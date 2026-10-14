@@ -32,11 +32,14 @@ function specFormat (spec: Part): SpecFormat | null {
   return null
 }
 
-function parseEnvironment (format: SpecFormat, content: Uint8Array): types.Environment {
+export function parseEnvironment (format: SpecFormat, content: Uint8Array): types.Environment {
   const text = new TextDecoder('utf-8', { fatal: false }).decode(content).replace(/^\uFEFF/, '')
   if (format === 'xml') {
     if (text.includes('https://admin-shell.io/aas/3/0') && !text.includes('https://admin-shell.io/aas/3/1')) {
       throw new StudioProblem('package_rejected', 'Packages of AAS version 3.0 are not supported yet; Studio edits AAS 3.1.')
+    }
+    if (text.includes('https://admin-shell.io/aas/3/2') && !text.includes('https://admin-shell.io/aas/3/1')) {
+      throw new StudioProblem('package_rejected', 'AAS 3.2 XML is not supported yet; Studio validates AAS 3.1. Use the JSON format instead.')
     }
     // AAS Core expects the root element first, without the XML declaration.
     const parsed = xmlization.fromXmlString(text.replace(/^\s*<\?xml[^>]*\?>\s*/, ''))
@@ -83,6 +86,10 @@ export async function readPackage (bytes: Uint8Array, limits: ArchiveLimits = de
     throw new StudioProblem('package_rejected', `The AAS spec has an unsupported content type (${spec.ContentType}).`)
   }
   const environment = parseEnvironment(format, spec.ReadAllBytes())
+  return { pkg, spec, format, environment: jsonization.toJsonable(environment) as JsonObject, diagnostics: diagnosticsOf(environment) }
+}
+
+function diagnosticsOf (environment: types.Environment): string[] {
   const diagnostics: string[] = []
   for (const error of verification.verify(environment)) {
     diagnostics.push(`${error.path.toString()}: ${error.message}`)
@@ -90,7 +97,35 @@ export async function readPackage (bytes: Uint8Array, limits: ArchiveLimits = de
       break
     }
   }
-  return { pkg, spec, format, environment: jsonization.toJsonable(environment) as JsonObject, diagnostics }
+  return diagnostics
+}
+
+export type UploadFormat = 'aasx' | SpecFormat
+
+export interface InspectedEnvironment {
+  shellIds: string[]
+  diagnostics: string[]
+}
+
+/**
+ * Checks an AASX, JSON or XML file before Studio forwards it to a target
+ * (D16): archive limits and AAS Core parsing as for opened packages.
+ */
+export async function inspectEnvironment (bytes: Uint8Array, format: UploadFormat, limits: ArchiveLimits = defaultArchiveLimits): Promise<InspectedEnvironment> {
+  let environment: JsonObject
+  let diagnostics: string[]
+  if (format === 'aasx') {
+    const opened = await readPackage(bytes, limits)
+    opened.pkg.Close()
+    environment = opened.environment
+    diagnostics = opened.diagnostics
+  } else {
+    const parsed = parseEnvironment(format, bytes)
+    environment = jsonization.toJsonable(parsed) as JsonObject
+    diagnostics = diagnosticsOf(parsed)
+  }
+  const shells = Array.isArray(environment.assetAdministrationShells) ? environment.assetAdministrationShells as JsonObject[] : []
+  return { shellIds: shells.map(shell => String(shell.id)), diagnostics }
 }
 
 /** Serializes the environment in the package's original format and returns the new package bytes. */

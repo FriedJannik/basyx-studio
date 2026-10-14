@@ -1,12 +1,15 @@
+import type { BinaryContent } from '../targets/aas-target'
+import type { PackageFiles } from './model'
 import type { OpenedPackage } from './package'
 import type { WorkerProblem, WorkerRequest, WorkerResponse, WorkerResults, WorkspaceCalls, WorkspaceInfo, WorkspaceMethod } from './protocol'
+import type { Part } from 'aas-package3-typescript'
 import { randomBytes } from 'node:crypto'
 import { readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { StudioProblem } from '../problem'
 import { defaultArchiveLimits } from './archive'
 import { WorkspaceModel } from './model'
-import { readPackage, writePackage } from './package'
+import { inspectEnvironment, readPackage, writePackage } from './package'
 
 interface OpenWorkspace {
   path: string
@@ -15,7 +18,46 @@ interface OpenWorkspace {
   diagnostics: string[]
 }
 
-const callable = new Set<string>(['listShells', 'shell', 'submodelIds', 'submodelMetadata', 'submodel', 'element', 'setElementValue'])
+const callable = new Set<string>([
+  'listShells', 'shell', 'submodelIds', 'submodelMetadata', 'submodel', 'element', 'setElementValue',
+  'deleteShell', 'thumbnail', 'attachment', 'replaceAttachment', 'conceptDescriptions', 'searchShells', 'searchElements',
+])
+
+/** Largest file a user may add to a package through Studio. */
+const maxAttachmentBytes = 50 * 1024 * 1024
+
+function toContent (part: Part): BinaryContent {
+  return { bytes: part.ReadAllBytes(), contentType: part.ContentType || 'application/octet-stream', fileName: part.URI.pathname.split('/').pop() || null }
+}
+
+/** Package parts of an opened workspace; supplementary files go below `/aasx-suppl/`. */
+function packageFiles (opened: OpenedPackage): PackageFiles {
+  const uriOf = (path: string) => new URL(path.startsWith('/') ? path : `/${path}`, opened.spec.URI)
+  return {
+    read: async path => {
+      // Only paths inside the package; File values may also be external URLs.
+      if (/^[a-z][\w+.-]*:/i.test(path)) {
+        return null
+      }
+      const part = await opened.pkg.FindPart(uriOf(path))
+      return part ? toContent(part) : null
+    },
+    write: async (fileName, file) => {
+      if (file.bytes.length > maxAttachmentBytes) {
+        throw new StudioProblem('invalid_request', 'The file is too large.')
+      }
+      const safe = fileName.replaceAll(/[^\w.-]/g, '_').replace(/^\.+/, '').slice(0, 120) || 'file'
+      const path = `/aasx-suppl/${randomBytes(6).toString('hex')}/${safe}`
+      const part = await opened.pkg.PutPart(uriOf(path), file.contentType, file.bytes)
+      await opened.pkg.RelateSupplementaryToSpec(part, opened.spec)
+      return path
+    },
+    thumbnail: async () => {
+      const part = await opened.pkg.Thumbnail()
+      return part ? toContent(part) : null
+    },
+  }
+}
 
 /**
  * The Workspace Worker's request handling: opened packages, their models,
@@ -36,10 +78,13 @@ export class WorkspaceWorker {
           throw new StudioProblem('invalid_request', 'Unknown workspace operation.')
         }
         const method = workspace.model[request.method] as (...args: unknown[]) => ReturnType<WorkspaceCalls[WorkspaceMethod]>
-        return method.apply(workspace.model, request.args)
+        return await method.apply(workspace.model, request.args)
       }
       case 'save': {
         return this.#save(request.workspaceId, request.path)
+      }
+      case 'inspect': {
+        return inspectEnvironment(request.bytes, request.format)
       }
       case 'close': {
         this.#workspaces.delete(request.workspaceId)
@@ -58,7 +103,7 @@ export class WorkspaceWorker {
     }
     const opened = await readPackage(new Uint8Array(await readFile(path)))
     const workspaceId = `ws-${randomBytes(9).toString('base64url')}`
-    this.#workspaces.set(workspaceId, { path, opened, model: new WorkspaceModel(opened.environment), diagnostics: opened.diagnostics })
+    this.#workspaces.set(workspaceId, { path, opened, model: new WorkspaceModel(opened.environment, packageFiles(opened)), diagnostics: opened.diagnostics })
     return this.#info(workspaceId)
   }
 

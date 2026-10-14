@@ -4,9 +4,11 @@ Studio apps that prove the app platform (MVP-3, [ADR 0004](../../docs/adr/0004-r
 
 | App | Contributes | Permissions |
 | --- | --- | --- |
-| `nameplate` | Submodel view for the Digital Nameplate (IDTA 02006, versions 2.0 and 3.0) | read, write, notifications |
 | `shell-explorer` | Target module with nested routes; shell module | read, navigation |
 | `backend-demo` | Target module with a Deno backend | read, backend |
+
+The Digital Nameplate example became Studio's bundled `apps/nameplate` in
+MVP-4; it shows the nameplate and, in edit mode, changes its properties.
 
 Each app is a Vite + Vue + Vuetify project that uses `@basyx/studio-sdk`.
 Build all apps and package them as installable `.zip` files:

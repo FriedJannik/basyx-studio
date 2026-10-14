@@ -8,11 +8,11 @@ export function appFileUrl (baseUrl: string, installationId: string, path: strin
 
 /**
  * The contributions of the installed apps. Modules are returned always; the
- * UI shows them for their context. Submodel views are returned only for a
- * submodel's semantic ID, matched exactly (as in the BaSyx AAS Web UI), with
- * the matching ID as the reason.
+ * UI shows them for their context. Submodel views are returned only for the
+ * given submodel semantic IDs, matched exactly (as in the BaSyx AAS Web UI),
+ * with the matching ID as the reason.
  */
-export function contributionsFor (installations: AppInstallationRecord[], baseUrl: string, semanticId: string | undefined): AppContributions {
+export function contributionsFor (installations: AppInstallationRecord[], baseUrl: string, semanticIds: string[]): AppContributions {
   const result: AppContributions = { submodelViews: [], modules: [] }
   for (const installation of installations) {
     const { manifest } = installation
@@ -22,8 +22,9 @@ export function contributionsFor (installations: AppInstallationRecord[], baseUr
       appTitle: manifest.title,
       permissions: manifest.permissions,
       unsigned: installation.unsigned,
+      bundled: installation.bundled,
     }
-    if (semanticId) {
+    for (const semanticId of semanticIds) {
       for (const view of manifest.contributes.submodelViews ?? []) {
         if (view.semanticIds.includes(semanticId)) {
           result.submodelViews.push({

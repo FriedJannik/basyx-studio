@@ -1,0 +1,22 @@
+{
+  "$schema": "../../packages/studio-sdk/app-manifest.schema.json",
+  "manifestVersion": 0,
+  "id": "org.eclipse.basyx.studio.handover-documentation",
+  "version": "1.0.0",
+  "publisher": { "name": "Eclipse BaSyx" },
+  "title": { "en": "Documents" },
+  "description": { "en": "Lists the handover documentation (VDI 2770, IDTA 02004) of an asset and opens its files." },
+  "studioApi": "^0.1.0",
+  "runtimes": ["hosted", "desktop"],
+  "permissions": ["studio.aas.read"],
+  "contributes": {
+    "submodelViews": [
+      {
+        "id": "handover-documentation",
+        "title": { "en": "Documents" },
+        "entry": "ui/index.html",
+        "semanticIds": ["0173-1#01-AHF578#003", "0173-1#01-AHF578#002", "0173-1#01-AHF578#001", "https://admin-shell.io/vdi/2770/1/0/Documentation"]
+      }
+    ]
+  }
+}

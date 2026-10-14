@@ -1,7 +1,7 @@
 import type { JsonObject } from '~~/server/lib/aas/outline'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { decodeKey, encodeKey, formatLocator, parseLocator, splitAddressable } from '~~/server/lib/aas/keys'
+import { ancestorsOf, decodeKey, encodeKey, formatLocator, parseLocator, splitAddressable } from '~~/server/lib/aas/keys'
 import { childrenOf, navigate, submodelChildren, toElementNode } from '~~/server/lib/aas/outline'
 import { StudioProblem } from '~~/server/lib/problem'
 
@@ -47,6 +47,16 @@ describe('element locators', () => {
       idShortPath: 'Calibrate',
       rest: [{ kind: 'variables', group: 'inoutput' }, { kind: 'idShort', idShort: 'Settings' }, { kind: 'idShort', idShort: 'Mode' }],
     })
+  })
+
+  it('names the ancestors of an element with the keys of their tree nodes', () => {
+    expect(ancestorsOf(parseLocator('Level1.Items[2].Name'))).toEqual([
+      { key: encodeKey('Level1'), label: 'Level1' },
+      { key: encodeKey('Level1.Items'), label: 'Items' },
+      { key: encodeKey('Level1.Items[2]'), label: '[2]' },
+    ])
+    expect(ancestorsOf(parseLocator('Calibrate@inoutput.Settings')).map(ancestor => ancestor.label)).toEqual(['Calibrate', 'inoutput'])
+    expect(ancestorsOf(parseLocator('Top'))).toEqual([])
   })
 })
 

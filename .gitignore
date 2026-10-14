@@ -28,3 +28,7 @@ logs
 !.env.example
 
 .pnpm-store
+/server/bundled-apps/*.zip
+
+# Generated on demand (pnpm testenv:large)
+/test-setup/fixtures/large

@@ -47,6 +47,16 @@ The client secret is deployment configuration, not user data. The BFF obtains an
 
 Studio may connect without OAuth when explicitly configured. The same endpoint validation and authorization rules still apply.
 
+### Client certificates (mutual TLS)
+
+Some infrastructures require a TLS client certificate on every connection, including their identity provider ([ADR 0025](../adr/0025-client-certificates-for-infrastructures.md)). The certificate belongs to the infrastructure, independent of the access mode above, so it combines with each of them.
+
+- **Format.** A PKCS#12 bundle (`.p12`/`.pfx`) with the private key and the certificate, plus its passphrase. Hosted deployments reference deployment files (`file:/path.p12`, passphrase as `env:NAME` or `file:/path`); the desktop Studio stores an uploaded bundle and passphrase encrypted, like client secrets (SEC-007).
+- **Where it is presented.** The Studio Service presents it on every HTTPS request it sends for the infrastructure: AAS calls, the connection probe, OIDC discovery, token exchange and refresh. It never presents it over plain HTTP. Connection pools are keyed by infrastructure and revision, so a certificate is never used for another infrastructure, and pools close when the infrastructure changes or is deleted.
+- **Browser sign-in.** Interactive sign-in happens in the system browser, which uses the operating system's certificate store. Users import the same `.p12` there (macOS: double-click it to add it to the login keychain; then allow the browser to use it when the IdP asks). Studio cannot use keychain identities itself, because their keys are often not exportable.
+- **Material.** Bundles, keys and passphrases never appear in API responses, logs, audit records or the public runtime config. The API returns the subject, issuer, expiry and, for references, the reference.
+- **Failures.** Missing, rejected and expired certificates and wrong passphrases are reported as their own problems (`target_client_certificate_required`, `target_client_certificate_rejected`, `client_certificate_invalid`, or violations on `clientCertificate` when saving), not as an unreachable infrastructure.
+
 ## OIDC portability
 
 Keycloak is the primary reference and development IdP, but implementation must use standard discovery, authorization, token, logout, and claim handling. BaSyx Go also tests alternative providers such as Ory and Entra ID; Studio must not hard-code realm URLs or Keycloak-only claim shapes.

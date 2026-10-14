@@ -1,5 +1,6 @@
-// Builds the example apps (examples/apps/*) and packages each as an
-// installable app package: examples/apps/dist/<name>.zip.
+// Builds apps and packages each as an installable app package:
+//   node scripts/build-example-apps.mjs                      examples/apps/* → examples/apps/dist/<name>.zip
+//   node scripts/build-example-apps.mjs apps server/bundled-apps   bundled apps (ADR 0023)
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
@@ -8,8 +9,8 @@ import { fileURLToPath } from 'node:url'
 import { zipSync } from 'fflate'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
-const examples = join(root, 'examples', 'apps')
-const output = join(examples, 'dist')
+const examples = join(root, process.argv[2] ?? join('examples', 'apps'))
+const output = process.argv[3] ? join(root, process.argv[3]) : join(examples, 'dist')
 
 async function filesBelow (directory) {
   const entries = await readdir(directory, { withFileTypes: true, recursive: true })

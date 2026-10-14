@@ -1,5 +1,12 @@
 <template>
   <div class="d-flex flex-wrap align-center ga-2">
+    <!-- The package's state next to its actions (UX-005). -->
+    <v-chip
+      :color="target.workspace?.unsavedChanges ? 'warning' : 'success'"
+      :prepend-icon="target.workspace?.unsavedChanges ? 'mdi-content-save-alert-outline' : 'mdi-content-save-check-outline'"
+      :text="t(target.workspace?.unsavedChanges ? 'workspace.unsaved' : 'workspace.saved')"
+    />
+
     <v-btn-primary
       :disabled="!target.workspace?.unsavedChanges || busy !== null"
       :loading="busy === 'save'"
@@ -29,13 +36,14 @@
     />
 
     <v-dialog v-model="confirmClose" max-width="480">
-      <v-card :text="t('workspace.closeText')" :title="t('workspace.closeTitle', { name: target.name })">
+      <DialogCard :title="t('workspace.closeTitle', { name: target.name })">
+        {{ t('workspace.closeText') }}
+
         <template #actions>
-          <v-spacer />
           <v-btn :text="t('workspace.cancel')" @click="confirmClose = false" />
           <v-btn-primary color="error" :text="t('workspace.closeWithoutSaving')" @click="close(true)" />
         </template>
-      </v-card>
+      </DialogCard>
     </v-dialog>
   </div>
 </template>

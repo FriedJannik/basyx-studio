@@ -6,7 +6,8 @@ import type { AuthorizationTransaction } from '../oidc/transactions'
 import { and, eq } from 'drizzle-orm'
 import { targetCredentials } from '../../database/schema'
 import { recordAudit } from '../audit'
-import { resolveClientSecret } from '../infrastructures'
+import { resolveClientCertificate, resolveClientSecret } from '../infrastructures'
+import { networkFailureOf } from '../network/guarded-fetch'
 import { clientCredentialsTokens, completeAuthorization, getOidcClient, OidcError, refreshTokens, startAuthorization } from '../oidc/client'
 import { saveTransaction } from '../oidc/transactions'
 import { StudioProblem } from '../problem'
@@ -28,6 +29,13 @@ const refreshTokenPurpose = 'target_credentials.refresh_token'
 function toProblem (error: unknown, mode: 'delegated' | 'service'): StudioProblem {
   if (error instanceof StudioProblem) {
     return error
+  }
+  const failure = networkFailureOf(error)
+  if (failure?.kind === 'client_certificate_required') {
+    return new StudioProblem('target_client_certificate_required', `The identity provider of this target: ${failure.message}.`, { cause: error })
+  }
+  if (failure?.kind === 'client_certificate_rejected') {
+    return new StudioProblem('target_client_certificate_rejected', `The identity provider of this target: ${failure.message}.`, { cause: error })
   }
   if (error instanceof OidcError && error.kind === 'unreachable') {
     return new StudioProblem('target_unreachable', 'The identity provider of this target could not be reached.', { cause: error })
@@ -137,6 +145,7 @@ export class CredentialBroker {
       clientId: record.security.clientId,
       clientSecret: await resolveClientSecret(this.deps, record),
       allowPrivateNetwork: record.allowPrivateNetwork && this.deps.config.allowPrivateNetworkTargets,
+      clientCertificate: await resolveClientCertificate(this.deps, record),
     }
   }
 

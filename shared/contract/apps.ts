@@ -25,6 +25,8 @@ export const appInstallationSchema = z.object({
   digest: z.string(),
   /** Installed through developer mode, without a marketplace signature. */
   unsigned: z.boolean(),
+  /** Shipped with Studio and installed at startup (ADR 0023). */
+  bundled: z.boolean(),
   permissions: z.array(appPermissionSchema),
   submodelViews: z.number().int(),
   modules: z.number().int(),
@@ -44,6 +46,7 @@ const contributionBase = {
   entryUrl: z.string(),
   permissions: z.array(appPermissionSchema),
   unsigned: z.boolean(),
+  bundled: z.boolean(),
 }
 
 export const submodelViewContributionSchema = z.object({
@@ -66,8 +69,11 @@ export type ModuleContributionInfo = z.infer<typeof moduleContributionSchema>
 export type AppContributionInfo = SubmodelViewContributionInfo | ModuleContributionInfo
 
 export const appContributionsQuerySchema = z.object({
-  /** Submodel semantic ID; submodel views are returned only when it is given. */
-  semanticId: z.string().min(1).max(2048).optional(),
+  /**
+   * Submodel semantic IDs; submodel views are returned only for given IDs.
+   * Repeat the parameter for several submodels, e.g. a shell's overview.
+   */
+  semanticId: z.union([z.string().min(1).max(2048), z.array(z.string().min(1).max(2048)).max(100)]).optional().transform(value => value === undefined ? [] : (Array.isArray(value) ? value : [value])),
 })
 
 export const appContributionsSchema = z.object({
@@ -108,6 +114,8 @@ export const appMethodParamsSchemas = {
   'studio.ui.navigate': z.object({
     subPath: z.string().max(500).regex(/^(?:[\w.~-]+(?:\/[\w.~-]+)*)?$/, 'must be a relative path'),
   }).strict(),
+  'studio.ui.setHeight': z.object({ height: z.number().int().min(0).max(20_000) }).strict(),
+  'studio.ui.openFile': z.object({ submodelId: identifier, idShortPath, download: z.boolean().default(false) }).strict(),
   'studio.aas.listShells': listQuerySchema.strict(),
   'studio.aas.getShell': z.object({ shellId: identifier }).strict(),
   'studio.aas.listSubmodels': z.object({ shellId: identifier }).strict(),
@@ -138,6 +146,8 @@ export const appCallInputSchema = z.object({
   installationId: z.string().max(64).optional(),
   /** The target the frame is bound to; `null` for a global module outside a target. */
   targetId: z.string().max(200).nullable().optional(),
+  /** The shell the frame shows, if any; some infrastructures reach submodels only through it. */
+  shellId: z.string().max(4000).nullable().optional(),
   method: appMethodNameSchema,
   params: z.unknown(),
 })

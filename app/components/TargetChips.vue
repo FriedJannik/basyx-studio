@@ -1,17 +1,29 @@
 <template>
-  <div class="d-flex flex-wrap ga-2">
+  <!-- Quiet status, as in shadcn: muted text with an icon, and a small
+       coloured dot as the only colour; filled chips made lists look busy. -->
+  <div class="d-flex flex-wrap align-center ga-3 text-body-small text-medium-emphasis">
     <template v-if="target.workspace">
-      <v-chip :prepend-icon="targetIcon(target)" :text="t('workspace.localFile')" />
+      <span class="d-inline-flex align-center ga-1">
+        <v-icon :icon="targetIcon(target)" size="16" />
+        {{ t('workspace.localFile') }}
+      </span>
 
-      <v-chip
-        :color="target.workspace.unsavedChanges ? 'warning' : 'success'"
-        :text="t(target.workspace.unsavedChanges ? 'workspace.unsaved' : 'workspace.saved')"
-      />
+      <span class="d-inline-flex align-center ga-1">
+        <v-icon :color="target.workspace.unsavedChanges ? 'warning' : 'success'" icon="mdi-circle" size="8" />
+        {{ t(target.workspace.unsavedChanges ? 'workspace.unsaved' : 'workspace.saved') }}
+      </span>
     </template>
 
     <template v-else-if="target.securityMode">
-      <v-chip :prepend-icon="targetIcon(target)" :text="t(`security.${target.securityMode}`)" />
-      <v-chip :color="stateColor" :text="t(`authState.${target.authenticationState}`)" />
+      <span class="d-inline-flex align-center ga-1">
+        <v-icon :icon="targetIcon(target)" size="16" />
+        {{ t(`security.${target.securityMode}`) }}
+      </span>
+
+      <span class="d-inline-flex align-center ga-1">
+        <v-icon :color="target.authenticationState === 'required' ? 'warning' : 'success'" icon="mdi-circle" size="8" />
+        {{ t(`authState.${target.authenticationState}`) }}
+      </span>
     </template>
   </div>
 </template>
@@ -20,8 +32,6 @@
   import type { Target } from '#shared/contract'
   import { targetIcon } from '~/utils/aas'
 
-  const props = defineProps<{ target: Target }>()
+  defineProps<{ target: Target }>()
   const { t } = useI18n()
-
-  const stateColor = computed(() => props.target.authenticationState === 'required' ? 'warning' : 'success')
 </script>

@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { appBlobs, appFiles, auditEvents } from '~~/server/database/schema'
 import { contributionsFor } from '~~/server/lib/apps/contributions'
-import { getInstallation, installApp, listInstallations, readAppFile, toAppInstallation, uninstallApp } from '~~/server/lib/apps/store'
+import { getInstallation, installApp, installBundledApp, listInstallations, readAppFile, toAppInstallation, uninstallApp } from '~~/server/lib/apps/store'
 import { SecretCipher } from '~~/server/lib/crypto/cipher'
 import { openDatabase } from '~~/server/lib/database/client'
 import { applyMigrations, loadMigrationsFromDirectory } from '~~/server/lib/database/migrate'
@@ -97,16 +97,41 @@ describe('app installations', () => {
     })), 'r6')
     const installations = await listInstallations(deps)
     const baseUrl = 'http://apps.localhost:3000/app/'
-    const matching = contributionsFor(installations, baseUrl, 'https://admin-shell.io/idta/nameplate/3/0/Nameplate')
+    const matching = contributionsFor(installations, baseUrl, ['https://admin-shell.io/idta/nameplate/3/0/Nameplate'])
     expect(matching.submodelViews).toEqual([expect.objectContaining({
       installationId: record.id,
       id: 'np',
       entryUrl: `${baseUrl}${record.id}/ui/index.html`,
       reason: { semanticId: 'https://admin-shell.io/idta/nameplate/3/0/Nameplate' },
     })])
-    expect(contributionsFor(installations, baseUrl, 'https://admin-shell.io/idta/nameplate/3/0/Nameplate/').submodelViews).toEqual([])
-    expect(contributionsFor(installations, baseUrl, undefined).submodelViews).toEqual([])
+    expect(contributionsFor(installations, baseUrl, ['https://admin-shell.io/idta/nameplate/3/0/Nameplate/']).submodelViews).toEqual([])
+    expect(contributionsFor(installations, baseUrl, []).submodelViews).toEqual([])
+    // A shell's overview asks for the views of all its submodels at once.
+    expect(contributionsFor(installations, baseUrl, ['urn:other', 'https://admin-shell.io/idta/nameplate/3/0/Nameplate']).submodelViews).toHaveLength(1)
     expect(matching.modules).toEqual([expect.objectContaining({ id: 'explorer', route: 'explorer', context: 'target', icon: 'mdi-compass' })])
+  })
+
+  it('installs bundled apps without developer mode, updates them by digest, and keeps them installed', async () => {
+    const strict: StudioDeps = { ...deps, config: configWith({ allowUnsigned: false }) }
+    const v1 = zipApp(manifestOf({ id: 'org.example.bundled', version: '1.0.0' }), { 'ui/index.html': '<p>v1</p>' })
+    expect(await installBundledApp(strict, v1)).toBe('installed')
+    expect(await installBundledApp(strict, v1)).toBe('unchanged')
+    const installed = (await listInstallations(deps)).find(record => record.appId === 'org.example.bundled')!
+    expect(toAppInstallation(installed)).toMatchObject({ bundled: true, unsigned: false, installedBy: 'studio' })
+
+    const v2 = zipApp(manifestOf({ id: 'org.example.bundled', version: '1.1.0' }), { 'ui/index.html': '<p>v2</p>' })
+    expect(await installBundledApp(strict, v2)).toBe('updated')
+    const updated = await getInstallation(deps, installed.id)
+    expect(updated.version).toBe('1.1.0')
+    expect(new TextDecoder().decode((await readAppFile(deps, installed.id, 'ui/index.html'))!.content)).toBe('<p>v2</p>')
+
+    expect((await failure(uninstallApp(deps, admin, installed.id, 'r-bundled'))).code).toBe('forbidden')
+  })
+
+  it('leaves an app an administrator installed when a bundled app has the same ID', async () => {
+    const own = await installApp(deps, admin, zipApp(manifestOf({ id: 'org.example.own' }), { 'ui/index.html': '<p>own</p>' }), 'r-own')
+    expect(await installBundledApp(deps, zipApp(manifestOf({ id: 'org.example.own', version: '9.0.0' }), { 'ui/index.html': '<p>bundled</p>' }))).toBe('skipped')
+    expect((await getInstallation(deps, own.id)).bundled).toBe(false)
   })
 
   it('uninstalls and removes only blobs that no other installation uses', async () => {

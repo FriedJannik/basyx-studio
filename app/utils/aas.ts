@@ -47,6 +47,16 @@ export function isEditableModelType (modelType: unknown): modelType is EditableM
   return (editableModelTypes as readonly unknown[]).includes(modelType)
 }
 
+/** The resource key (base64url) of an AAS identifier or element path, as the Studio API uses it. */
+export function resourceKey (value: string): string {
+  const bytes = new TextEncoder().encode(value)
+  let binary = ''
+  for (const byte of bytes) {
+    binary += String.fromCodePoint(byte)
+  }
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')
+}
+
 /** The AAS identifier behind a resource key (base64url), or `null` if malformed. */
 export function decodeResourceKey (key: string): string | null {
   try {
@@ -57,3 +67,14 @@ export function decodeResourceKey (key: string): string | null {
     return null
   }
 }
+
+/** Color and icon of a change event's action. */
+export const changeMeta = {
+  created: { color: 'success', icon: 'mdi-plus-circle-outline' },
+  updated: { color: 'info', icon: 'mdi-pencil-circle-outline' },
+  deleted: { color: 'error', icon: 'mdi-minus-circle-outline' },
+} as const
+
+/** Modes of the details drawer (MVP-4 plan, T2), as `mode` in the URL. */
+export const detailsModes = ['details', 'visualization', 'json', 'xml', 'uml'] as const
+export type DetailsMode = (typeof detailsModes)[number]

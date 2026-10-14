@@ -9,7 +9,6 @@
     <v-text-field
       v-if="modelType === 'Property'"
       :error-messages="fieldErrors"
-      hide-details="auto"
       :label="label"
       :model-value="propertyValue"
       :placeholder="t('editor.emptyValue')"

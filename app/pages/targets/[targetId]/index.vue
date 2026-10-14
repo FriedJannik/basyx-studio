@@ -1,93 +1,76 @@
 <template>
   <v-container>
-    <TargetHeader :target="target.data.value" />
-
     <ProblemAlert v-if="target.error.value" :error="target.error.value" retry @retry="target.refetch()" />
 
     <TargetAuthorization
-      v-else-if="target.data.value && (target.needsAuthorization.value || authRequired)"
+      v-else-if="target.data.value && target.needsAuthorization.value"
       :target="target.data.value"
-      @authorized="onAuthorized"
+      @authorized="invalidate(['targets', targetId])"
     />
 
-    <template v-else-if="target.data.value">
-      <h1 class="text-headline-small mb-4">{{ t('target.shells') }}</h1>
+    <v-skeleton-loader v-else-if="!target.data.value" type="heading, card" />
 
-      <ProblemAlert
-        v-if="shells.error.value && items.length === 0"
-        class="mb-4"
-        :error="shells.error.value"
-        retry
-        @retry="shells.refetch()"
-      />
+    <template v-else>
+      <!-- The landing page of a target; a later MVP turns it into a dashboard (MVP-4 plan, R1). -->
+      <PageHeader :subtitle="target.data.value.description ?? t('landing.subtitle')" :title="target.data.value.name">
+        <template #actions>
+          <v-btn
+            v-if="capabilities.upload"
+            prepend-icon="mdi-upload"
+            :text="t('landing.upload')"
+            variant="tonal"
+            @click="uploadOpen = true"
+          />
 
-      <v-progress-linear v-else-if="shells.isLoading.value && items.length === 0" />
+          <v-btn-primary prepend-icon="$aas" :text="t('landing.openViewer')" :to="`/targets/${targetId}/shells`" />
+        </template>
+      </PageHeader>
 
-      <v-card v-else-if="items.length > 0">
-        <v-infinite-scroll @load="loadMore">
-          <v-list lines="two">
-            <v-list-item
-              v-for="shell in items"
-              :key="shell.key"
-              prepend-icon="mdi-shield-outline"
-              :subtitle="shell.id"
-              :title="langText(shell.displayName) ?? shell.idShort ?? shell.id"
-              :to="`/targets/${targetId}/shells/${shell.key}`"
-            >
-              <template v-if="shell.assetKind" #append>
-                <v-chip :text="shell.assetKind" />
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-infinite-scroll>
+      <v-card class="mb-4">
+        <v-card-item>
+          <template #prepend>
+            <v-avatar :color="target.data.value.authenticationState === 'required' ? 'warning' : 'success'" variant="tonal">
+              <v-icon :icon="targetIcon(target.data.value)" />
+            </v-avatar>
+          </template>
+
+          <v-card-title>{{ t('landing.status') }}</v-card-title>
+
+          <template v-if="mdAndUp" #append>
+            <TargetStatus :target="target.data.value" />
+          </template>
+        </v-card-item>
+
+        <v-card-text class="pt-0">
+          <TargetStatus v-if="!mdAndUp" class="mb-4" :target="target.data.value" />
+          <CapabilityChips :capabilities="capabilities" />
+        </v-card-text>
       </v-card>
 
-      <v-empty-state v-else-if="shells.data.value" icon="mdi-shield-off-outline" :title="t('target.noShells')" />
+      <v-empty-state
+        icon="mdi-view-dashboard-outline"
+        :text="t('landing.dashboardText')"
+        :title="t('landing.dashboardTitle')"
+      />
+
+      <UploadDialog v-if="capabilities.upload" v-model="uploadOpen" :target="target.data.value" />
     </template>
   </v-container>
 </template>
 
 <script lang="ts" setup>
-  import type { Page, ShellSummary } from '#shared/contract'
-  import { useInfiniteQuery } from '@pinia/colada'
-  import { StudioApiError } from '~/composables/useStudioApi'
-  import { langText } from '~/utils/aas'
-
-  type LoadStatus = 'ok' | 'empty' | 'error' | 'loading'
+  import type { TargetCapabilities } from '#shared/contract'
+  import { useDisplay } from 'vuetify'
+  import { noCapabilities } from '#shared/contract'
+  import { targetIcon } from '~/utils/aas'
 
   const { t } = useI18n()
   const route = useRoute()
-  const api = useStudioApi()
   const invalidate = useInvalidate()
+  const { mdAndUp } = useDisplay()
 
   const targetId = computed(() => String(route.params.targetId))
   const target = useTarget(targetId)
-
-  const shells = useInfiniteQuery({
-    key: () => ['targets', targetId.value, 'shells'],
-    query: ({ pageParam, signal }) => api<Page<ShellSummary>>(`/targets/${targetId.value}/shells`, {
-      query: { limit: 25, cursor: pageParam ?? undefined },
-      signal,
-    }),
-    initialPageParam: null as string | null,
-    getNextPageParam: lastPage => lastPage.page.nextCursor,
-    enabled: () => target.data.value !== undefined && !target.needsAuthorization.value,
-  })
-
-  const items = computed(() => shells.data.value?.pages.flatMap(page => page.items) ?? [])
-  const authRequired = computed(() => shells.error.value instanceof StudioApiError && shells.error.value.code === 'target_auth_required')
-
-  // v-infinite-scroll asks for the next cursor page when the list end becomes visible.
-  async function loadMore ({ done }: { done: (status: LoadStatus) => void }) {
-    if (!shells.hasNextPage.value) {
-      done('empty')
-      return
-    }
-    await shells.loadNextPage()
-    done(shells.error.value ? 'error' : (shells.hasNextPage.value ? 'ok' : 'empty'))
-  }
-
-  async function onAuthorized () {
-    await invalidate(['targets', targetId.value])
-  }
+  const capabilities = computed<TargetCapabilities>(() => target.data.value?.capabilities ?? noCapabilities)
+  const uploadOpen = ref(false)
 </script>

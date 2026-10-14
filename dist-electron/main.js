@@ -139,6 +139,11 @@ async function I(e, t) {
 	let r = new c({
 		show: !1,
 		title: "BaSyx Studio",
+		...l.isPackaged ? {} : { icon: V() },
+		width: 1440,
+		height: 900,
+		minWidth: 1024,
+		minHeight: 640,
 		webPreferences: {
 			contextIsolation: !0,
 			nodeIntegration: !1,
@@ -229,8 +234,11 @@ function B(e) {
 		});
 	});
 }
-async function V() {
-	z();
+function V() {
+	return s(l.getAppPath(), "build", "icon.png");
+}
+async function H() {
+	z(), !l.isPackaged && process.platform === "darwin" && l.dock?.setIcon(V());
 	let e = process.env.VITE_DEV_SERVER_URL;
 	if (!l.isPackaged) {
 		if (!e) throw Error("The Electron development server URL is missing.");
@@ -240,15 +248,15 @@ async function V() {
 	let t = await M();
 	w = t.url, T = t.launchSecret, await I(w, T);
 }
-function H(e) {
+function U(e) {
 	let t = e instanceof Error ? e.message : "Unknown startup error.";
 	u.showErrorBox("BaSyx Studio could not start", t), l.quit();
 }
 process.env.STUDIO_USER_DATA_DIR && l.setPath("userData", process.env.STUDIO_USER_DATA_DIR), l.requestSingleInstanceLock() ? (l.on("second-instance", () => {
 	let [e] = c.getAllWindows();
 	e && (e.isMinimized() && e.restore(), e.focus());
-}), l.whenReady().then(V).catch(H)) : l.quit(), l.on("activate", () => {
-	c.getAllWindows().length === 0 && w && I(w, T).catch(H);
+}), l.whenReady().then(H).catch(U)) : l.quit(), l.on("activate", () => {
+	c.getAllWindows().length === 0 && w && I(w, T).catch(U);
 }), l.on("before-quit", () => {
 	D = !0;
 }), l.on("will-quit", () => {

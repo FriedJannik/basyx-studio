@@ -1,0 +1,22 @@
+{
+  "$schema": "../../packages/studio-sdk/app-manifest.schema.json",
+  "manifestVersion": 0,
+  "id": "org.eclipse.basyx.studio.technical-data",
+  "version": "1.0.0",
+  "publisher": { "name": "Eclipse BaSyx" },
+  "title": { "en": "Technical Data" },
+  "description": { "en": "Shows the technical properties (IDTA 02003) of an asset on its overview." },
+  "studioApi": "^0.1.0",
+  "runtimes": ["hosted", "desktop"],
+  "permissions": ["studio.aas.read"],
+  "contributes": {
+    "submodelViews": [
+      {
+        "id": "technical-data",
+        "title": { "en": "Technical Data" },
+        "entry": "ui/index.html",
+        "semanticIds": ["0173-1#01-AHX837#002", "https://admin-shell.io/idta/TechnicalData/Submodel/2/0", "https://admin-shell.io/ZVEI/TechnicalData/Submodel/1/2", "https://admin-shell.io/ZVEI/TechnicalData/Submodel/1/1"]
+      }
+    ]
+  }
+}

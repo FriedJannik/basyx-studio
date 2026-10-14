@@ -47,6 +47,12 @@ export default withNuxt(
       argument: 'style',
       message: 'Use Vuetify props or utility classes instead of inline styles.',
     }],
+  },
+}).append({
+  // Apps (apps/, examples/apps/) create their own Vuetify instance, so only
+  // Studio's own components are checked against vuetify.config.ts.
+  files: ['app/**/*.vue'],
+  rules: {
     'vue/no-restricted-static-attribute': ['error',
       ...restatedDefaults(vuetifyConfig.defaults),
       {

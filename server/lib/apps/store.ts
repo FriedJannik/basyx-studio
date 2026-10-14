@@ -72,6 +72,55 @@ export async function installApp (deps: StudioDeps, actor: Actor, bytes: Uint8Ar
   return record
 }
 
+/** The subject recorded as installer of bundled apps. */
+export const bundledInstaller = 'studio'
+
+/**
+ * Installs or updates an app shipped with Studio (ADR 0023). Bundled apps
+ * come from the Studio build itself, so they need neither developer mode nor
+ * a marketplace signature. An app with the same ID that an administrator
+ * installed is left alone.
+ */
+export async function installBundledApp (deps: StudioDeps, bytes: Uint8Array): Promise<'installed' | 'updated' | 'unchanged' | 'skipped'> {
+  const pkg = readAppPackage(bytes, deps.config.deploymentMode)
+  return deps.db.transaction(async tx => {
+    const [existing] = await tx.select().from(appInstallations).where(eq(appInstallations.appId, pkg.manifest.id))
+    if (existing && !existing.bundled) {
+      return 'skipped'
+    }
+    if (existing?.digest === pkg.digest) {
+      return 'unchanged'
+    }
+    // Keep the installation ID, so frames and audit records stay comparable across updates.
+    const id = existing?.id ?? newInstallationId()
+    if (existing) {
+      await tx.delete(appInstallations).where(eq(appInstallations.id, id))
+    }
+    await tx.insert(appInstallations).values({
+      id,
+      appId: pkg.manifest.id,
+      version: pkg.manifest.version,
+      digest: pkg.digest,
+      manifest: pkg.manifest,
+      unsigned: false,
+      bundled: true,
+      installedBy: bundledInstaller,
+    })
+    for (const file of new Map(pkg.files.map(entry => [entry.digest, entry])).values()) {
+      await tx.insert(appBlobs).values({ digest: file.digest, size: file.content.length, content: file.content }).onConflictDoNothing()
+    }
+    if (pkg.files.length > 0) {
+      await tx.insert(appFiles).values(pkg.files.map(file => ({ installationId: id, path: file.path, digest: file.digest, contentType: file.contentType })))
+    }
+    if (existing) {
+      await tx.delete(appBlobs).where(notExists(
+        tx.select({ one: sql`1` }).from(appFiles).where(eq(appFiles.digest, appBlobs.digest)),
+      ))
+    }
+    return existing ? 'updated' : 'installed'
+  })
+}
+
 export async function listInstallations (deps: Pick<StudioDeps, 'db'>): Promise<AppInstallationRecord[]> {
   return deps.db.select().from(appInstallations).orderBy(appInstallations.installedAt)
 }
@@ -87,6 +136,9 @@ export async function getInstallation (deps: Pick<StudioDeps, 'db'>, id: string)
 /** Removes the installation and every blob no other installation uses. */
 export async function uninstallApp (deps: StudioDeps, actor: Actor, id: string, requestId: string): Promise<AppInstallationRecord> {
   const record = await getInstallation(deps, id)
+  if (record.bundled) {
+    throw new StudioProblem('forbidden', 'Apps shipped with Studio cannot be uninstalled.')
+  }
   await deps.db.transaction(async tx => {
     await tx.delete(appInstallations).where(eq(appInstallations.id, id))
     await tx.delete(appBlobs).where(notExists(
@@ -171,6 +223,7 @@ export function toAppInstallation (record: AppInstallationRecord): AppInstallati
     publisher: manifest.publisher.name,
     digest: record.digest,
     unsigned: record.unsigned,
+    bundled: record.bundled,
     permissions: manifest.permissions,
     submodelViews: manifest.contributes.submodelViews?.length ?? 0,
     modules: manifest.contributes.modules?.length ?? 0,

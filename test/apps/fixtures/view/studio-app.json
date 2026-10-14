@@ -1,0 +1,20 @@
+{
+  "manifestVersion": 0,
+  "id": "org.example.nameplate-test-view",
+  "version": "0.1.0",
+  "publisher": { "name": "Studio tests" },
+  "title": { "en": "Nameplate test view" },
+  "studioApi": "^0.1.0",
+  "runtimes": ["hosted", "desktop"],
+  "permissions": ["studio.aas.read"],
+  "contributes": {
+    "submodelViews": [
+      {
+        "id": "test-view",
+        "title": { "en": "Test view" },
+        "entry": "ui/index.html",
+        "semanticIds": ["https://admin-shell.io/idta/nameplate/3/0/Nameplate"]
+      }
+    ]
+  }
+}

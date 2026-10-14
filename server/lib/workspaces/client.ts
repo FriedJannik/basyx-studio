@@ -36,10 +36,11 @@ export class WorkspaceWorkerClient {
   request<Op extends WorkerRequest['op']> (request: Extract<WorkerRequest, { op: Op }>): Promise<WorkerResults[Op]> {
     const child = this.#start()
     const id = this.#nextId++
-    const timeoutMs = request.op === 'open' ? (this.options.openTimeoutMs ?? 120_000) : (this.options.timeoutMs ?? 30_000)
+    const parsesPackage = request.op === 'open' || request.op === 'inspect'
+    const timeoutMs = parsesPackage ? (this.options.openTimeoutMs ?? 120_000) : (this.options.timeoutMs ?? 30_000)
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
-        this.#stop(new StudioProblem(request.op === 'open' ? 'package_rejected' : 'internal_error', 'The workspace operation took too long and was stopped.'))
+        this.#stop(new StudioProblem(parsesPackage ? 'package_rejected' : 'internal_error', 'The workspace operation took too long and was stopped.'))
       }, timeoutMs)
       this.#pending.set(id, { resolve: resolve as (value: unknown) => void, reject, timer })
       child.send({ id, request }, error => {

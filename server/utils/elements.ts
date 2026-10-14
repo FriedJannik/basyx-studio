@@ -2,7 +2,7 @@ import type { ElementDetail } from '#shared/contract'
 import type { LocatorStep } from '../lib/aas/keys'
 import type { ElementSnapshot } from '../lib/targets/aas-target'
 import type { RequestEvent } from 'nuxt/server'
-import { decodeKey, parseLocator, splitAddressable } from '../lib/aas/keys'
+import { ancestorsOf, decodeKey, parseLocator, splitAddressable } from '../lib/aas/keys'
 import { navigate } from '../lib/aas/outline'
 import { StudioProblem } from '../lib/problem'
 import { routeParam } from './handler'
@@ -44,5 +44,6 @@ export function toElementDetail (event: RequestEvent, route: ElementRoute, snaps
     value,
     revision: writable ? snapshot.revision : null,
     concurrency: writable ? snapshot.concurrency : null,
+    ancestors: ancestorsOf(parseLocator(route.locator)),
   }
 }

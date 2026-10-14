@@ -35,7 +35,12 @@ async function editSerialNumber (value: string, select = true) {
   if (select) {
     await window.getByRole('tree').getByText('SerialNumber', { exact: true }).click()
   }
-  const field = window.getByRole('textbox').first()
+  // Values are edited in Studio's edit mode only.
+  const edit = window.getByRole('button', { name: 'Edit', exact: true })
+  if (await edit.getAttribute('aria-pressed') !== 'true') {
+    await edit.click()
+  }
+  const field = window.getByRole('textbox', { name: 'SerialNumber' })
   await field.fill(value)
   await window.getByRole('button', { name: 'Apply' }).click()
   await expect(window.getByText('Applied. Save the package to keep the change.')).toBeVisible()
@@ -75,7 +80,7 @@ test('asks before closing a package or the window with unsaved changes', async (
   await editSerialNumber('SN-E2E-UNSAVED')
 
   // Closing the package in the app asks first.
-  await window.getByRole('button', { name: 'Close', exact: true }).click()
+  await window.getByRole('button', { name: 'Close package' }).click()
   await expect(window.getByText('Close unsaved.aasx?')).toBeVisible()
   await window.getByRole('button', { name: 'Cancel' }).click()
 

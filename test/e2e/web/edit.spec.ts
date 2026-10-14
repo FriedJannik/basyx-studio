@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
-import { edgeCasesShell, edgeCasesSubmodel, key, registerOpenTarget, setAtSource, signIn } from './support'
+import { edgeCasesShell, edgeCasesSubmodel, key, registerOpenTarget, setAtSource, setMode, signIn } from './support'
 
 // MVP-2 definition of done 2 and 4 in the hosted build: edit a property of
 // the open target, see it after a reload, and handle a conflicting change.
@@ -12,10 +12,17 @@ function elementUrl (element: string) {
   return `/targets/${targetId}/shells/${key(edgeCasesShell)}?submodel=${key(edgeCasesSubmodel)}&element=${key(element)}`
 }
 
-async function valueField (page: Page) {
-  const field = page.getByRole('textbox').first()
+/** The value editor of the selected element in the details drawer (edit mode). */
+async function valueField (page: Page, idShort: string) {
+  const field = page.getByRole('textbox', { name: idShort, exact: true })
   await expect(field).toBeVisible()
   return field
+}
+
+async function openInEditMode (page: Page, element: string) {
+  await page.goto(elementUrl(element))
+  await setMode(page, 'Edit')
+  return valueField(page, element)
 }
 
 test.beforeEach(async ({ page }) => {
@@ -27,9 +34,14 @@ test.afterEach(async ({ request }) => {
   await setAtSource(request, edgeCasesSubmodel, 'SimpleString', original)
 })
 
-test('edits a property value and shows it after a reload', async ({ page }) => {
+test('shows values read-only in view mode', async ({ page }) => {
   await page.goto(elementUrl('SimpleString'))
-  const field = await valueField(page)
+  await expect(page.locator('[data-test="property-value"]')).toHaveText(original)
+  await expect(page.getByRole('button', { name: 'Apply' })).toHaveCount(0)
+})
+
+test('edits a property value and shows it after a reload', async ({ page }) => {
+  const field = await openInEditMode(page, 'SimpleString')
   await expect(field).toHaveValue(original)
 
   await field.fill('edited end to end')
@@ -39,12 +51,12 @@ test('edits a property value and shows it after a reload', async ({ page }) => {
   await expect(page.getByText('edited end to end', { exact: true })).toBeVisible()
 
   await page.reload()
-  await expect(await valueField(page)).toHaveValue('edited end to end')
+  await setMode(page, 'Edit')
+  await expect(await valueField(page, 'SimpleString')).toHaveValue('edited end to end')
 })
 
 test('keeps the draft on a conflict and applies it only when asked', async ({ page, request }) => {
-  await page.goto(elementUrl('SimpleString'))
-  const field = await valueField(page)
+  const field = await openInEditMode(page, 'SimpleString')
   await field.fill('my draft')
 
   await setAtSource(request, edgeCasesSubmodel, 'SimpleString', 'changed by someone else')
@@ -57,12 +69,12 @@ test('keeps the draft on a conflict and applies it only when asked', async ({ pa
   await page.getByRole('button', { name: 'Apply mine anyway' }).click()
   await expect(page.getByText('Applied.')).toBeVisible()
   await page.reload()
-  await expect(await valueField(page)).toHaveValue('my draft')
+  await setMode(page, 'Edit')
+  await expect(await valueField(page, 'SimpleString')).toHaveValue('my draft')
 })
 
 test('explains values that do not match the value type', async ({ page }) => {
-  await page.goto(elementUrl('Temperature'))
-  const field = await valueField(page)
+  const field = await openInEditMode(page, 'Temperature')
   await field.fill('warm')
   await page.getByRole('button', { name: 'Apply' }).click()
   await expect(page.getByText('Value must be consistent with the value type.')).toBeVisible()

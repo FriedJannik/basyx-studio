@@ -24,7 +24,10 @@
           { "ROUTE": "/submodels" },
           { "ROUTE": "/submodels/*" },
           { "ROUTE": "/concept-descriptions" },
-          { "ROUTE": "/concept-descriptions/*" }
+          { "ROUTE": "/concept-descriptions/*" },
+          { "ROUTE": "/events" },
+          { "ROUTE": "/.well-known/event-feed.json" },
+          { "ROUTE": "/.well-known/event-feed/schemas/*" }
         ]
       }
     ],

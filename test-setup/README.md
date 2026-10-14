@@ -10,6 +10,7 @@ never configure the `test-cli` password-grant client in a real IdP.
 ```sh
 pnpm testenv:up      # start and wait until healthy (about 30 s)
 pnpm testenv:smoke   # verify targets, IdP configuration and access rules
+pnpm testenv:large   # optional: add the "large" target for performance checks
 pnpm testenv:down    # stop and discard all data
 ```
 
@@ -18,8 +19,9 @@ pnpm testenv:down    # stop and discard all data
 | Service | URL on the host | Purpose |
 | --- | --- | --- |
 | `keycloak` | <http://keycloak.localhost:18080> (admin console: `admin` / `admin`) | OIDC provider, realm `basyx-studio` |
-| `basyx-open` | <http://localhost:18081> | Unsecured BaSyx Go AAS environment (AAS, submodel and CD repository) |
-| `basyx-secured` | <http://localhost:18082> | BaSyx Go AAS environment with OIDC and ABAC |
+| `basyx-open` | <http://localhost:18081> | Unsecured BaSyx Go AAS environment: repositories, registries (kept in sync with the repositories), discovery, history and event feed |
+| `basyx-secured` | <http://localhost:18082> | BaSyx Go AAS environment with OIDC and ABAC, history and event feed; shells are listed from the repository |
+| `basyx-large` | <http://localhost:18083> | Optional (`pnpm testenv:large`, compose profile `large`): unsecured BaSyx Go AAS environment with the `large` profile, registries in sync |
 | `postgres` | `localhost:15432` | Database `studio` (user `studio` / `studio`) for hosted Studio metadata, plus the BaSyx databases |
 
 BaSyx Go runs the `SNAPSHOT` images of `main`, pulled on every start
@@ -46,7 +48,12 @@ targets within one Studio session.
 | Secured (as Studio) | `http://localhost:18082` | `deployment_client_credentials` | client `studio-service`, secret `studio-service-test-secret` |
 
 The AAS environment serves `/shells`, `/submodels` and `/concept-descriptions`
-from one base URL. Registry and discovery endpoints are not part of MVP-1.
+from one base URL, and, on the same URL, the registries (`/shell-descriptors`,
+`/submodel-descriptors`) and discovery (`/lookup/shells`). Both targets record
+history (`$history`) and serve the event feed (`/events`), and announce them in
+`/description`, so Studio detects them as it would on any server. Only `open`
+keeps its registries filled (registry sync); `secured` tests the
+repository-only path.
 
 Register them in Studio under *Infrastructures* (signed in as `studio-admin`),
 always with *Allow loopback and private-network addresses* enabled:
@@ -69,9 +76,13 @@ configuration and the environment variables these secret references point to.
 | Open | `EdgeCasesShell`: every submodel element kind, collections nested 5 levels deep, list of collections, list of lists (`NestedLists[1][0]`), an operation with in/out/inout variables, a hyphenated idShort, an empty value, a 300-element submodel, and a dangling submodel reference that returns 404 |
 | Open | 60 `PagingShell…` shells for cursor paging (62 shells in total) |
 | Secured | `SecuredPublicShell` (with `Nameplate`, which has the Digital Nameplate 3.0 semantic ID, and the restricted `Costs` submodel) and `SecuredInternalShell` |
+| Large | 2,000 shells `LargeShell0001`… (every fifth a type, all with the shared `Nameplate`), and `LargeTree` on `LargeShell0001`: a list of 1,000 collections (about 5,000 elements), `Deep.Level1.Level2.Level3.Leaf` and 50 numeric readings |
 
 The JSON fixtures are generated and checked with AAS Core 3.1 by
-`fixtures/generate-fixtures.mjs` (`pnpm testenv:fixtures`). BaSyx loads them at
+`fixtures/generate-fixtures.mjs` (`pnpm testenv:fixtures`). The `large`
+profile is generated on demand by `pnpm testenv:large` into `fixtures/large/`,
+which is not checked in; register it in Studio like *Open*, with the URL
+`http://localhost:18083`. BaSyx loads them at
 startup through `GENERAL_AAS_PRECONFIG_PATHS`.
 
 ### Users and expected access on the secured target

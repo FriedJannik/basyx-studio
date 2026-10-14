@@ -2,17 +2,34 @@ import type { AddressPolicy } from './address-policy'
 import type { LookupAddress } from 'node:dns'
 import type { Response as UndiciResponse } from 'undici'
 import { lookup } from 'node:dns/promises'
+import { isIP } from 'node:net'
+import { connect as tlsConnect } from 'node:tls'
 import { Agent, fetch as undiciFetch } from 'undici'
 import { rejectAddress, rejectUrl } from './address-policy'
+
+/**
+ * A TLS client certificate (mutual TLS). `identity` names the certificate for
+ * the agent cache, e.g. infrastructure ID and revision; it never contains key
+ * material, so certificates are never shared between infrastructures.
+ */
+export interface ClientCertificate {
+  identity: string
+  /** PEM private key. */
+  key: string
+  /** PEM certificate chain, leaf first. */
+  cert: string
+}
 
 export interface OutboundPolicy extends AddressPolicy {
   /** Origins this client may contact, e.g. the configured endpoint origins. */
   allowedOrigins: ReadonlySet<string>
   timeoutMs: number
   maxResponseBytes: number
+  /** Presented on HTTPS connections only; never on plain HTTP. */
+  clientCertificate?: ClientCertificate
 }
 
-export type NetworkFailureKind = 'blocked' | 'timeout' | 'unreachable' | 'too_large'
+export type NetworkFailureKind = 'blocked' | 'timeout' | 'unreachable' | 'too_large' | 'client_certificate_required' | 'client_certificate_rejected'
 
 /** Thrown by the guarded fetch; carries why a request failed before or during transport. */
 export class NetworkFailure extends Error {
@@ -20,6 +37,18 @@ export class NetworkFailure extends Error {
     super(message, options)
     this.name = 'NetworkFailure'
   }
+}
+
+/** The network failure behind an error, e.g. one that a client library wrapped. */
+export function networkFailureOf (error: unknown): NetworkFailure | undefined {
+  let current = error
+  for (let depth = 0; current && depth < 5; depth++) {
+    if (current instanceof NetworkFailure) {
+      return current
+    }
+    current = (current as { cause?: unknown }).cause
+  }
+  return undefined
 }
 
 /** Collects the first transport failure, because the SDK hides fetch errors behind status 0. */
@@ -32,41 +61,149 @@ type LookupCallback = (error: NodeJS.ErrnoException | null, address: string | Lo
 // Re-validates the resolved address at connect time, so a DNS answer that
 // changes after the pre-flight check (DNS rebinding) cannot reach a forbidden
 // address.
-function createGuardedAgent (policy: AddressPolicy, protocol: string): Agent {
+function guardedLookup (policy: AddressPolicy, protocol: string) {
+  return (hostname: string, options: object, callback: LookupCallback): void => {
+    lookup(hostname, { all: true, verbatim: true })
+      .then(addresses => {
+        for (const address of addresses) {
+          const reason = rejectAddress(address.address, protocol, policy)
+          if (reason) {
+            callback(Object.assign(new Error(reason), { code: 'ESTUDIOBLOCKED' }), [])
+            return
+          }
+        }
+        const wantsAll = (options as { all?: boolean }).all === true
+        if (wantsAll) {
+          callback(null, addresses)
+        } else {
+          callback(null, addresses[0]!.address, addresses[0]!.family)
+        }
+      })
+      .catch(error => callback(error as NodeJS.ErrnoException, []))
+  }
+}
+
+function createGuardedAgent (policy: AddressPolicy, protocol: string, certificate: ClientCertificate | undefined): Agent {
   return new Agent({
     connect: {
-      lookup (hostname: string, options: object, callback: LookupCallback) {
-        lookup(hostname, { all: true, verbatim: true })
-          .then(addresses => {
-            for (const address of addresses) {
-              const reason = rejectAddress(address.address, protocol, policy)
-              if (reason) {
-                callback(Object.assign(new Error(reason), { code: 'ESTUDIOBLOCKED' }), [])
-                return
-              }
-            }
-            const wantsAll = (options as { all?: boolean }).all === true
-            if (wantsAll) {
-              callback(null, addresses)
-            } else {
-              callback(null, addresses[0]!.address, addresses[0]!.family)
-            }
-          })
-          .catch(error => callback(error as NodeJS.ErrnoException, []))
-      },
+      ...(certificate && protocol === 'https:' ? { key: certificate.key, cert: certificate.cert } : {}),
+      lookup: guardedLookup(policy, protocol),
     },
   })
 }
 
 const agents = new Map<string, Agent>()
-function agentFor (policy: AddressPolicy, protocol: string): Agent {
-  const key = `${policy.allowPrivateNetwork}:${protocol}`
+
+/** The agent cache key of a request: one agent per address policy, protocol and client certificate. */
+export function agentKey (policy: OutboundPolicy, protocol: string): string {
+  const certificate = protocol === 'https:' ? policy.clientCertificate : undefined
+  return `${policy.allowPrivateNetwork}:${protocol}:${certificate ? `cert:${certificate.identity}` : ''}`
+}
+
+function agentFor (policy: OutboundPolicy, protocol: string): Agent {
+  const key = agentKey(policy, protocol)
   let agent = agents.get(key)
   if (!agent) {
-    agent = createGuardedAgent(policy, protocol)
+    agent = createGuardedAgent(policy, protocol, protocol === 'https:' ? policy.clientCertificate : undefined)
     agents.set(key, agent)
   }
   return agent
+}
+
+/**
+ * Closes the agents of client certificates whose identity starts with
+ * `prefix` (e.g. an infrastructure ID), so replaced or deleted certificates do
+ * not stay in memory.
+ */
+export function releaseCertificateAgents (prefix: string): void {
+  for (const [key, agent] of agents) {
+    if (key.includes(`:cert:${prefix}`)) {
+      agents.delete(key)
+      agent.close().catch(() => {})
+    }
+  }
+}
+
+// OpenSSL codes of the TLS alerts a server sends about the client certificate.
+const certificateRequiredCodes = new Set(['ERR_SSL_TLSV13_ALERT_CERTIFICATE_REQUIRED'])
+const certificateRejectedCodes = new Set([
+  'ERR_SSL_SSLV3_ALERT_BAD_CERTIFICATE',
+  'ERR_SSL_SSLV3_ALERT_UNSUPPORTED_CERTIFICATE',
+  'ERR_SSL_SSLV3_ALERT_CERTIFICATE_REVOKED',
+  'ERR_SSL_SSLV3_ALERT_CERTIFICATE_EXPIRED',
+  'ERR_SSL_SSLV3_ALERT_CERTIFICATE_UNKNOWN',
+  'ERR_SSL_TLSV1_ALERT_UNKNOWN_CA',
+  'ERR_SSL_TLSV1_ALERT_ACCESS_DENIED',
+])
+
+/** The first error code in a cause chain (undici wraps socket errors). */
+function errorCode (error: unknown): string | undefined {
+  let current = error
+  for (let depth = 0; current && depth < 5; depth++) {
+    const code = (current as { code?: unknown }).code
+    if (typeof code === 'string') {
+      return code
+    }
+    current = (current as { cause?: unknown }).cause
+  }
+  return undefined
+}
+
+/**
+ * Reads the TLS alert a server sends after the handshake. undici reports a
+ * connection that the server closed right after its alert as "other side
+ * closed" when the close arrives first, so a failed HTTPS request is
+ * diagnosed with one more handshake (same address guard and certificate, no
+ * HTTP request). Resolves with the alert error; with `ESTUDIOTLSCLOSED` if
+ * the server closed the connection right after the handshake without an
+ * alert, as Node's TLS servers do; or undefined.
+ */
+function readTlsAlert (url: URL, policy: OutboundPolicy): Promise<unknown> {
+  const host = url.hostname.replace(/^\[|\]$/g, '')
+  const certificate = policy.clientCertificate
+  return new Promise(resolve => {
+    const socket = tlsConnect({
+      host,
+      port: Number(url.port || 443),
+      servername: isIP(host) ? undefined : host,
+      lookup: guardedLookup(policy, 'https:'),
+      ...(certificate ? { key: certificate.key, cert: certificate.cert } : {}),
+    })
+    const settle = (error?: unknown) => {
+      clearTimeout(timer)
+      socket.destroy()
+      resolve(error)
+    }
+    // A server that accepts the certificate stays silent until the request.
+    const timer = setTimeout(settle, Math.min(policy.timeoutMs, 2000))
+    let secured = false
+    socket.on('secureConnect', () => {
+      secured = true
+    })
+    socket.on('error', settle)
+    socket.on('close', () => settle(secured ? Object.assign(new Error('closed after the handshake'), { code: 'ESTUDIOTLSCLOSED' }) : undefined))
+  })
+}
+
+/** Maps TLS alerts about the client certificate to typed failures. */
+function certificateFailure (error: unknown, origin: string, presented: boolean): NetworkFailure | undefined {
+  const code = errorCode(error)
+  if (!code) {
+    return undefined
+  }
+  if (code === 'ESTUDIOTLSCLOSED') {
+    return presented
+      ? new NetworkFailure('client_certificate_rejected', `${origin} closed the connection after the TLS handshake; it did not accept the client certificate`, { cause: error })
+      : new NetworkFailure('client_certificate_required', `${origin} closed the connection after the TLS handshake; it probably requires a TLS client certificate`, { cause: error })
+  }
+  if (certificateRequiredCodes.has(code) || (!presented && certificateRejectedCodes.has(code))) {
+    return new NetworkFailure('client_certificate_required', `${origin} requires a TLS client certificate${presented ? ', but did not accept the configured one' : ''}`, { cause: error })
+  }
+  if (certificateRejectedCodes.has(code)) {
+    const reason = code === 'ERR_SSL_SSLV3_ALERT_CERTIFICATE_EXPIRED' ? ' as expired' : (code === 'ERR_SSL_SSLV3_ALERT_CERTIFICATE_REVOKED' ? ' as revoked' : '')
+    return new NetworkFailure('client_certificate_rejected', `${origin} rejected the TLS client certificate${reason}`, { cause: error })
+  }
+  return undefined
 }
 
 /** Resolves a host and checks every address against the policy. */
@@ -171,6 +308,14 @@ export function createGuardedFetch (
       const cause = (error as { cause?: { code?: string } }).cause
       if (cause?.code === 'ESTUDIOBLOCKED') {
         return fail(new NetworkFailure('blocked', String((cause as Error).message), { cause: error }))
+      }
+      const presented = url.protocol === 'https:' && policy.clientCertificate !== undefined
+      let tlsFailure = certificateFailure(error, url.origin, presented)
+      if (!tlsFailure && url.protocol === 'https:' && errorCode(error) === 'UND_ERR_SOCKET') {
+        tlsFailure = certificateFailure(await readTlsAlert(url, policy), url.origin, presented)
+      }
+      if (tlsFailure) {
+        return fail(tlsFailure)
       }
       if ((error as Error).name === 'TimeoutError') {
         return fail(new NetworkFailure('timeout', `no response within ${policy.timeoutMs} ms`, { cause: error }))

@@ -1,28 +1,41 @@
-import type { ElementNode } from '#shared/contract'
-import { z } from 'zod'
+import type { TreeNode } from '#shared/contract'
+import type { JsonObject } from '~~/server/lib/aas/outline'
 import { decodeKey, parseLocator, splitAddressable } from '~~/server/lib/aas/keys'
-import { childrenOf, navigate, submodelChildren, toElementNode } from '~~/server/lib/aas/outline'
+import { childrenOf, navigate, submodelChildren } from '~~/server/lib/aas/outline'
+import { buildLevels } from '~~/server/lib/aas/tree'
 import { StudioProblem } from '~~/server/lib/problem'
 import { defineStudioHandler, queryValidated, routeParam } from '~~/server/utils/handler'
-import { openTarget } from '~~/server/utils/target'
+import { openTarget, requireCapability } from '~~/server/utils/target'
+import { elementLevelQuerySchema } from '#shared/contract'
 
-const querySchema = z.object({ parentElementKey: z.string().max(4000).optional() })
-
-export default defineStudioHandler(async (event): Promise<{ items: ElementNode[] }> => {
+/**
+ * Tree nodes below the submodel or one of its elements, with as many levels
+ * as fit into the node budget (MVP-4 plan, T1), now or (with `at`) as they
+ * were at a point in time.
+ */
+export default defineStudioHandler(async (event): Promise<{ items: TreeNode[] }> => {
   const submodelId = decodeKey(routeParam(event, 'submodelKey'), 'submodel key')
-  const { parentElementKey } = queryValidated(event, querySchema)
-  const { target } = await openTarget(event)
+  const { parentElementKey, at, budget } = queryValidated(event, elementLevelQuerySchema)
+  const opened = await openTarget(event)
+  const steps = parentElementKey ? parseLocator(decodeKey(parentElementKey, 'element key')) : []
 
-  if (!parentElementKey) {
-    const submodel = await target.submodel(submodelId)
-    return { items: submodelChildren(submodel).map(child => toElementNode(child)) }
+  let parent: JsonObject | JsonObject[] | undefined
+  if (at) {
+    await requireCapability(opened, 'history')
+    const submodel = await opened.target.submodelAt(submodelId, new Date(at).toISOString())
+    if (steps.length === 0) {
+      return { items: buildLevels(submodelChildren(submodel), budget) }
+    }
+    // The submodel's elements, addressed like the children of a collection.
+    parent = navigate({ modelType: 'SubmodelElementCollection', value: submodel.submodelElements }, steps)
+  } else if (steps.length === 0) {
+    return { items: buildLevels(submodelChildren(await opened.target.submodel(submodelId)), budget) }
+  } else {
+    const { idShortPath, rest } = splitAddressable(steps)
+    parent = navigate((await opened.target.element(submodelId, idShortPath)).value, rest)
   }
-
-  const steps = parseLocator(decodeKey(parentElementKey, 'element key'))
-  const { idShortPath, rest } = splitAddressable(steps)
-  const parent = navigate((await target.element(submodelId, idShortPath)).value, rest)
-  if (!parent) {
+  if (parent === undefined) {
     throw new StudioProblem('target_resource_not_found')
   }
-  return { items: childrenOf(parent, steps).map(child => toElementNode(child)) }
+  return { items: buildLevels(childrenOf(parent, steps), budget) }
 })

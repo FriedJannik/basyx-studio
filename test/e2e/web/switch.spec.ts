@@ -19,12 +19,15 @@ test('switching targets never shows data of the previous target', async ({ page 
   await page.goto('/')
   await page.getByText('E2E switch open').click()
   await expect(page).toHaveURL(new RegExp(`/targets/${open}$`))
-  await page.getByRole('link', { name: 'AAS targets' }).click()
+  await page.getByRole('link', { name: 'Open shells' }).click()
+  await expect(page).toHaveURL(new RegExp(`/targets/${open}/shells$`))
+  await page.getByRole('link', { name: 'AAS targets' }).first().click()
   await page.getByText('E2E switch secured').click()
-  await expect(page).toHaveURL(new RegExp(`/targets/${secured}$`))
+  await page.getByRole('link', { name: 'Open shells' }).click()
+  await expect(page).toHaveURL(new RegExp(`/targets/${secured}/shells$`))
 
   // Give the delayed answer time to arrive; it must not replace the secured list.
   await page.waitForTimeout(2000)
   await expect(page.getByText('EdgeCasesShell')).toHaveCount(0)
-  await expect(page.getByText('urn:studio:test:secured:aas:public')).toBeVisible()
+  await expect(page.getByText('SecuredPublicShell').first()).toBeVisible()
 })

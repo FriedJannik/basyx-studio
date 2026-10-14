@@ -34,9 +34,12 @@ export async function resolveSubmodelRefs (target: AasTarget, ids: string[]): Pr
         if (error.code === 'target_auth_required' || error.code === 'target_credentials_rejected') {
           throw error
         }
-        const status = error.code === 'target_forbidden'
-          ? 'forbidden'
-          : (error.code === 'target_resource_not_found' ? 'not_found' : 'error')
+        const statuses: Partial<Record<typeof error.code, SubmodelRef['status']>> = {
+          target_forbidden: 'forbidden',
+          target_resource_not_found: 'not_found',
+          descriptor_endpoint_blocked: 'blocked',
+        }
+        const status = statuses[error.code] ?? 'error'
         items[index] = { ...base, status }
       }
     }

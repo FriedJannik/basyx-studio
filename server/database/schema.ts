@@ -1,4 +1,4 @@
-import type { EndpointInput, SecuritySummary } from '#shared/contract'
+import type { ClientCertificateSummary, EndpointInput, InfrastructureTemplate, ListSource, Preferences, SecuritySummary, ServiceProfiles, SyncSettings } from '#shared/contract'
 import type { AppManifest } from '@basyx/studio-sdk/protocol'
 import { boolean, customType, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
@@ -13,10 +13,20 @@ export const infrastructures = pgTable('infrastructures', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
+  template: text('template').$type<InfrastructureTemplate>().notNull().default('full'),
   endpoints: jsonb('endpoints').$type<EndpointInput[]>().notNull(),
+  listSource: text('list_source').$type<ListSource>().notNull().default('registry'),
+  sync: jsonb('sync').$type<SyncSettings>().notNull().default({ serverSyncsRegistry: true, serverSyncsDiscovery: true, studioDefault: 'autoCreate', userOverride: false }),
+  /** `/description` profiles per endpoint at the last probe (MVP-4 plan, I6). */
+  serviceProfiles: jsonb('service_profiles').$type<ServiceProfiles>().notNull().default({}),
+  probedAt: timestamp('probed_at', { withTimezone: true }),
   security: jsonb('security').$type<StoredSecurity>().notNull(),
   /** Encrypted client secret for desktop `stored` secrets; never returned by the API. */
   secretCiphertext: text('secret_ciphertext'),
+  /** TLS client certificate (mutual TLS) without its material; `null` without one. */
+  clientCertificate: jsonb('client_certificate').$type<ClientCertificateSummary>(),
+  /** Encrypted PKCS#12 bundle and passphrase of desktop `stored` certificates; never returned by the API. */
+  clientCertificateCiphertext: text('client_certificate_ciphertext'),
   allowPrivateNetwork: boolean('allow_private_network').notNull().default(false),
   revision: integer('revision').notNull().default(1),
   createdBy: text('created_by').notNull(),
@@ -93,6 +103,8 @@ export const appInstallations = pgTable('app_installations', {
   /** The validated manifest, as installed. */
   manifest: jsonb('manifest').$type<AppManifest>().notNull(),
   unsigned: boolean('unsigned').notNull(),
+  /** Shipped with Studio and installed at startup (ADR 0023); not uninstallable by users. */
+  bundled: boolean('bundled').notNull().default(false),
   installedBy: text('installed_by').notNull(),
   installedAt: timestamp('installed_at', { withTimezone: true }).notNull().defaultNow(),
 }, table => [uniqueIndex('app_installations_app_id_idx').on(table.appId)])
@@ -110,3 +122,10 @@ export const appFiles = pgTable('app_files', {
   digest: text('digest').notNull().references(() => appBlobs.digest),
   contentType: text('content_type').notNull(),
 }, table => [primaryKey({ columns: [table.installationId, table.path] }), index('app_files_digest_idx').on(table.digest)])
+
+/** Per-user preferences (recent shells, display settings), keyed by the user's subject. */
+export const userPreferences = pgTable('user_preferences', {
+  subject: text('subject').primaryKey(),
+  preferences: jsonb('preferences').$type<Preferences>().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})

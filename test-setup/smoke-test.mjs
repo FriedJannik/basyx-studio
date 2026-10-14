@@ -232,6 +232,34 @@ await check('open: submodel elements carry a strong ETag', async () => {
   return etag
 })
 
+const historyProfiles = [
+  'https://admin-shell.io/aas/API/3/2/AssetAdministrationShellRepositoryServiceSpecification/SSP-006',
+  'https://admin-shell.io/aas/API/3/2/SubmodelRepositoryServiceSpecification/SSP-007',
+]
+const eventFeedProfile = 'https://basyx.org/aas/API/3/2/EventFeed/1.0'
+
+async function expectOptionalFeatures (url) {
+  const { body } = await expectStatus(`${url}/description`, undefined, 200)
+  const missing = [...historyProfiles, eventFeedProfile].filter(profile => !body.profiles?.includes(profile))
+  expect(missing.length === 0, `missing profiles: ${missing.join(', ')}`)
+  return 'history, event feed'
+}
+
+await check('open: /description announces history and the event feed', () => expectOptionalFeatures(openUrl))
+
+await check('open: a submodel can be read as it was at a point in time', async () => {
+  const date = new Date().toISOString()
+  const { body } = await expectStatus(`${openUrl}/submodels/${edgeSm}/$history?date=${encodeURIComponent(date)}`, undefined, 200)
+  expect(body.id === 'urn:studio:test:sm:edge-cases', `got ${body.id}`)
+  return 'ok'
+})
+
+await check('open: the event feed lists events', async () => {
+  const { body } = await expectStatus(`${openUrl}/events?limit=1`, undefined, 200)
+  expect(Array.isArray(body.records), 'no records array')
+  return `${body.records.length} event(s) on the first page`
+})
+
 // --- Target "secured" ----------------------------------------------------------
 
 await check('secured: health without token', () => expectStatus(`${securedUrl}/health`, undefined, 200).then(() => 'UP'))
@@ -300,6 +328,17 @@ await check('secured: alice (basyx-reader) may not update values', async () => {
   const update = await request('PATCH', `${serialNumber}/$value`, tokens.alice, { body: 'SEC-0001' })
   expect(update.status === 403, `expected HTTP 403, got ${update.status}`)
   return '403'
+})
+
+await check('secured: /description announces history and the event feed', () => expectOptionalFeatures(securedUrl))
+
+await check('secured: alice reads the history of the public nameplate', () =>
+  expectStatus(`${securedUrl}/submodels/${b64url('urn:studio:test:secured:sm:public-nameplate')}/$history?date=${encodeURIComponent(new Date().toISOString())}`, tokens.alice, 200).then(() => '200'))
+
+await check('secured: alice reads the event feed, bob is denied', async () => {
+  await expectStatus(`${securedUrl}/events?limit=1`, tokens.alice, 200)
+  await expectStatus(`${securedUrl}/events?limit=1`, tokens.bob, 403)
+  return '200 / 403'
 })
 
 // --- Report ----------------------------------------------------------------------

@@ -26,6 +26,7 @@ const envSchema = z.object({
   STUDIO_APPS_URL: z.url({ protocol: /^https?$/ }).optional(),
   STUDIO_APPS_ALLOW_UNSIGNED: z.enum(['true', 'false']).optional(),
   STUDIO_DENO_PATH: z.string().min(1).optional(),
+  STUDIO_UPLOAD_MAX_BYTES: z.coerce.number().int().positive().max(2 * 1024 * 1024 * 1024).default(100 * 1024 * 1024),
   NITRO_HOST: z.string().optional(),
   NITRO_PORT: z.coerce.number().int().optional(),
   PORT: z.coerce.number().int().optional(),
@@ -69,6 +70,8 @@ export interface StudioConfig {
   allowPrivateNetworkTargets: boolean
   secureCookies: boolean
   apps: StudioAppsConfig
+  /** Largest AASX, JSON or XML file users may upload to a target (D16). */
+  uploadMaxBytes: number
 }
 
 export class ConfigurationError extends Error {}
@@ -165,5 +168,6 @@ export function loadStudioConfig (env: NodeJS.ProcessEnv, deploymentMode: Deploy
       capabilityUrl: `http://127.0.0.1:${port}`,
       workDir: resolve(values.STUDIO_DATA_DIR, 'app-backends'),
     },
+    uploadMaxBytes: values.STUDIO_UPLOAD_MAX_BYTES,
   }
 }

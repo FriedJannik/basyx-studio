@@ -95,3 +95,16 @@ export function splitAddressable (steps: readonly LocatorStep[]): { idShortPath:
     rest: firstVariables === -1 ? [] : steps.slice(firstVariables),
   }
 }
+
+/** The label of a locator step as the tree shows it: idShort, `[index]` or the variable group. */
+function stepLabel (step: LocatorStep): string {
+  if (step.kind === 'idShort') {
+    return step.idShort
+  }
+  return step.kind === 'index' ? `[${step.index}]` : step.group
+}
+
+/** The elements above a locator, top-down, with the keys the tree uses for them. */
+export function ancestorsOf (steps: readonly LocatorStep[]): Array<{ key: string, label: string }> {
+  return steps.slice(0, -1).map((step, index) => ({ key: encodeKey(formatLocator(steps.slice(0, index + 1))), label: stepLabel(step) }))
+}

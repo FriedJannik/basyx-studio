@@ -3,6 +3,8 @@ packages:
   # The Studio SDK for app authors and the example apps (MVP-3).
   - "packages/*"
   - "examples/apps/*"
+  # Apps shipped with Studio (ADR 0023).
+  - "apps/*"
 
 storeDir: ../.pnpm-store
 minimumReleaseAge: 1440
@@ -11,7 +13,7 @@ minimumReleaseAgeStrict: true
 # delay ends, by exact version only (ADR 0012). Entries may be removed once the
 # version is older than 24 hours.
 minimumReleaseAgeExclude:
-  - basyx-typescript-sdk@2.3.0
+  - basyx-typescript-sdk@2.4.0
 strictDepBuilds: true
 blockExoticSubdeps: true
 trustLockfile: false

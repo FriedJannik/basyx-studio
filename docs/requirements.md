@@ -50,6 +50,10 @@ Priority terms follow this meaning:
 | DATA-014 | Must | Cross-target copy shall leave the source unchanged, report each created/skipped/failed resource, and never imply atomicity across independent infrastructures. |
 | DATA-015 | Should | Cross-target copy commands shall support idempotency and safe retry so interrupted transfers do not silently create inconsistent duplicates. |
 | DATA-016 | Must | Browser and Electron renderer features shall use the same versioned Studio API and target contract; they shall not access BaSyx services or the desktop package engine directly. |
+| DATA-017 | Must | Studio shall resolve shells and submodels through the infrastructure's registries where configured, and shall contact descriptor endpoints only under the infrastructure's configured base URLs. |
+| DATA-018 | Must | Studio shall offer optional server features (history, change feed, sharing, queries) only where the server announces them in its service profiles. |
+| DATA-019 | Should | Studio shall search shells and submodel elements on the server with the AAS Query Language where supported, and say when it can only filter loaded data. |
+| DATA-020 | Should | After uploads and deletes, Studio shall keep registries and discovery in step where the server does not, as the infrastructure (or, where allowed, the user) chooses, and report each entry's outcome. |
 
 ## Runtime-installable apps
 
@@ -138,6 +142,7 @@ Priority terms follow this meaning:
 | UX-003 | Must | Destructive operations shall require clear context and confirmation where recovery is not immediate. |
 | UX-004 | Should | Remote infrastructure and local workspace pickers shall share a consistent select-review-open/connect interaction model. |
 | UX-005 | Should | Studio shall distinguish saved server/package state from unsaved editor drafts. |
+| UX-006 | Must | Changing AAS data shall need an explicit edit mode; view mode shall offer no edit controls, in Studio and in apps. |
 
 ## Explicit non-goals for the first product increment
 
