@@ -78,10 +78,10 @@
 </template>
 
 <script lang="ts" setup>
-  import type { ElementHit, ElementSearchResult, Page, ShellSearchPage, ShellSummary } from '#shared/contract'
-  import { useQueryCache } from '@pinia/colada'
+  import type { ElementHit, ElementSearchResult, Page, ShellSearchPage, ShellSummary, Target } from '#shared/contract'
+  import { useQuery, useQueryCache } from '@pinia/colada'
   import { useDisplay, useTheme } from 'vuetify'
-  import { decodeResourceKey, langText, modelTypeIcon } from '~/utils/aas'
+  import { decodeResourceKey, langText, modelTypeIcon, targetIcon, targetSubtitle } from '~/utils/aas'
 
   const props = defineProps<{ targetId: string | null }>()
 
@@ -102,6 +102,7 @@
   const api = useStudioApi()
   const session = useSessionStore()
   const ui = useUiStore()
+  const panel = usePanel()
   const preferences = usePreferences()
   const target = useTarget(() => props.targetId ?? '')
 
@@ -112,6 +113,13 @@
   const found = ref<{ shells: ShellSummary[], elements: ElementHit[] }>({ shells: [], elements: [] })
   const lookedUp = ref<ShellSummary[] | null>(null)
   const queryCache = useQueryCache()
+
+  // The targets page's query, loaded once the palette opens.
+  const targets = useQuery({
+    key: ['targets'],
+    query: ({ signal }) => api<{ items: Target[] }>('/targets', { signal }),
+    enabled: () => ui.commandOpen && !session.needsLogin,
+  })
 
   const trimmed = computed(() => query.value.trim())
   const looksLikeAssetId = computed(() => /[:/]/.test(trimmed.value))
@@ -132,12 +140,14 @@
     void router.push({ path: `/targets/${props.targetId}/shells/${shellKey}`, query: location })
   }
 
+  const structureActions = useStructureActionsStore()
+
   const actions = computed<PaletteItem[]>(() => {
     const base = props.targetId ? `/targets/${props.targetId}` : null
     const items: PaletteItem[] = [
       { key: 'theme', group: '', title: t('palette.actions.theme'), icon: 'mdi-theme-light-dark', run: () => preferences.update(current => ({ ...current, theme: theme.current.value.dark ? 'light' : 'dark' })) },
       { key: 'targets', group: '', title: t('palette.actions.targets'), icon: 'mdi-server-network', run: () => router.push('/') },
-      { key: 'settings', group: '', title: t('palette.actions.settings'), icon: 'mdi-cog-outline', run: () => router.push('/settings') },
+      { key: 'settings', group: '', title: t('palette.actions.settings'), icon: 'mdi-cog-outline', run: () => panel.open('settings') },
     ]
     if (base) {
       items.push(
@@ -149,8 +159,12 @@
         items.push({ key: 'concepts', group: '', title: t('palette.actions.concepts'), icon: 'mdi-book-open-page-variant-outline', run: () => router.push(`${base}/concepts`) })
       }
     }
+    // The selected node's structure actions, in edit mode.
+    if (ui.editing) {
+      items.push(...structureActions.actions.map(action => ({ ...action, group: '' })))
+    }
     if (session.isAdmin) {
-      items.push({ key: 'infrastructures', group: '', title: t('palette.actions.infrastructures'), icon: 'mdi-server-plus-outline', run: () => router.push('/admin/infrastructures') })
+      items.push({ key: 'infrastructures', group: '', title: t('palette.actions.infrastructures'), icon: 'mdi-server-plus-outline', run: () => panel.open('infrastructures') })
     }
     return items.map(item => ({ ...item, group: t('palette.groups.actions') }))
   })
@@ -210,7 +224,30 @@
       icon: modelTypeIcon(hit.modelType),
       run: () => openShell(hit.shellKey!, { submodel: hit.submodelKey, element: hit.elementKey }),
     }))
-    items.push(...shells, ...elements, ...actions.value.filter(action => !needle || action.title.toLowerCase().includes(needle)))
+    // Targets by name or description; without a search, all of them outside a
+    // target, so the palette switches targets. Enter opens a target's shells,
+    // which starts its authorization first where it needs one.
+    const matchingTargets = (targets.data.value?.items ?? [])
+      .filter(item => item.id !== props.targetId)
+      .filter(item => needle ? [item.name, item.description].some(value => value?.toLowerCase().includes(needle)) : !props.targetId)
+      .slice(0, needle ? 6 : 8)
+      .map(item => ({
+        key: `target:${item.id}`,
+        group: t('palette.groups.targets'),
+        title: item.name,
+        subtitle: targetSubtitle(item, t('landing.subtitle')),
+        icon: targetIcon(item),
+        run: () => router.push(`/targets/${item.id}/shells`),
+      }))
+    // Outside a target, targets are what the palette is mostly for, so they come first.
+    if (!props.targetId) {
+      items.push(...matchingTargets)
+    }
+    items.push(...shells, ...elements)
+    if (props.targetId) {
+      items.push(...matchingTargets)
+    }
+    items.push(...actions.value.filter(action => !needle || action.title.toLowerCase().includes(needle)))
     return items
   })
 

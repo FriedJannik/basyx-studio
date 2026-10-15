@@ -60,8 +60,8 @@ test('filters the tree, opens details and remembers the shell for the user', asy
 
 test('searches elements across shells with the command palette', async ({ page }) => {
   await page.goto(`/targets/${targetId}`)
-  await page.getByRole('button', { name: /Search shells, elements, actions/ }).click()
-  await page.getByPlaceholder('Search shells, elements, asset IDs, actions…').fill('SerialNumber')
+  await page.getByRole('button', { name: /Search shells, elements, targets/ }).click()
+  await page.getByPlaceholder('Search shells, elements, asset IDs, targets, actions…').fill('SerialNumber')
   await page.getByRole('option').or(page.getByRole('listitem')).filter({ hasText: 'EdgeCasesShell' }).first().click()
   await expect(page).toHaveURL(/\/shells\/.+element=/)
   await expect(page.getByText('Motor.SerialNumber')).toBeVisible()
@@ -121,7 +121,7 @@ test('lists concept descriptions and saves settings per user', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'Concept descriptions' })).toBeVisible()
   await expect(page.locator('tbody tr').first()).toBeVisible()
 
-  await page.goto('/settings')
+  await page.goto(`/targets/${targetId}/concepts?panel=settings`)
   await page.getByRole('button', { name: 'Dark' }).click()
   await page.reload()
   await expect(page.locator('.v-application')).toHaveClass(/v-theme--dark/)

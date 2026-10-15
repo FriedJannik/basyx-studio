@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { conceptDescriptionSources } from '../search/expression'
 import { securityModeSchema, syncModes } from './infrastructure'
 
 export const authenticationStates = ['not_required', 'authenticated', 'required'] as const
@@ -25,13 +26,28 @@ export const searchModes = ['query', 'expression', 'filter'] as const
  *   Studio detects on the target; they are `false` until detected.
  */
 export const targetCapabilitiesSchema = z.object({
+  /** Change values of elements (`writeValues` of the MVP-5 plan, P1). */
   write: z.boolean(),
+  /** Add, delete, move and rename elements and edit submodel metadata. */
+  writeStructure: z.boolean(),
+  /** Create shells and submodels, change shell metadata and submodel references. */
+  createResources: z.boolean(),
+  /** Children of collections keep the order Studio gives them (list items always do). */
+  orderedChildren: z.boolean(),
+  /** Undo and redo of applied changes (workspaces only, MVP-5 plan, W8). */
+  undo: z.boolean(),
   persistence: z.enum(['immediate', 'explicit_save']),
   deleteShells: z.boolean(),
   /** Read File elements and thumbnails, and replace File contents. */
   files: z.boolean(),
   operations: z.boolean(),
   conceptDescriptions: z.boolean(),
+  /**
+   * How concept descriptions are searched (MVP-6 plan, S1): `query` on the
+   * repository's query endpoint, `expression` by Studio (workspaces), or
+   * `filter` on the loaded list only.
+   */
+  conceptDescriptionSearch: z.enum(searchModes),
   search: z.enum(searchModes),
   /** Where shell queries run (`search: query`); raw queries use that endpoint's roots. */
   queryTarget: z.enum(['registry', 'repository']).nullable(),
@@ -57,11 +73,16 @@ export type TargetCapabilities = z.infer<typeof targetCapabilitiesSchema>
 /** Nothing is offered; used while a target is unknown or not loaded. */
 export const noCapabilities: TargetCapabilities = {
   write: false,
+  writeStructure: false,
+  createResources: false,
+  orderedChildren: false,
+  undo: false,
   persistence: 'immediate',
   deleteShells: false,
   files: false,
   operations: false,
   conceptDescriptions: false,
+  conceptDescriptionSearch: 'filter',
   search: 'filter',
   queryTarget: null,
   elementSearch: false,
@@ -78,6 +99,10 @@ export const noCapabilities: TargetCapabilities = {
 export const workspaceStateSchema = z.object({
   fileName: z.string(),
   unsavedChanges: z.boolean(),
+  /** A package that was never saved: *Save* is *Save as*. */
+  isNew: z.boolean().optional(),
+  canUndo: z.boolean().optional(),
+  canRedo: z.boolean().optional(),
 })
 export type WorkspaceState = z.infer<typeof workspaceStateSchema>
 
@@ -140,6 +165,8 @@ export type ShellSummary = z.infer<typeof shellSummarySchema>
 export const shellDetailSchema = z.object({
   key: z.string(),
   shell: z.record(z.string(), z.unknown()),
+  /** Revision of the shell's metadata and asset information (not its submodel references), for `PUT`. */
+  revision: z.string().nullable().optional(),
 })
 export type ShellDetail = z.infer<typeof shellDetailSchema>
 
@@ -156,6 +183,8 @@ export type ShellAvailability = z.infer<typeof shellAvailabilitySchema>
 export const submodelRefStatuses = ['available', 'forbidden', 'not_found', 'blocked', 'error'] as const
 export const submodelRefSchema = z.object({
   key: z.string(),
+  /** `Template` or `Instance`, where the submodel could be read. */
+  kind: z.string().nullable().optional(),
   submodelId: z.string(),
   idShort: z.string().nullable(),
   semanticId: z.string().nullable(),
@@ -182,6 +211,8 @@ export type ElementNode = z.infer<typeof elementNodeSchema>
 export const submodelDetailSchema = z.object({
   key: z.string(),
   submodel: z.record(z.string(), z.unknown()),
+  /** Revision of the submodel's metadata, for `PUT` (MVP-5 plan, W1); absent for historic or full reads. */
+  revision: z.string().nullable().optional(),
 })
 export type SubmodelDetail = z.infer<typeof submodelDetailSchema>
 
@@ -211,6 +242,12 @@ export const elementDetailSchema = z.object({
   concurrency: z.enum(concurrencyModes).nullable(),
   /** The elements above it, from the submodel's top level down, for opening its path in the tree. */
   ancestors: z.array(z.object({ key: z.string(), label: z.string() })),
+  /**
+   * Revision of the element's children (idShorts, types and order, not
+   * their values) that adding, moving and reordering are based on; `null`
+   * for elements without children.
+   */
+  structureRevision: z.string().nullable().optional(),
 })
 export type ElementDetail = z.infer<typeof elementDetailSchema>
 
@@ -241,6 +278,36 @@ export interface TreeNode extends ElementNode {
   /** Loaded children; absent with `hasChildren` when they follow on demand. */
   children?: TreeNode[]
 }
+
+/**
+ * A new element below `parentElementKey` (the submodel's top level without
+ * it), at `index` (appended without it). Based on the parent's structure
+ * revision (`If-Match`).
+ */
+export const elementCreateSchema = z.object({
+  parentElementKey: z.string().max(4000).optional(),
+  index: z.number().int().min(0).optional(),
+  element: z.record(z.string(), z.unknown()),
+})
+export type ElementCreateInput = z.infer<typeof elementCreateSchema>
+
+/** The element as it should be, including a new idShort. Based on the element's revision. */
+export const elementReplaceSchema = z.object({
+  element: z.record(z.string(), z.unknown()),
+})
+export type ElementReplaceInput = z.infer<typeof elementReplaceSchema>
+
+/** Moves an element to `index` among its siblings; based on the parent's structure revision. */
+export const elementMoveSchema = z.object({
+  index: z.number().int().min(0),
+})
+export type ElementMoveInput = z.infer<typeof elementMoveSchema>
+
+/** Submodel metadata; the elements are kept as they are. */
+export const submodelReplaceSchema = z.object({
+  submodel: z.record(z.string(), z.unknown()),
+})
+export type SubmodelReplaceInput = z.infer<typeof submodelReplaceSchema>
 
 export const pointInTimeQuerySchema = z.object({
   /** Point in time (ISO 8601) for a historic version; needs the `history` capability. */
@@ -281,6 +348,37 @@ export const conceptDescriptionSummarySchema = z.object({
 })
 export type ConceptDescriptionSummary = z.infer<typeof conceptDescriptionSummarySchema>
 
+/** One concept description with the revision a write must be based on (MVP-6 plan, W1). */
+export const conceptDescriptionDetailSchema = z.object({
+  key: z.string(),
+  conceptDescription: z.record(z.string(), z.unknown()),
+  revision: z.string().nullable(),
+})
+export type ConceptDescriptionDetail = z.infer<typeof conceptDescriptionDetailSchema>
+
+/** A new or edited concept description; AAS Core checks it on the server. */
+export const conceptDescriptionInputSchema = z.object({
+  conceptDescription: z.record(z.string(), z.unknown()),
+})
+export type ConceptDescriptionInput = z.infer<typeof conceptDescriptionInputSchema>
+
+/** A concept description as JSON (`ConceptDescriptionDetail`) or as AAS XML. */
+export const conceptDescriptionQuerySchema = z.object({
+  format: z.enum(['json', 'xml']).default('json'),
+})
+
+/**
+ * How many submodels and elements reference a concept description by their
+ * semantic ID (MVP-6 plan, L5). `checked` is false where the target cannot
+ * search for it; `truncated` where it stopped counting.
+ */
+export interface ConceptDescriptionUsages {
+  checked: boolean
+  submodels: number
+  elements: number
+  truncated: boolean
+}
+
 /** A submodel element that matched a search, with where to find it. */
 export interface ElementHit {
   shellKey: string | null
@@ -295,14 +393,17 @@ export interface ElementHit {
 
 /** A shell search (MVP-4 plan, S2): the search field's expression, or a raw query from the advanced dialog. */
 export const searchRequestSchema = z.object({
-  scope: z.enum(['shells', 'elements']).default('shells'),
+  scope: z.enum(['shells', 'elements', 'conceptDescriptions']).default('shells'),
+  /** Concept descriptions only: the sources to narrow to (MVP-6 plan, S1). */
+  sources: z.array(z.enum(conceptDescriptionSources)).max(4).optional(),
   expression: z.string().max(2000).optional(),
   query: z.record(z.string(), z.unknown()).optional(),
   limit: z.number().int().min(1).max(200).default(50),
   cursor: z.string().max(4000).optional(),
 })
   .refine(input => (input.expression === undefined) !== (input.query === undefined), 'give either an expression or a query')
-  .refine(input => input.scope === 'shells' || input.expression !== undefined, 'elements are searched by text')
+  .refine(input => input.scope !== 'elements' || input.expression !== undefined, 'elements are searched by text')
+  .refine(input => input.scope === 'conceptDescriptions' || input.sources === undefined, 'only concept descriptions are filtered by source')
 export type SearchRequest = z.input<typeof searchRequestSchema>
 
 export type ShellSearch = { expression: string } | { query: Record<string, unknown> }
@@ -326,9 +427,9 @@ export const exportQuerySchema = z.object({ format: z.enum(exportFormats) })
 
 /** The outcome of one descriptor or asset-link write after an upload or delete (MVP-4 plan, I5). */
 export interface SyncStep {
-  resource: 'shellDescriptor' | 'submodelDescriptor' | 'assetLinks'
+  resource: 'submodel' | 'shell' | 'submodelReference' | 'shellDescriptor' | 'submodelDescriptor' | 'assetLinks'
   id: string
-  outcome: 'written' | 'removed' | 'failed'
+  outcome: 'written' | 'removed' | 'failed' | 'skipped'
   detail?: string
 }
 
@@ -436,3 +537,113 @@ export interface InvitationResult {
   token: string
   expiresAt: string
 }
+
+// Creating shells and submodels, instances and templates (MVP-5 plan, W4,
+// T1-T5). Studio writes whole resources; the shell never carries its
+// submodel references in a metadata write.
+
+export const submodelSourceSchema = z.discriminatedUnion('source', [
+  z.object({
+    source: z.literal('empty'),
+    idShort: z.string().min(1).max(128),
+    id: z.string().min(1).max(2000).optional(),
+    /** The submodel's other fields: names, description, category, semantic ID, kind. */
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  }),
+  z.object({
+    source: z.literal('template'),
+    /** `bundled:<name>` or `target:<submodelKey>` (a Template-kind submodel on the target). */
+    templateId: z.string().min(1).max(4000),
+    id: z.string().min(1).max(2000).optional(),
+    idShort: z.string().min(1).max(128).optional(),
+    /** Names, description, category and semantic ID that replace the template's. */
+    metadata: z.record(z.string(), z.unknown()).optional(),
+    /** Paths of the optional elements to keep. */
+    include: z.array(z.string().max(1000)).max(5000).optional(),
+    /** Values by element path. */
+    values: z.record(z.string().max(1000), z.string().max(100_000)).optional(),
+  }),
+  z.object({
+    source: z.literal('json'),
+    submodel: z.record(z.string(), z.unknown()),
+    id: z.string().min(1).max(2000).optional(),
+  }),
+  z.object({
+    source: z.literal('existing'),
+    id: z.string().min(1).max(2000),
+  }),
+])
+export type SubmodelSource = z.infer<typeof submodelSourceSchema>
+
+/** A new shell, optionally with new submodels (the creation wizard). Without `shell.id` one is generated. */
+export const shellCreateSchema = z.object({
+  shell: z.record(z.string(), z.unknown()),
+  submodels: z.array(submodelSourceSchema).max(50).default([]),
+})
+export type ShellCreateInput = z.infer<typeof shellCreateSchema>
+
+/** The shell's metadata and asset information; the submodel references are kept. */
+export const shellReplaceSchema = z.object({
+  shell: z.record(z.string(), z.unknown()),
+})
+export type ShellReplaceInput = z.infer<typeof shellReplaceSchema>
+
+/** Adds a submodel to a shell: a new one, or a reference to an existing one. */
+export const submodelRefCreateSchema = z.object({
+  submodel: submodelSourceSchema,
+})
+export type SubmodelRefCreateInput = z.infer<typeof submodelRefCreateSchema>
+
+export const submodelRefDeleteQuerySchema = z.object({
+  deleteSubmodel: z.enum(['true', 'false']).default('false').transform(value => value === 'true'),
+})
+
+/** An instance from a type shell (T4): the submodels to copy (all by default) and the new shell's fields. */
+export const instanceCreateSchema = z.object({
+  shell: z.record(z.string(), z.unknown()).default({}),
+  submodelIds: z.array(z.string().min(1).max(2000)).max(100).optional(),
+})
+export type InstanceCreateInput = z.infer<typeof instanceCreateSchema>
+
+/** A dry run: AAS Core findings for a JSON value, nothing is written. */
+export const validationInputSchema = z.object({
+  kind: z.enum(['element', 'submodel', 'shell', 'conceptDescription']),
+  value: z.unknown(),
+})
+export type ValidationInput = z.infer<typeof validationInputSchema>
+
+export interface ValidationResult {
+  violations: Array<{ path: string, message: string }>
+}
+
+/** A shell with the steps that created it (submodels first, then the shell, then registries). */
+export interface ShellCreateResult {
+  shell: ShellSummary
+  steps: SyncStep[]
+}
+
+export interface SubmodelTemplate {
+  id: string
+  title: string
+  semanticId: string | null
+  source: 'bundled' | 'target'
+  /** What a template is: a submodel, or a collection that gets a submodel around it. */
+  version: string | null
+}
+
+export interface SubmodelTemplateFields {
+  id: string
+  title: string
+  fields: Array<{
+    path: string
+    label: string
+    modelType: string
+    valueType: string | null
+    required: boolean
+    input: boolean
+    depth: number
+  }>
+}
+
+/** A new, empty workspace (MVP-5 plan, P4). */
+export const newWorkspaceInputSchema = z.object({ empty: z.literal(true) })

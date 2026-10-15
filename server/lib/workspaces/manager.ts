@@ -38,7 +38,7 @@ export function toWorkspaceTarget (info: WorkspaceInfo): Target {
     securityMode: null,
     authenticationState: 'not_required',
     capabilities: workspaceCapabilities,
-    workspace: { fileName: info.fileName, unsavedChanges: info.unsavedChanges },
+    workspace: { fileName: info.fileName, unsavedChanges: info.unsavedChanges, isNew: info.isNew, canUndo: info.canUndo, canRedo: info.canRedo },
     registrySync: null,
   }
 }
@@ -56,6 +56,7 @@ class WorkspaceAasTarget implements AasTarget {
   // A workspace has no registries or discovery.
   registerShells = noSync
   unregisterShell = noSync
+  unregisterSubmodels = noSync
   submodelAt = unsupported
   changes = unsupported
   access = unsupported
@@ -74,6 +75,31 @@ class WorkspaceAasTarget implements AasTarget {
   setElementValue: AasTarget['setElementValue'] = (submodelId, idShortPath, value, revision) =>
     this.#call('setElementValue', submodelId, idShortPath, value, revision)
 
+  addElement: AasTarget['addElement'] = (submodelId, parentPath, element, index, structureRevision) =>
+    this.#call('addElement', submodelId, parentPath, element, index, structureRevision)
+
+  replaceElement: AasTarget['replaceElement'] = (submodelId, idShortPath, element, revision) =>
+    this.#call('replaceElement', submodelId, idShortPath, element, revision)
+
+  deleteElement: AasTarget['deleteElement'] = (submodelId, idShortPath, revision) =>
+    this.#call('deleteElement', submodelId, idShortPath, revision)
+
+  moveElement: AasTarget['moveElement'] = (submodelId, idShortPath, index, structureRevision) =>
+    this.#call('moveElement', submodelId, idShortPath, index, structureRevision)
+
+  replaceSubmodelMetadata: AasTarget['replaceSubmodelMetadata'] = (submodelId, metadata, revision) =>
+    this.#call('replaceSubmodelMetadata', submodelId, metadata, revision)
+
+  undo = () => this.#call('undo')
+  redo = () => this.#call('redo')
+  setThumbnail = (shellId: string, file: BinaryContent) => this.#call('setThumbnail', shellId, file)
+  createSubmodel = (submodel: JsonObject) => this.#call('createSubmodel', submodel)
+  deleteSubmodel = (id: string) => this.#call('deleteSubmodel', id)
+  createShell = (shell: JsonObject) => this.#call('createShell', shell)
+  replaceShell = (id: string, shell: JsonObject, revision: string) => this.#call('replaceShell', id, shell, revision)
+  replaceSubmodel = (id: string, submodel: JsonObject, revision: string) => this.#call('replaceSubmodel', id, submodel, revision)
+  addSubmodelRef = (shellId: string, submodelId: string) => this.#call('addSubmodelRef', shellId, submodelId)
+  removeSubmodelRef = (shellId: string, submodelId: string) => this.#call('removeSubmodelRef', shellId, submodelId)
   deleteShell = (id: string) => this.#call('deleteShell', id)
   thumbnail = (shellId: string) => this.#call('thumbnail', shellId)
   attachment = (submodelId: string, idShortPath: string) => this.#call('attachment', submodelId, idShortPath)
@@ -81,6 +107,21 @@ class WorkspaceAasTarget implements AasTarget {
     this.#call('replaceAttachment', submodelId, idShortPath, file, revision)
 
   conceptDescriptions = (limit: number, cursor: string | undefined) => this.#call('conceptDescriptions', limit, cursor)
+  conceptDescription = (id: string) => this.#call('conceptDescription', id)
+  /** Workspaces have no query endpoint; raw queries are not offered (`conceptDescriptionSearch: expression`). */
+  searchConceptDescriptions: AasTarget['searchConceptDescriptions'] = async (search, sources, limit, cursor) => {
+    if (!('expression' in search)) {
+      throw new StudioProblem('query_unsupported', 'AASX packages are searched with the search field only.')
+    }
+    return this.#call('searchConceptDescriptions', search.expression, sources, limit, cursor)
+  }
+
+  createConceptDescription = (conceptDescription: JsonObject) => this.#call('createConceptDescription', conceptDescription)
+  replaceConceptDescription = (id: string, conceptDescription: JsonObject, revision: string) =>
+    this.#call('replaceConceptDescription', id, conceptDescription, revision)
+
+  deleteConceptDescription = (id: string, revision: string) => this.#call('deleteConceptDescription', id, revision)
+  conceptDescriptionUsages = (id: string) => this.#call('conceptDescriptionUsages', id)
   /** Workspaces have no query endpoint; raw queries are not offered (`search: expression`). */
   searchShells: AasTarget['searchShells'] = async (search, limit, cursor) => {
     if (!('expression' in search)) {
@@ -130,6 +171,11 @@ export class WorkspaceManager {
 
   async open (handle: string): Promise<WorkspaceInfo> {
     return this.client.request({ op: 'open', path: this.#take(handle, 'open') })
+  }
+
+  /** A new, empty package (P4); it is saved with *Save as*. */
+  create (): Promise<WorkspaceInfo> {
+    return this.client.request({ op: 'create' })
   }
 
   list (): Promise<WorkspaceInfo[]> {

@@ -35,12 +35,12 @@ async function editSerialNumber (value: string, select = true) {
   if (select) {
     await window.getByRole('tree').getByText('SerialNumber', { exact: true }).click()
   }
-  // Values are edited in Studio's edit mode only.
-  const edit = window.getByRole('button', { name: 'Edit', exact: true })
+  // Values are edited in Studio's edit mode only; the app bar switches it.
+  const edit = window.getByRole('banner').getByRole('button', { name: 'Edit', exact: true })
   if (await edit.getAttribute('aria-pressed') !== 'true') {
     await edit.click()
   }
-  const field = window.getByRole('textbox', { name: 'SerialNumber' })
+  const field = window.getByRole('textbox', { name: 'Value', exact: true })
   await field.fill(value)
   await window.getByRole('button', { name: 'Apply' }).click()
   await expect(window.getByText('Applied. Save the package to keep the change.')).toBeVisible()

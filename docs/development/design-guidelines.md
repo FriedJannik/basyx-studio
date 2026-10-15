@@ -120,6 +120,19 @@ writes.
 - Look: Studio's colours, small radii (at most 8 px), outlined fields, borders
   instead of shadows. All of it lives in `vuetify.config.ts` defaults and
   aliases.
+- Appearance settings: users choose each part on its own, as in Slack: the
+  mode (light, dark or system), an accent colour (BaSyx by default, six more
+  presets, or any colour from a simple picker), a background (*Neutral*,
+  Vuetify's own surfaces, plus *Slate*, *Warm*, *Midnight* and *High
+  contrast*) and a shape (*Normal*, the small radii above, or *More rounded*:
+  24 px surfaces and fields, pill-shaped buttons and chips). Every accent and
+  background has a light and a dark shade; preset accents reach 4.5:1 on every
+  background of their mode, and a custom accent is darkened or lightened until
+  it does. All of it is defined in `shared/appearance.ts`: `vuetify.config.ts`
+  builds the light and dark themes from the defaults, and `app.vue` lays the
+  user's accent and background over both. The rounded shape is a defaults
+  provider in `app.vue` that changes radii only. New components set radii
+  through defaults, never in templates, so both shapes follow.
 - The details drawer shows the selection in modes: *Details*, *Visualization*
   (app views), *JSON*, *XML* and *UML*. The mode and the selection are in the
   URL, so links reproduce what the user saw.
@@ -154,3 +167,21 @@ The current implementations in `app/pages/project-manager.vue` and
 `app/pages/connect-server.vue` are interaction drafts. Preserve their useful
 master-detail structure, but replace mock data and renderer-side trust with the
 target service boundaries.
+
+## Editing (MVP-5)
+
+- Forms live in the details drawer, never in a dialog: one form per model type
+  with the sections *Identity*, *Semantics*, *Value* and *Qualifiers*, and
+  forms for the shell and the submodel. Dialogs are for confirmations, the
+  creation wizard, adding submodels, *Insert from JSON* and *Create instance*.
+- The creation wizard has three steps: shell and asset, submodels from
+  templates, review. The review lists what is written, in order; a partial
+  write lists what was written and what was not.
+- On workspaces, ⌘Z and ⇧⌘Z undo and redo applied changes until Save or Close;
+  live targets offer no undo after apply.
+- Structure actions (add, copy, paste, duplicate, move, delete) sit in the tree
+  row's menu in edit mode, and appear nowhere in view mode.
+- A new element's form takes the drawer and is written on *Create*;
+  *Cancel* leaves nothing behind. Applying is per element; a failed apply keeps
+  the draft, names the findings of AAS Core and says what conflicted.
+- A tree row with an unapplied draft carries a marker.

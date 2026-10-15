@@ -8,7 +8,49 @@
     :temporary="!lgAndUp"
     :width="drawerWidth"
   >
-    <div v-if="item" class="d-flex flex-column h-100">
+    <!-- A new element: its form takes the drawer until it is created or cancelled (U4). -->
+    <div v-if="creating" class="d-flex flex-column h-100">
+      <v-toolbar class="px-1" color="transparent" density="compact">
+        <v-toolbar-title class="text-title-medium">{{ t('editor.newTitle', { type: creating.element.modelType, parent: creating.parentLabel }) }}</v-toolbar-title>
+        <v-btn :aria-label="t('common.close')" icon="mdi-close" size="small" @click="emit('cancel-create')" />
+      </v-toolbar>
+
+      <v-divider />
+
+      <div class="flex-grow-1 overflow-y-auto">
+        <ElementForm
+          :create="creating"
+          :explicit-save="capabilities.persistence === 'explicit_save'"
+          :link-concepts="capabilities.conceptDescriptions"
+          :submodel-key="creating.submodelKey"
+          :target-id="targetId"
+          @cancel="emit('cancel-create')"
+          @created="detail => emit('created', detail)"
+        />
+      </div>
+    </div>
+
+    <!-- The shell form (U5): the shell header's Edit opens it here. -->
+    <div v-else-if="editingShell && shellDetail" class="d-flex flex-column h-100">
+      <v-toolbar class="px-1" color="transparent" density="compact">
+        <v-toolbar-title class="text-title-medium">{{ t('shell.editTitle') }}</v-toolbar-title>
+        <v-btn :aria-label="t('common.close')" icon="mdi-close" size="small" @click="emit('close-shell')" />
+      </v-toolbar>
+
+      <v-divider />
+
+      <div class="flex-grow-1 overflow-y-auto">
+        <ShellForm
+          :can-upload="capabilities.files"
+          :explicit-save="capabilities.persistence === 'explicit_save'"
+          :shell="shellDetail"
+          :target-id="targetId"
+          @changed="detail => emit('shell-changed', detail)"
+        />
+      </div>
+    </div>
+
+    <div v-else-if="item" class="d-flex flex-column h-100">
       <!-- Where the selection is, on one line: up to the parent, or jump to
            any level from the path menu. The title below names the selection. -->
       <v-toolbar class="px-1" color="transparent" density="compact">
@@ -119,13 +161,14 @@
 
       <!-- Details -->
       <div v-else-if="mode === 'details' && detail" class="flex-grow-1 overflow-y-auto">
-        <div v-if="item.elementKey" class="pa-4">
+        <div v-if="item.elementKey && (!form || keepsView)" class="pa-4">
+          <!-- Types whose form covers their whole value replace the view; the
+               views of File, Blob and Operation stay and get the form below. -->
           <ElementValueView
+            v-if="!form || keepsView"
             :can-invoke="canInvoke"
             :can-replace="canWrite && capabilities.files"
             :detail="detail"
-            :editable="canWrite && isEditableModelType(value.modelType) && detail.revision !== null"
-            :explicit-save="capabilities.persistence === 'explicit_save'"
             :history="history"
             :item="item"
             :refreshing="refreshing"
@@ -136,7 +179,29 @@
           />
         </div>
 
-        <v-list class="px-2" lines="two">
+        <div v-if="form && item.elementKey && detail">
+          <ElementForm
+            :detail="detail"
+            :explicit-save="capabilities.persistence === 'explicit_save'"
+            :link-concepts="capabilities.conceptDescriptions"
+            :submodel-key="item.submodelKey"
+            :target-id="targetId"
+            @changed="onChanged"
+          />
+        </div>
+
+        <div v-else-if="form && detail">
+          <SubmodelForm
+            :detail="detail"
+            :explicit-save="capabilities.persistence === 'explicit_save'"
+            :submodel-key="item.submodelKey"
+            :target-id="targetId"
+            @changed="onChanged"
+          />
+        </div>
+
+        <!-- In edit mode the form holds the fields; only what it cannot edit stays. -->
+        <v-list v-if="metadata.length > 0" class="px-2" lines="two">
           <v-list-subheader :title="t('details.metadata')" />
 
           <v-list-item
@@ -155,14 +220,21 @@
 
         <v-divider />
 
-        <v-expansion-panels :model-value="['description']" multiple>
-          <v-expansion-panel :title="t('details.description')" value="description">
+        <v-expansion-panels :model-value="['description', 'concept']" multiple>
+          <v-expansion-panel v-if="!form" :title="t('details.description')" value="description">
             <v-expansion-panel-text class="text-body-medium text-medium-emphasis">
               {{ description ?? t('details.noDescription') }}
             </v-expansion-panel-text>
           </v-expansion-panel>
 
-          <v-expansion-panel :title="t('details.qualifiers')" value="qualifiers">
+          <!-- What the semantic ID means (MVP-6 plan, E1). -->
+          <v-expansion-panel v-if="showConcept" :title="t('cd.semanticsCard')" value="concept">
+            <v-expansion-panel-text>
+              <ConceptDescriptionCard :can-create="canCreateConcept" :node="value" :target-id="targetId" />
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+
+          <v-expansion-panel v-if="!form" :title="t('details.qualifiers')" value="qualifiers">
             <v-expansion-panel-text>
               <div v-if="qualifiers.length > 0" class="d-flex flex-wrap ga-2">
                 <v-chip v-for="qualifier in qualifiers" :key="qualifier" prepend-icon="mdi-tag-outline" :text="qualifier" />
@@ -211,16 +283,24 @@
       :text="t('details.nothingText')"
       :title="t('details.nothing')"
     />
+
+    <!-- Apply and Discard of the open form, always in view (FormActions). -->
+    <template #append>
+      <div id="details-form-actions" />
+    </template>
   </v-navigation-drawer>
 </template>
 
 <script lang="ts" setup>
-  import type { ElementDetail, SubmodelDetail, SubmodelRef, SubmodelViewContributionInfo, Target, TargetCapabilities } from '#shared/contract'
+  import type { ElementDetail, ShellDetail, SubmodelDetail, SubmodelRef, SubmodelViewContributionInfo, Target, TargetCapabilities } from '#shared/contract'
   import type { ShellTreeItem } from '~/composables/useShellTrees'
   import type { DetailsMode } from '~/utils/aas'
+  import type { CreatingElement } from '~/utils/editor'
   import { useQuery, useQueryCache } from '@pinia/colada'
   import { useDisplay } from 'vuetify'
-  import { decodeResourceKey, isEditableModelType, langText, modelTypeIcon } from '~/utils/aas'
+  import { isElementModelType } from '#shared/aas/defaults'
+  import { decodeResourceKey, langText, modelTypeIcon } from '~/utils/aas'
+  import { formActionsFooterKey } from '~/utils/editor'
 
   // The details drawer (MVP-4 plan, T2): the selected submodel or element in
   // the modes of the Web UI's right pane. The mode and the app view are in the
@@ -239,13 +319,23 @@
     at: string | null
     history: number[]
     refreshing: boolean
+    /** A new element being created below a parent (U4); takes the drawer. */
+    creating: CreatingElement | null
+    /** The shell's form takes the drawer (U5). */
+    editingShell: boolean
+    shellDetail: ShellDetail | null | undefined
   }>()
   const emit = defineEmits<{
-    select: [id: string]
+    'select': [id: string]
+    'created': [detail: ElementDetail]
+    'cancel-create': []
+    'close-shell': []
+    'shell-changed': [detail: ShellDetail]
     /** An element changed at its source; reload what shows it. */
-    changed: [detail: ElementDetail]
+    'changed': [detail: ElementDetail]
   }>()
   const mode = defineModel<DetailsMode>('mode', { required: true })
+  provide(formActionsFooterKey, '#details-form-actions')
   const view = defineModel<string | null>('view', { required: true })
 
   const { t } = useI18n()
@@ -295,7 +385,7 @@
         return api<ElementDetail>(`/targets/${targetId.value}/submodels/${item.submodelKey}/elements/${item.elementKey}`, { query: { at }, signal })
       }
       const submodel = await api<SubmodelDetail>(`/targets/${targetId.value}/submodels/${item.submodelKey}`, { query: { at }, signal })
-      return { key: submodel.key, path: '', value: submodel.submodel, revision: null, concurrency: null, ancestors: [] } satisfies ElementDetail
+      return { key: submodel.key, path: '', value: submodel.submodel, revision: submodel.revision ?? null, concurrency: null, ancestors: [] } satisfies ElementDetail
     },
     enabled: () => props.item !== null && !props.item.unavailable && !props.item.more,
   })
@@ -351,43 +441,54 @@
     }
   })
 
+  // The edit form: in edit mode, for elements and submodels the target lets the user change.
+  const form = computed(() => props.canWrite && props.capabilities.writeStructure && !props.at
+    && detail.value?.revision !== null && detail.value?.revision !== undefined
+    && (props.item?.elementKey ? isElementModelType(value.value.modelType) : true))
+  const keepsView = computed(() => ['File', 'Blob', 'Operation'].includes(String(value.value.modelType)))
+
+  // The concept description behind the semantic ID, where the target has a repository for them.
+  const showConcept = computed(() => props.capabilities.conceptDescriptions && typeof value.value.semanticId?.keys?.[0]?.value === 'string' && value.value.semanticId.keys[0].value !== '')
+  const canCreateConcept = computed(() => props.canWrite && props.capabilities.writeStructure && props.capabilities.createResources && !props.at)
+
   const description = computed(() => langText(Array.isArray(value.value.description) ? value.value.description : [], preferences.value.valueLanguage))
 
   const qualifiers = computed(() => ((value.value.qualifiers ?? []) as Array<{ type?: string, value?: string }>)
     .map(qualifier => `${qualifier.type ?? '?'}: ${qualifier.value ?? ''}`))
 
-  // The Web UI's header fields (D6), where the element has them.
+  // The Web UI's header fields (D6), where the element has them; `edited`
+  // marks those the form edits, which edit mode shows only in the form.
   const metadata = computed(() => {
     const element = value.value
     const semanticId = (element.semanticId?.keys?.[0]?.value as string | undefined) ?? props.item?.semanticId ?? null
     const displayName = langText(Array.isArray(element.displayName) ? element.displayName : [], preferences.value.valueLanguage)
-    const rows: Array<{ label: string, value: string, icon: string, copy?: boolean }> = []
+    const rows: Array<{ label: string, value: string, icon: string, copy?: boolean, edited?: boolean }> = []
     if (props.item?.modelType === 'Submodel') {
-      rows.push({ label: t('details.identifier'), value: String(element.id ?? decodeResourceKey(props.item.submodelKey)), icon: 'mdi-identifier', copy: true })
+      rows.push({ label: t('details.identifier'), value: String(element.id ?? decodeResourceKey(props.item.submodelKey)), icon: 'mdi-identifier', copy: true, edited: true })
     }
     if (typeof element.idShort === 'string') {
-      rows.push({ label: t('details.idShort'), value: element.idShort, icon: 'mdi-label-outline', copy: true })
+      rows.push({ label: t('details.idShort'), value: element.idShort, icon: 'mdi-label-outline', copy: true, edited: true })
     }
     if (displayName && displayName !== element.idShort) {
-      rows.push({ label: t('details.displayName'), value: displayName, icon: 'mdi-format-title' })
+      rows.push({ label: t('details.displayName'), value: displayName, icon: 'mdi-format-title', edited: true })
     }
     if (semanticId) {
-      rows.push({ label: t('details.semanticId'), value: semanticId, icon: 'mdi-identifier', copy: true })
+      rows.push({ label: t('details.semanticId'), value: semanticId, icon: 'mdi-identifier', copy: true, edited: true })
     }
     if (element.kind) {
-      rows.push({ label: t('details.kind'), value: String(element.kind), icon: 'mdi-shape-outline' })
+      rows.push({ label: t('details.kind'), value: String(element.kind), icon: 'mdi-shape-outline', edited: true })
     }
     if (element.category) {
-      rows.push({ label: t('details.category'), value: String(element.category), icon: 'mdi-tag-outline' })
+      rows.push({ label: t('details.category'), value: String(element.category), icon: 'mdi-tag-outline', edited: true })
     }
     if (element.valueType) {
-      rows.push({ label: t('details.valueType'), value: String(element.valueType), icon: 'mdi-code-tags' })
+      rows.push({ label: t('details.valueType'), value: String(element.valueType), icon: 'mdi-code-tags', edited: true })
     }
     if (element.contentType) {
-      rows.push({ label: t('details.contentType'), value: String(element.contentType), icon: 'mdi-file-cog-outline' })
+      rows.push({ label: t('details.contentType'), value: String(element.contentType), icon: 'mdi-file-cog-outline', edited: true })
     }
     if (element.administration?.version) {
-      rows.push({ label: t('details.version'), value: [element.administration.version, element.administration.revision].filter(Boolean).join('.'), icon: 'mdi-file-certificate-outline' })
+      rows.push({ label: t('details.version'), value: [element.administration.version, element.administration.revision].filter(Boolean).join('.'), icon: 'mdi-file-certificate-outline', edited: true })
     }
     if (props.item?.children) {
       rows.push({ label: t('details.children'), value: t('details.elements', props.item.children.filter(child => !child.more).length), icon: 'mdi-file-tree-outline' })
@@ -395,7 +496,7 @@
     if (path.value) {
       rows.push({ label: t('details.idShortPath'), value: path.value, icon: 'mdi-map-marker-path', copy: true })
     }
-    return rows
+    return form.value ? rows.filter(row => !row.edited) : rows
   })
 
   function onChanged (changed: ElementDetail) {

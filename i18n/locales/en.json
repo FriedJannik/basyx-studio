@@ -15,7 +15,10 @@
     "targetNamed": "Target: {name}",
     "view": "View",
     "edit": "Edit",
-    "account": "Account"
+    "account": "Account",
+    "arcadeOn": "Arcade mode: +30 lives",
+    "arcadeOff": "Arcade mode off. Back to work.",
+    "drafts": "no drafts | {count} draft | {count} drafts"
   },
   "qr": {
     "title": "QR code of the asset",
@@ -41,22 +44,36 @@
   "lists": {
     "noMatches": "Nothing matches the search and filters.",
     "filters": "{n} filter | {n} filters",
-    "filtersApplied": "{n} filter applied, remove it | {n} filters applied, remove them"
+    "filtersApplied": "{n} filter applied, remove it | {n} filters applied, remove them",
+    "perPage": "Rows per page",
+    "range": "{from}–{to}",
+    "noRows": "No rows",
+    "previousPage": "Previous page",
+    "nextPage": "Next page"
   },
   "home": {
     "title": "AAS targets",
     "subtitle": "Choose an infrastructure to browse its Asset Administration Shells.",
     "search": "Search targets",
     "filters": {
+      "state": "State",
       "access": "Access",
-      "state": "State"
+      "ready": "Ready",
+      "required": "Needs authorization"
     },
     "signInTitle": "Sign in to BaSyx Studio",
     "signInText": "Studio accesses your AAS infrastructures on your behalf. Sign in with your organization's account to continue.",
     "noTargets": "No infrastructures are configured yet.",
     "noTargetsAdmin": "Add an infrastructure to get started.",
     "noTargetsUser": "Ask a Studio administrator to add one.",
-    "addInfrastructure": "Add infrastructure"
+    "addInfrastructure": "Add infrastructure",
+    "subtitleCount": "Choose one of {n} infrastructures to browse its Asset Administration Shells.",
+    "resetFilters": "Reset search and filters",
+    "view": {
+      "label": "View",
+      "grid": "Cards",
+      "list": "List"
+    }
   },
   "security": {
     "unsecured": "Unsecured",
@@ -102,7 +119,7 @@
     "more": "More actions",
     "delete": "Delete shell",
     "deleteTitle": "Delete shell?",
-    "deleteText": "This removes {name} from the infrastructure. Its {count} submodels stay in the submodel repository.",
+    "deleteText": "{name} is removed from the infrastructure. Its submodels stay unless you delete them too.",
     "deleted": "{name} deleted",
     "assetKind": "Asset kind: {kind}",
     "assetType": "Asset type",
@@ -135,7 +152,24 @@
       "error": "The submodel could not be loaded.",
       "absent": "Not present at this time."
     },
-    "deletedSyncFailed": "{name} was deleted; {count} registry or discovery entry could not be removed. | {name} was deleted; {count} registry or discovery entries could not be removed."
+    "deletedSyncFailed": "{name} was deleted; {count} registry or discovery entry could not be removed. | {name} was deleted; {count} registry or discovery entries could not be removed.",
+    "edit": "Edit",
+    "editTitle": "Edit shell",
+    "asset": "Asset",
+    "assetKindLabel": "Asset kind",
+    "specificAssetIds": "Specific asset IDs",
+    "specificName": "Name",
+    "addSpecific": "Add specific asset ID",
+    "thumbnail": "Thumbnail",
+    "derivedFrom": "Derived from",
+    "administration": "Administration",
+    "revisionLabel": "Revision",
+    "addSubmodel": "Submodel",
+    "alsoDeleteSubmodels": "Also delete its submodel | Also delete its {count} submodels",
+    "affectedSubmodels": "These submodels are deleted",
+    "sharedWarning": "Other shells that reference these submodels will lose them.",
+    "assetHint": "What the shell describes: an instance of a product, a product type, or neither.",
+    "derivedHint": "The type shell this shell was derived from."
   },
   "editor": {
     "title": "Value",
@@ -152,7 +186,63 @@
     "conflictTitle": "Someone else changed this value",
     "conflictText": "Your change was not applied. Keep it and apply it anyway, or discard it.",
     "overwrite": "Apply mine anyway",
-    "bestEffort": "This infrastructure does not report revisions. A change made by someone else at the same moment can be overwritten."
+    "bestEffort": "This infrastructure does not report revisions. A change made by someone else at the same moment can be overwritten.",
+    "create": "Add element",
+    "findings": "Findings from AAS Core",
+    "sections": {
+      "identity": "Identity",
+      "semantics": "Semantics",
+      "value": "Value",
+      "qualifiers": "Qualifiers",
+      "basics": "Basics",
+      "names": "Names and description",
+      "supplemental": "Supplemental semantic IDs"
+    },
+    "referenceType": "Reference type",
+    "keyType": "Key type",
+    "keyValue": "Key value",
+    "addKey": "Add key",
+    "addReference": "Add reference",
+    "pasteReference": "Paste copied reference",
+    "min": "Minimum",
+    "max": "Maximum",
+    "filePath": "File path or URL",
+    "blobHint": "The content of a Blob is shown and downloaded from its details. Change the media type here.",
+    "listType": "Element type",
+    "listTypeLocked": "The type cannot change while the list has elements.",
+    "orderRelevant": "Order is relevant",
+    "direction": "Direction",
+    "state": "State",
+    "messageTopic": "Message topic",
+    "addQualifier": "Add qualifier",
+    "qualifierType": "Type",
+    "qualifierValue": "Value",
+    "structureConflictTitle": "The structure changed in the meantime",
+    "newTitle": "New {type} in {parent}",
+    "idShortHint": "Letters, digits, - and _; starts with a letter.",
+    "idShortInvalid": "An idShort starts with a letter and has letters, digits, - or _ only.",
+    "value": "Value",
+    "noValue": "A {type} has no value of its own; its structure is edited in the tree.",
+    "categoryHint": "CONSTANT, PARAMETER or VARIABLE, or your own.",
+    "semanticsHint": "What the element means: a global reference such as an IRDI or an IRI. Use the options for model references.",
+    "unapplied": "Unapplied changes",
+    "addText": "Add text",
+    "addTranslation": "Add translation",
+    "referenceKeys": "Type and keys",
+    "removeReference": "Remove reference",
+    "removeKey": "Remove key",
+    "referenceValue": "Reference value (IRI, IRDI)",
+    "kinds": {
+      "Instance": "Instance",
+      "Template": "Template"
+    },
+    "assetKinds": {
+      "Instance": "Instance",
+      "Type": "Type",
+      "NotApplicable": "Not applicable"
+    },
+    "supplementalSemanticId": "Supplemental semantic ID",
+    "addSupplemental": "Add supplemental semantic ID"
   },
   "workspace": {
     "localFile": "Local AASX file",
@@ -165,7 +255,10 @@
     "closeTitle": "Close {name}?",
     "closeText": "The package has unsaved changes. They are lost if you close it now.",
     "closeWithoutSaving": "Close without saving",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "new": "New package",
+    "undo": "Undo",
+    "redo": "Redo"
   },
   "variables": {
     "input": "Input variables",
@@ -212,7 +305,9 @@
     "app_not_found": "The app is not installed (anymore).",
     "app_permission_not_declared": "The app did not declare the permission for this action.",
     "app_backend_unavailable": "The app's backend is not available.",
-    "app_backend_failed": "The app's backend failed."
+    "app_backend_failed": "The app's backend failed.",
+    "idshort_conflict": "An element with this name exists already here. Choose another idShort.",
+    "structure_conflict": "The elements here changed in the meantime. The list was reloaded; try again."
   },
   "admin": {
     "title": "Infrastructures",
@@ -337,7 +432,15 @@
       "changeFeed": "The services report changes, so Studio can show what changed recently.",
       "rebac": "The services check access per user and shell (relationship-based access control), so shells can be shared."
     },
-    "probedAt": "Checked {time}"
+    "probedAt": "Checked {time}",
+    "ids": "Identifiers",
+    "idScheme": "Identifier scheme",
+    "idSchemeHint": "How Studio generates the identifiers of new shells and submodels; users may replace one per resource.",
+    "idPrefix": "IRI prefix",
+    "idSchemes": {
+      "iri": "IRI: prefix, kind and UUID",
+      "uuid": "URN: urn:uuid and a UUID"
+    }
   },
   "apps": {
     "title": "Apps",
@@ -356,7 +459,6 @@
     "unsignedHint": "Installed in developer mode, without a marketplace signature or review.",
     "unsignedDisabled": "Installing unsigned apps is disabled in this deployment (STUDIO_APPS_ALLOW_UNSIGNED).",
     "disabled": "Apps are disabled because no apps origin is configured (STUDIO_APPS_URL).",
-    "permissions": "Permissions",
     "backend": "Backend",
     "submodelViews": "{count} submodel view | {count} submodel views",
     "modules": "{count} module | {count} modules",
@@ -409,11 +511,11 @@
   },
   "palette": {
     "search": "Search targets and actions…",
-    "searchTarget": "Search shells, elements, actions…",
-    "placeholder": "Search actions…",
-    "placeholderTarget": "Search shells, elements, asset IDs, actions…",
+    "searchTarget": "Search shells, elements, targets…",
+    "placeholder": "Search targets and actions…",
+    "placeholderTarget": "Search shells, elements, asset IDs, targets, actions…",
     "empty": "No results for “{query}”",
-    "emptyText": "Try an idShort, an identifier or an action like “theme”.",
+    "emptyText": "Try a target name, an idShort, an identifier or an action like “theme”.",
     "navigate": "navigate",
     "open": "open",
     "results": "no results | {count} result | {count} results",
@@ -423,7 +525,8 @@
       "shells": "Shells",
       "elements": "Submodel elements",
       "recent": "Recently opened",
-      "discovery": "Asset ID"
+      "discovery": "Asset ID",
+      "targets": "Targets"
     },
     "actions": {
       "theme": "Switch between light and dark theme",
@@ -434,6 +537,14 @@
       "dashboard": "Go to the target's home page",
       "concepts": "Go to concept descriptions",
       "infrastructures": "Manage infrastructures"
+    },
+    "structure": {
+      "add": "Add element to {name}",
+      "json": "Insert from JSON into {name}",
+      "paste": "Paste into {name}",
+      "copy": "Copy {name}",
+      "duplicate": "Duplicate {name}",
+      "delete": "Delete {name}"
     }
   },
   "capabilities": {
@@ -483,7 +594,8 @@
       "apply": "Search",
       "invalidJson": "Not valid JSON: {message}",
       "notObject": "A query is a JSON object with $condition.",
-      "edit": "Edit the advanced query"
+      "edit": "Edit the advanced query",
+      "conceptDescriptions": "Runs on the concept description repository"
     },
     "search": "Search shells",
     "filters": {
@@ -643,7 +755,8 @@
   "overview": {
     "none": "No views for this shell",
     "noneText": "No installed app offers a view for this shell's submodels. Use the Submodels tab to browse the structure.",
-    "reason": "{app} · {submodel}"
+    "reason": "{app} · {submodel}",
+    "liveHint": "Re-read from {submodel} · last {count} values of this session"
   },
   "changes": {
     "title": "Changes",
@@ -690,7 +803,7 @@
   "concepts": {
     "title": "Concept descriptions",
     "subtitle": "Semantic definitions referenced by submodel elements",
-    "search": "Search by name, ID or definition",
+    "search": "Search by idShort or ID",
     "concept": "Concept",
     "dataType": "Data type",
     "unit": "Unit",
@@ -699,16 +812,23 @@
     "id": "ID",
     "definition": "Definition",
     "noDefinition": "No definition.",
-    "truncated": "Showing the first {count} concept descriptions."
+    "truncated": "Showing the first {count} concept descriptions.",
+    "localOnly": "Filters the loaded concept descriptions only: this infrastructure announces no query endpoint for them.",
+    "otherSource": "Other"
   },
   "settings": {
     "title": "Settings",
+    "showWelcome": "Welcome screen at startup",
+    "close": "Close settings",
     "subtitle": "Appearance and live data, saved for your account",
     "appearance": "Appearance",
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
     "system": "System",
+    "uiLanguage": "Language",
+    "browserLanguage": "Browser default",
+    "dialectsUnlocked": "Hidden dialects unlocked",
     "valueLanguage": "Language of multi-language values",
     "refresh": "Auto-refresh",
     "refreshSubtitle": "Values are re-read; infrastructures do not push changes",
@@ -723,6 +843,30 @@
     "syncModes": {
       "autoCreate": "Create and remove entries",
       "dontCreate": "Leave them unchanged"
+    },
+    "accent": "Accent colour",
+    "accents": {
+      "basyx": "BaSyx",
+      "blue": "Blue",
+      "teal": "Teal",
+      "green": "Green",
+      "violet": "Violet",
+      "pink": "Pink",
+      "graphite": "Graphite"
+    },
+    "customAccent": "Custom colour",
+    "background": "Background",
+    "backgrounds": {
+      "neutral": "Neutral",
+      "slate": "Slate",
+      "warm": "Warm",
+      "midnight": "Midnight",
+      "contrast": "High contrast"
+    },
+    "shape": "Shape",
+    "shapes": {
+      "normal": "Normal",
+      "rounded": "More rounded"
     }
   },
   "invite": {
@@ -747,5 +891,169 @@
     "wrap": "Wrap lines",
     "noWrap": "Do not wrap lines",
     "loadFailed": "The code view could not be loaded"
+  },
+  "edit": {
+    "rowMenu": "Element actions",
+    "unsaved": "Unsaved changes",
+    "addElement": "Add element",
+    "paste": "Paste",
+    "copy": "Copy",
+    "copyReference": "Copy reference",
+    "duplicate": "Duplicate",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "delete": "Delete",
+    "deleteTitle": "Delete element?",
+    "deleteText": "{type} {name} and everything below it will be removed.",
+    "deleted": "{name} deleted",
+    "pasted": "{name} pasted",
+    "referenceCopied": "Reference to {name} copied. Paste it into a reference field.",
+    "draftNode": "draft",
+    "insertJson": "Insert from JSON",
+    "insertJsonTitle": "Insert into {name}",
+    "convert": "Convert to instance",
+    "convertTitle": "Convert to instance?",
+    "convertText": "The template qualifiers of {name} are removed and its kind becomes Instance. This changes the submodel itself.",
+    "converted": "{name} is an instance now; {count} template qualifiers removed",
+    "removeSubmodel": "Remove submodel",
+    "removeSubmodelTitle": "Remove {name}?",
+    "removeSubmodelText": "The submodel is removed from this shell. Other shells that reference it keep it.",
+    "alsoDelete": "Also delete the submodel itself",
+    "editSubmodel": "Edit submodel"
+  },
+  "instance": {
+    "create": "Create instance",
+    "title": "Create instance",
+    "text": "A new shell derived from {name} with copies of its submodels, each with a new identifier.",
+    "created": "Instance {name} created"
+  },
+  "insert": {
+    "insert": "Insert",
+    "valid": "AAS Core finds no problems.",
+    "notJson": "This is not a JSON object."
+  },
+  "wizard": {
+    "title": "Create shell",
+    "newShell": "New shell",
+    "steps": {
+      "shell": "Shell and asset",
+      "submodels": "Submodels",
+      "review": "Review"
+    },
+    "generatedHint": "Left empty, Studio generates one.",
+    "generatedIdHint": "Left empty, Studio generates one by the infrastructure's scheme.",
+    "next": "Next",
+    "back": "Back",
+    "create": "Create",
+    "willWrite": "Studio writes, in this order",
+    "newSubmodel": "New submodel",
+    "unnamed": "(unnamed)",
+    "partial": "Only some of the changes were written",
+    "fromTemplate": "From template",
+    "empty": "Empty submodel",
+    "fromJson": "From JSON",
+    "json": "Submodel as JSON",
+    "noSubmodels": "No submodels yet. Add an empty submodel and fill in its fields; elements are added in the tree afterwards.",
+    "required": "Required elements",
+    "noRequired": "The template has no required values.",
+    "optional": "Optional elements ({count})",
+    "selectAll": "Select all",
+    "selectNone": "Select none",
+    "remove": "Remove",
+    "bundled": "IDTA template",
+    "onTarget": "On this target",
+    "addSubmodels": "Add submodels",
+    "add": "Add",
+    "kinds": {
+      "template": "Template",
+      "empty": "Empty",
+      "json": "JSON"
+    },
+    "resource": {
+      "submodel": "Submodel",
+      "shell": "Shell",
+      "submodelReference": "Reference",
+      "shellDescriptor": "Shell descriptor",
+      "submodelDescriptor": "Submodel descriptor",
+      "assetLinks": "Asset links"
+    },
+    "addSubmodel": "Add submodel"
+  },
+  "welcome": {
+    "overline": "Welcome to",
+    "tagline": "Every asset has a story. Give it a digital twin.",
+    "keywords": "Asset Administration Shell · Industry 4.0 · Open Source",
+    "start": "Enter Studio",
+    "dontShow": "Don't show this at startup"
+  },
+  "cd": {
+    "new": "New concept description",
+    "moreCreate": "More ways to create",
+    "fromJson": "From JSON",
+    "fromJsonTitle": "Insert concept description from JSON",
+    "newTitle": "New concept description",
+    "create": "Create",
+    "created": "{name} created.",
+    "deleted": "{name} deleted.",
+    "delete": "Delete concept description",
+    "deleteTitle": "Delete concept description?",
+    "deleteText": "{name} will be removed. Elements that reference it keep their semantic ID.",
+    "usages": "Referenced by {submodels} and {elements} on this target.",
+    "usagesTruncated": "There may be more.",
+    "usagesUnknown": "This target cannot search for references, so usages are not checked.",
+    "unused": "No submodel or element on this target references it.",
+    "actions": "Actions",
+    "idHint": "An IRDI or IRI. Left empty, Studio generates one by the infrastructure's scheme.",
+    "idTaken": "A concept description with this ID exists already.",
+    "namesHint": "Usually the same as the preferred name and definition below.",
+    "isCaseOf": "Is case of",
+    "isCaseOfHint": "External definitions this concept is compatible with, e.g. an ECLASS property.",
+    "conflictTitle": "Someone else changed this concept description",
+    "nothingText": "Select a concept description in the table.",
+    "open": "Open",
+    "notFound": "No concept description for this semantic ID on this target.",
+    "createFromElement": "Create concept description",
+    "semanticsCard": "Concept description",
+    "usageSubmodels": "no submodel | one submodel | {count} submodels",
+    "usageElements": "no element | one element | {count} elements",
+    "link": "Link concept description",
+    "linkTitle": "Link a concept description",
+    "linkEmpty": "No concept description on this target matches.",
+    "linkMore": "Show {count} more"
+  },
+  "dataSpec": {
+    "title": "Data specifications",
+    "hint": "IEC 61360 attributes: names, definition, data type and unit.",
+    "add": "Add IEC 61360",
+    "remove": "Remove data specification",
+    "unsupported": "Studio does not edit this content type; it is kept as it is and shown in JSON.",
+    "unknown": "Unknown content",
+    "newName": "Name",
+    "preferredName": "Preferred name",
+    "preferredNameHint": "Required, at least in English.",
+    "definition": "Definition",
+    "definitionRequired": "Required in English for concept descriptions, unless the concept describes a value.",
+    "dataType": "Data type",
+    "unit": "Unit",
+    "unitRequired": "Measures and currencies need a unit or unit ID.",
+    "unitId": "Unit ID",
+    "symbol": "Symbol",
+    "more": "More attributes",
+    "shortName": "Short name",
+    "sourceOfDefinition": "Source of definition",
+    "valueFormat": "Value format",
+    "valueNone": "No value",
+    "valueSingle": "Value",
+    "valueList": "Value list",
+    "value": "Value",
+    "valueId": "Value ID (IRDI, IRI)",
+    "addPair": "Add value",
+    "levelType": "Level type",
+    "levels": {
+      "min": "Minimum",
+      "nom": "Nominal",
+      "typ": "Typical",
+      "max": "Maximum"
+    }
   }
 }

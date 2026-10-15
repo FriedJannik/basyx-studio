@@ -1,15 +1,5 @@
 <template>
-  <!-- Editable types get the edit area's editor instead of their view -->
-  <ElementEditArea
-    v-if="editable"
-    :detail="detail"
-    :explicit-save="explicitSave"
-    :submodel-key="submodelKey"
-    :target-id="targetId"
-    @changed="value => emit('changed', value)"
-  />
-
-  <v-card v-else-if="modelType === 'Property'" border="0" color="surface-light">
+  <v-card v-if="modelType === 'Property'" border="0" color="surface-light">
     <v-card-item>
       <v-card-subtitle class="text-label-medium">{{ t('details.valueOf', { type: element.valueType ?? '' }) }}</v-card-subtitle>
 
@@ -26,6 +16,8 @@
       <span class="text-body-large font-weight-medium text-high-emphasis text-break" data-test="property-value">
         {{ display || t('editor.emptyValue') }}
       </span>
+
+      <span v-if="unit && display" class="text-body-medium text-medium-emphasis">{{ unit }}</span>
     </v-card-text>
 
     <template v-if="history.length > 1">
@@ -67,6 +59,7 @@
       <span>{{ element.min ?? '…' }}</span>
       <v-icon icon="mdi-arrow-left-right" size="small" />
       <span>{{ element.max ?? '…' }}</span>
+      <span v-if="unit" class="text-body-medium text-medium-emphasis">{{ unit }}</span>
     </v-card-text>
   </v-card>
 
@@ -120,6 +113,7 @@
   import type { ElementDetail, LangString } from '#shared/contract'
   import type { ShellTreeItem } from '~/composables/useShellTrees'
   import { useTheme } from 'vuetify'
+  import { ownUnit } from '#shared/aas/iec61360'
   import { decodeResourceKey, langText, modelTypeIcon } from '~/utils/aas'
 
   const props = defineProps<{
@@ -130,8 +124,6 @@
     history: number[]
     /** Values are re-read right now. */
     refreshing: boolean
-    editable: boolean
-    explicitSave: boolean
     canReplace: boolean
     canInvoke: boolean
   }>()
@@ -154,6 +146,10 @@
     }
     return typeof element.value.value === 'string' ? element.value.value : ''
   })
+  // The element's own IEC 61360 unit, else the one of its concept description (MVP-6 plan, E6).
+  const target = useTarget(() => props.targetId)
+  const unitOf = useConceptUnits(() => props.targetId, () => Boolean(target.data.value?.capabilities.conceptDescriptions) && ['Property', 'Range'].includes(modelType.value))
+  const unit = computed(() => ownUnit(element.value) ?? unitOf(element.value.semanticId?.keys?.[0]?.value))
   const children = computed(() => (props.item?.children ?? []).filter(child => !child.more))
   const structureTypes = ['Blob', 'ReferenceElement', 'RelationshipElement', 'AnnotatedRelationshipElement', 'BasicEventElement', 'Entity', 'Capability']
   // Collections and lists show only their children; other types show them below their own view.

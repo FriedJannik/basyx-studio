@@ -18,11 +18,17 @@ export function liveCapabilities (record: Pick<InfrastructureRecord, 'endpoints'
   const queryTarget = queryable[listSource] ? listSource : (queryable[other] ? other : null)
   return {
     write: true,
+    writeStructure: true,
+    createResources: true,
+    // BaSyx Go returns named children by name; only list items keep a position.
+    orderedChildren: false,
+    undo: false,
     persistence: 'immediate',
     deleteShells: true,
     files: true,
     operations: true,
     conceptDescriptions: serviceUrl(record, 'conceptDescriptionRepository') !== undefined,
+    conceptDescriptionSearch: announced.query.conceptDescriptionRepository ? 'query' : 'filter',
     search: queryTarget ? 'query' : 'filter',
     queryTarget,
     elementSearch: announced.query.submodelRepository,
@@ -40,11 +46,16 @@ export function liveCapabilities (record: Pick<InfrastructureRecord, 'endpoints'
 /** Desktop AASX workspaces: local editing without server-only features (D13). */
 export const workspaceCapabilities: TargetCapabilities = {
   write: true,
+  writeStructure: true,
+  createResources: true,
+  orderedChildren: true,
+  undo: true,
   persistence: 'explicit_save',
   deleteShells: true,
   files: true,
   operations: false,
   conceptDescriptions: true,
+  conceptDescriptionSearch: 'expression',
   search: 'expression',
   queryTarget: null,
   elementSearch: true,

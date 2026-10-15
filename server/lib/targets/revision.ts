@@ -47,3 +47,32 @@ export function parseRevision (value: string | undefined): RevisionToken {
   }
   throw new StudioProblem('invalid_request', 'Malformed revision.')
 }
+
+/**
+ * The structure revision of a parent (`s.<hash>`): a hash of its children's
+ * idShorts, model types and order, not of their values, so a value edit
+ * elsewhere never blocks adding or moving an element (MVP-5 plan, W2).
+ * List items have no idShort and share one model type, so their content
+ * stands in for their identity: reordering a list changes its revision.
+ */
+export function structureRevisionOf (children: unknown[]): string {
+  const outline = children.map(child => {
+    const element = (child ?? {}) as Record<string, unknown>
+    return typeof element.idShort === 'string'
+      ? [element.idShort, element.modelType ?? null]
+      : [null, element.modelType ?? null, contentHash(element)]
+  })
+  return `s.${contentHash(outline)}`
+}
+
+/** Parses an `If-Match` structure revision as sent by the UI (quoted or bare). */
+export function parseStructureRevision (value: string | undefined): string {
+  if (!value) {
+    throw new StudioProblem('precondition_required')
+  }
+  const text = value.trim().replace(/^"(.*)"$/, '$1')
+  if (!/^s\.[\w-]{43}$/.test(text)) {
+    throw new StudioProblem('invalid_request', 'Malformed structure revision.')
+  }
+  return text
+}

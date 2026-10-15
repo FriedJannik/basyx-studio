@@ -76,7 +76,7 @@ test('installs and uninstalls an app while another user has Studio open (DoD 1, 
   await expect(alice.locator('iframe[title="App: Digital Nameplate"]')).toBeVisible()
   await expect(alice.locator('iframe[title="App: Test view"]')).toHaveCount(0)
 
-  await page.goto('/admin/apps')
+  await page.goto('/?panel=apps')
   await page.locator('input[type="file"]').setInputFiles({ name: 'view.zip', mimeType: 'application/zip', buffer: Buffer.from(await testView()) })
   await page.getByRole('button', { name: 'Install app' }).click()
   await expect(page.getByText('Installed Nameplate test view 0.1.0.')).toBeVisible()
@@ -155,8 +155,8 @@ test('limits app writes to the user\'s own rights on the target (DoD 4)', async 
   for (const [username, expected] of [['alice', 'You are not permitted to change this value.'], ['dave', 'Serial number saved.']] as const) {
     const user = await (await browser.newContext()).newPage()
     await signIn(user, username)
+    // Opening the target starts its authorization; the IdP session signs in right away.
     await user.goto(`/targets/${delegatedTargetId}/shells`)
-    await user.getByRole('button', { name: 'Authorize' }).click()
     await expect(user.getByText('SecuredPublicShell').first()).toBeVisible()
     await openNameplateView(user, delegatedTargetId, securedShell)
     await editInNameplate(user, 'Serial number', `SEC-E2E-${username}-${Date.now()}`)

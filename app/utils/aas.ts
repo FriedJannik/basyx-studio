@@ -1,4 +1,4 @@
-import type { EditableModelType, LangString, Target } from '#shared/contract'
+import type { EditableModelType, LangString, SubmodelSource, Target, TargetCapabilities } from '#shared/contract'
 import { editableModelTypes } from '#shared/contract'
 
 const modelTypeIcons: Record<string, string> = {
@@ -43,6 +43,25 @@ export function targetIcon (target: Target): string {
   return target.securityMode ? securityModeIcons[target.securityMode]! : 'mdi-package-variant-closed'
 }
 
+/** The line under a target's name: its description, the package file, or `fallback`. */
+export function targetSubtitle (target: Target, fallback: string): string {
+  return target.description ?? target.workspace?.fileName ?? fallback
+}
+
+/** The optional features users notice, in display order; basic browsing is always there. */
+export function targetFeatures (c: TargetCapabilities): Array<{ key: string, icon: string, on: boolean }> {
+  return [
+    { key: 'export', icon: 'mdi-download', on: c.export },
+    { key: 'upload', icon: 'mdi-upload', on: c.upload },
+    { key: 'search', icon: 'mdi-database-search-outline', on: c.search !== 'filter' },
+    { key: 'elementSearch', icon: 'mdi-text-search', on: c.elementSearch },
+    { key: 'discovery', icon: 'mdi-barcode-scan', on: c.discovery },
+    { key: 'history', icon: 'mdi-history', on: c.history },
+    { key: 'changeFeed', icon: 'mdi-timeline-clock-outline', on: c.changeFeed },
+    { key: 'sharing', icon: 'mdi-account-multiple-plus-outline', on: c.sharing },
+  ]
+}
+
 export function isEditableModelType (modelType: unknown): modelType is EditableModelType {
   return (editableModelTypes as readonly unknown[]).includes(modelType)
 }
@@ -66,6 +85,56 @@ export function decodeResourceKey (key: string): string | null {
   } catch {
     return null
   }
+}
+
+/**
+ * Where a selected element is after the element at `changed` was moved to
+ * index `to` of its list, or deleted (`to` is `null`). Both are idShort
+ * paths; list items are addressed by index, so a selection behind them
+ * shifts. Returns `null` if the selection was deleted with `changed`.
+ */
+export function followListChange (selected: string, changed: string, to: number | null): string | null {
+  const item = /^(.+)\[(\d+)\]$/.exec(changed)
+  if (!item) {
+    const inside = selected === changed || selected.startsWith(`${changed}.`) || selected.startsWith(`${changed}[`)
+    return to === null && inside ? null : selected
+  }
+  const list = item[1]!
+  const from = Number(item[2])
+  const sibling = selected.startsWith(`${list}[`) ? /^(\d+)\](.*)$/.exec(selected.slice(list.length + 1)) : null
+  if (!sibling) {
+    return selected
+  }
+  const current = Number(sibling[1])
+  const rest = sibling[2]!
+  if (current === from) {
+    return to === null ? null : `${list}[${to}]${rest}`
+  }
+  const removed = current > from ? current - 1 : current
+  const next = to !== null && removed >= to ? removed + 1 : removed
+  return `${list}[${next}]${rest}`
+}
+
+/**
+ * The submodel additions an attempt still has to make. `written` holds what
+ * earlier attempts achieved, by key: `null` when done, or an `existing`
+ * source for a submodel that was written but not referenced. A key is the
+ * source as sent and its occurrence, so it survives changes to other entries.
+ */
+export function pendingAdditions (sources: SubmodelSource[], written: ReadonlyMap<string, SubmodelSource | null>): Array<{ key: string, source: SubmodelSource }> {
+  const seen = new Map<string, number>()
+  const pending: Array<{ key: string, source: SubmodelSource }> = []
+  for (const source of sources) {
+    const content = JSON.stringify(source)
+    const occurrence = (seen.get(content) ?? 0) + 1
+    seen.set(content, occurrence)
+    const key = `${occurrence}:${content}`
+    const done = written.get(key)
+    if (done !== null) {
+      pending.push({ key, source: done ?? source })
+    }
+  }
+  return pending
 }
 
 /** Color and icon of a change event's action. */
