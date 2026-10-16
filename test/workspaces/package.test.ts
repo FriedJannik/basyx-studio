@@ -20,21 +20,41 @@ async function edgeCasePackage (): Promise<Uint8Array> {
     await pkg.MakeSpec(spec)
     const manual = await pkg.PutPart(new URL('https://package.local/aasx-suppl/edge-cases/manual.pdf'), 'application/pdf', randomBytes(4096))
     await pkg.RelateSupplementaryToSpec(manual, spec)
+    // A part no relationship targets, as in the IDTA-01005 example package.
+    await pkg.PutPart(new URL('https://package.local/aasx-suppl/edge-cases/unrelated.txt'), 'text/plain', strToU8('not related'))
     return await pkg.Flush()
   } finally {
     pkg.Close()
   }
 }
 
+const relationshipTypes = 'http://admin-shell.io/aasx/relationships'
+
+/**
+ * A package as some vendor tools write it: entry names with a literal space
+ * instead of `%20`, referenced by relationship targets with the same space.
+ */
+function literalSpacePackage (manual: Uint8Array): Uint8Array {
+  const relationships = (...entries: string[]) => strToU8(`<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${entries.join('')}</Relationships>`)
+  return zipSync({
+    '[Content_Types].xml': strToU8('<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="json" ContentType="application/json"/><Default Extension="pdf" ContentType="application/pdf"/><Override PartName="/aasx/aasx-origin" ContentType="text/plain"/></Types>'),
+    '_rels/.rels': relationships(`<Relationship Type="${relationshipTypes}/aasx-origin" Target="/aasx/aasx-origin" Id="R1"/>`),
+    'aasx/aasx-origin': strToU8('Intentionally empty.'),
+    'aasx/_rels/aasx-origin.rels': relationships(`<Relationship Type="${relationshipTypes}/aas-spec" Target="/aasx/my data.json" Id="R2"/>`),
+    'aasx/my data.json': strToU8(JSON.stringify({ assetAdministrationShells: [], submodels: [], conceptDescriptions: [] })),
+    'aasx/_rels/my data.json.rels': relationships(`<Relationship Type="${relationshipTypes}/aas-suppl" Target="/aasx/suppl/User manual.pdf" Id="R3"/>`),
+    'aasx/suppl/User manual.pdf': manual,
+  })
+}
+
+/** Every part of a package except its AAS spec, which Studio re-serializes on save. */
 async function partsOf (bytes: Uint8Array): Promise<Map<string, Uint8Array>> {
-  const { pkg } = await readPackage(bytes)
+  const { pkg, spec } = await readPackage(bytes)
   const parts = new Map<string, Uint8Array>()
-  for (const relationship of await pkg.SupplementaryRelationships()) {
-    parts.set(relationship.Supplementary.URI.pathname, relationship.Supplementary.ReadAllBytes())
-  }
-  const thumbnail = await pkg.Thumbnail()
-  if (thumbnail) {
-    parts.set(thumbnail.URI.pathname, thumbnail.ReadAllBytes())
+  for (const part of await pkg.Parts()) {
+    if (part.URI.pathname !== spec.URI.pathname) {
+      parts.set(part.URI.pathname, part.ReadAllBytes())
+    }
   }
   return parts
 }
@@ -71,10 +91,23 @@ describe('AASX packages', () => {
     expect((await readPackage(saved)).environment).toEqual(opened.environment)
     const before = await partsOf(original)
     const after = await partsOf(saved)
-    expect(before.size).toBe(1)
+    expect([...before.keys()].toSorted()).toEqual(['/aasx-suppl/edge-cases/manual.pdf', '/aasx-suppl/edge-cases/unrelated.txt', '/aasx/aasx-origin'])
+    expect([...after.keys()].toSorted()).toEqual([...before.keys()].toSorted())
     for (const [path, bytes] of before) {
       expect(Buffer.from(after.get(path)!).equals(Buffer.from(bytes)), path).toBe(true)
     }
+  })
+
+  it('finds and round-trips parts stored under names with a literal space', async () => {
+    const manual = randomBytes(2048)
+    const opened = await readPackage(literalSpacePackage(manual))
+    // File values name the part by path; URL turns the space into %20.
+    const part = await opened.pkg.FindPart(new URL('/aasx/suppl/User manual.pdf', opened.spec.URI))
+    expect(part && Buffer.from(part.ReadAllBytes()).equals(manual)).toBe(true)
+
+    const reopened = await readPackage(await writePackage(opened, opened.environment))
+    const [relationship] = await reopened.pkg.SupplementaryRelationships()
+    expect(relationship && Buffer.from(relationship.Supplementary.ReadAllBytes()).equals(manual)).toBe(true)
   })
 
   it('keeps an edit across save and reopen', async () => {

@@ -188,8 +188,8 @@ importers:
         specifier: ^1.2026.8
         version: 1.2026.8
       aas-package3-typescript:
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.1.0
+        version: 1.1.0
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
@@ -3141,8 +3141,8 @@ packages:
     resolution: {integrity: sha512-/5NV/vDALVFDXgLmfsy9TRCBlKwO2LNBFzpzvb9iIj+jR+eSc6DLYYvVOdivT/jm7MtU6TebYuRmzEOI7w40UA==}
     engines: {node: '>=10.0.0'}
 
-  aas-package3-typescript@1.0.0:
-    resolution: {integrity: sha512-wX14DhPanTVq2jyURQIFrWRNdkvm01bDudkzN4tAWpGnWVsc4kZ2yJFLUldhtTMyfHel0P+jQJJbI5Ozx00dtQ==}
+  aas-package3-typescript@1.1.0:
+    resolution: {integrity: sha512-ERap/1D/3mwWU+M4LHBTZhcEzPdsXnoFLHqSZtHTPFySQDtDnAUyCQclk25IBBN5p7NjMvCqYOUYOVeN/xOK1Q==}
     engines: {node: '>=20'}
 
   abbrev@3.0.1:
@@ -10320,7 +10320,7 @@ snapshots:
 
   '@xmldom/xmldom@0.8.15': {}
 
-  aas-package3-typescript@1.0.0:
+  aas-package3-typescript@1.1.0:
     dependencies:
       fflate: 0.8.3
       xmlsax-typescript: 1.0.0

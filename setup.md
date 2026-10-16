@@ -189,8 +189,10 @@ transitive Git-/Tarball-Quellen. `trustLockfile: false` sorgt dafür, dass PNPM
 die Supply-Chain-Regeln auch auf eingereichte Lockfiles erneut anwendet.
 
 Ausnahmen von der Wartezeit gibt es nur für geprüfte Releases von Eclipse-BaSyx-
-Paketen und nur für die exakte Version in `minimumReleaseAgeExclude`, etwa
-`basyx-typescript-sdk@2.4.0` ([ADR 0012](docs/adr/0012-release-age-exceptions-for-basyx-packages.md)).
+und Eclipse-AAS-Core-Works-Paketen und nur für die exakte Version in
+`minimumReleaseAgeExclude`, etwa `basyx-typescript-sdk@2.4.0`
+([ADR 0012](docs/adr/0012-release-age-exceptions-for-basyx-packages.md),
+[ADR 0031](docs/adr/0031-release-age-exceptions-for-aas-core-works-packages.md)).
 Ihre Abhängigkeiten warten weiterhin 24 Stunden.
 
 Für mehrere Registries werden PNPM Named Registries verwendet, damit die

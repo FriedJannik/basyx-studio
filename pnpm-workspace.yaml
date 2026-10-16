@@ -9,11 +9,12 @@ packages:
 storeDir: ../.pnpm-store
 minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true
-# Reviewed Eclipse BaSyx releases that may be installed before the 24-hour
-# delay ends, by exact version only (ADR 0012). Entries may be removed once the
-# version is older than 24 hours.
+# Reviewed Eclipse BaSyx and Eclipse AAS Core Works releases that may be
+# installed before the 24-hour delay ends, by exact version only (ADR 0012,
+# ADR 0031). Entries may be removed once the version is older than 24 hours.
 minimumReleaseAgeExclude:
   - basyx-typescript-sdk@2.4.0
+  - aas-package3-typescript@1.1.0
 strictDepBuilds: true
 blockExoticSubdeps: true
 trustLockfile: false

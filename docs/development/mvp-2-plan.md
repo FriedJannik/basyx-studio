@@ -202,7 +202,7 @@ the worker process), `pnpm test:integration` (98 tests), `pnpm testenv:smoke`
   Studio Service, not an Electron `utilityProcess`: it then runs the same way
   in `nuxt dev`, tests and the packaged app. It is bundled with esbuild
   (`modules/workspace-worker.ts`) to `.output/server/workspace-worker.mjs`.
-- Package engine: `aas-package3-typescript` 1.0.0 with AAS Core 3.1. Studio
+- Package engine: `aas-package3-typescript` 1.1.0 with AAS Core 3.1. Studio
   checks entry names, counts, declared sizes and compression ratios before the
   library decompresses anything; the decompressor never writes more than an
   entry's declared size. AAS Core's XML reader needs the XML declaration
