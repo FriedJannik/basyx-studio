@@ -122,12 +122,6 @@ export function invocationOutputs (operation: JsonObject, result: JsonObject): O
     .map(variable => ({ idShort: variable.idShort, valueType: variable.valueType, value: values[variable.idShort] }))
 }
 
-/** The handle ID of an asynchronous invocation from its `Location` header (`…/operation-status/{handleId}`). */
-export function handleFromLocation (location: string | null): string | null {
-  const match = /operation-(?:status|results)\/([^/?#]+)/.exec(location ?? '')
-  return match ? decodeURIComponent(match[1]!) : null
-}
-
 export function toAccessGrants (document: JsonObject): AccessGrant[] {
   return objects(document.grants)
     .filter(grant => ['relation', 'subjectType', 'issuer', 'subject'].every(field => typeof grant[field] === 'string'))

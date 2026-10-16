@@ -2,7 +2,6 @@ import type { JsonObject } from '~~/server/lib/aas/outline'
 import { describe, expect, it } from 'vitest'
 import {
   assetIdParameter,
-  handleFromLocation,
   invocationBody,
   invocationOutputs,
   subjectFilter,
@@ -41,11 +40,6 @@ describe('BaSyx Go mappings', () => {
       { idShort: 'Result', valueType: 'xs:string', value: 'ok' },
       { idShort: 'Mode', valueType: 'xs:string', value: 'slow' },
     ])
-  })
-
-  it('reads the handle of an asynchronous invocation from its Location header', () => {
-    expect(handleFromLocation('http://basyx/submodels/abc/submodel-elements/Calibrate/operation-status/h%2B1')).toBe('h+1')
-    expect(handleFromLocation(null)).toBeNull()
   })
 
   it('quotes subjects in event filters', () => {

@@ -57,8 +57,9 @@ export class TargetHttp {
     return (type === 'aasEnvironment' ? environmentUrl(this.options.record) : serviceUrl(this.options.record, type)) ?? null
   }
 
-  configuration (base: TargetBase, recorder: FailureRecorder): Configuration {
-    return new Configuration({ basePath: this.#requireBase(base), fetchApi: this.#fetch(recorder) })
+  /** `returnRedirects` passes redirects to the SDK unfollowed, which reports them as failed results. */
+  configuration (base: TargetBase, recorder: FailureRecorder, options: { returnRedirects?: boolean } = {}): Configuration {
+    return new Configuration({ basePath: this.#requireBase(base), fetchApi: this.#fetch(recorder, options.returnRedirects) })
   }
 
   /** Sends a request to a service endpoint; non-2xx answers become problems unless passed. */
@@ -181,22 +182,28 @@ export class TargetHttp {
     return url
   }
 
-  #fetch (recorder: FailureRecorder): typeof fetch {
+  #fetch (recorder: FailureRecorder, returnRedirects = false): typeof fetch {
     const headers: Record<string, string> = { 'X-Request-ID': this.options.requestId }
     if (this.options.access.accessToken) {
       headers.Authorization = `Bearer ${this.options.access.accessToken}`
     }
-    return createGuardedFetch(this.options.policy, { recorder, headers })
+    return createGuardedFetch(this.options.policy, { recorder, headers, returnRedirects })
   }
 }
 
-/** The first message text of a BaSyx error body (`messages[].text`), if any. */
+/** The first message text of a BaSyx error body or SDK error result (`messages[].text`), if any. */
+export function messageText (body: unknown): string | undefined {
+  const messages = (body as { messages?: unknown } | null | undefined)?.messages
+  const text = Array.isArray(messages)
+    ? (messages as Array<{ text?: unknown }>).find(message => typeof message?.text === 'string')?.text as string | undefined
+    : undefined
+  // Keep server messages short; they may echo request data.
+  return text ? text.slice(0, 300) : undefined
+}
+
 async function messageOf (response: Response): Promise<string | undefined> {
   try {
-    const body = await response.json() as { messages?: Array<{ text?: unknown }> }
-    const text = body.messages?.find(message => typeof message.text === 'string')?.text as string | undefined
-    // Keep server messages short; they may echo request data.
-    return text ? text.slice(0, 300) : undefined
+    return messageText(await response.json())
   } catch {
     return undefined
   }

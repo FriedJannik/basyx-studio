@@ -302,6 +302,7 @@ Automated checks: `pnpm lint`, `pnpm typecheck`, `pnpm test` (153 tests),
   stays. Worth an issue upstream.
 - **SDK**: `postInvokeOperationAsync` returns no handle, so asynchronous
   invocations stay on the raw layer ([ADR 0022](../adr/0022-basyx-go-endpoints-outside-the-sdk.md)).
+  Fixed in SDK 2.4.1, which Studio now uses for invocations.
 - **Vuetify**: `VHotkey` rendered "Ctrl" on the server and ⌘ in a Mac browser;
   Studio now sets its platform from the request. Its accessible label for
   icon keys reads "$COMMAND"; to be reported upstream.

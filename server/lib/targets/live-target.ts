@@ -25,13 +25,12 @@ import type { FailureRecorder } from '../network/guarded-fetch'
 import type { AasTarget, BinaryContent, ChangesQuery, ElementSnapshot, StructureResult } from './aas-target'
 import type { TargetBase, TargetHttpOptions } from './http'
 import type { types } from '@aas-core-works/aas-core3.1-typescript'
-import type { Configuration } from 'basyx-typescript-sdk'
+import type { Configuration, SubmodelRepositoryService } from 'basyx-typescript-sdk'
 import { types as aasTypes, jsonization } from '@aas-core-works/aas-core3.1-typescript'
 import { AasDiscoveryClient, AasRegistryClient, AasRepositoryClient, ConceptDescriptionRepositoryClient, Lib, SubmodelRegistryClient, SubmodelRepositoryClient } from 'basyx-typescript-sdk'
 import { serviceUrl } from '#shared/contract'
 import { buildConceptDescriptionQuery, buildShellQuery, escapeRegex, parseSearch } from '#shared/search/expression'
 import {
-  handleFromLocation,
   invocationBody,
   invocationOutputs,
   subjectFilter,
@@ -49,12 +48,13 @@ import { elementHits } from '../aas/tree'
 import { withValue } from '../aas/values'
 import { StudioProblem } from '../problem'
 import { liveCapabilities } from './capabilities'
-import { encodeIdentifier, TargetHttp } from './http'
+import { encodeIdentifier, messageText, TargetHttp } from './http'
 import { announcedFeatures } from './profiles'
 import { EndpointResolver } from './resolution'
 import { contentHash, parseRevision, parseStructureRevision, revisionOf, structureRevisionOf } from './revision'
 
 type Jsonable = Parameters<typeof Lib.assetAdministrationShellDescriptorFromJsonable>[0]
+type OperationRequestValueOnly = SubmodelRepositoryService.OperationRequestValueOnly
 
 type SdkResult<T>
   = | { success: true, data: T, statusCode?: number, etag?: string }
@@ -86,8 +86,12 @@ function toJson (value: types.Class): JsonObject {
   return jsonization.toJsonable(value) as JsonObject
 }
 
-function path (idShortPath: string): string {
-  return encodeURIComponent(idShortPath)
+/**
+ * A value-only invocation body for the SDK. Its type requires
+ * `clientTimeoutDuration`, which synchronous invocations leave to the target.
+ */
+function operationRequest (body: JsonObject): OperationRequestValueOnly {
+  return body as unknown as OperationRequestValueOnly
 }
 
 /** Maps a value-only operation result to Studio's invocation state. */
@@ -564,41 +568,49 @@ export class LiveAasTarget implements AasTarget {
     })
   }
 
-  // The SDK's asynchronous value-only invocation does not expose the
-  // `Location` header with the handle, so invocations use the adapter.
   async invoke (submodelId: string, idShortPath: string, args: Array<{ idShort: string, value: string | null }>, async: boolean): Promise<Invocation> {
     const operation = await this.#operation(submodelId, idShortPath)
-    const base = `/submodels/${encodeIdentifier(submodelId)}/submodel-elements/${path(idShortPath)}`
+    const base = await this.#submodelBase(submodelId)
     if (!async) {
-      const result = await this.#http.json<JsonObject>(await this.#submodelBase(submodelId), `${base}/invoke/$value`, {
-        method: 'POST',
-        body: invocationBody(operation, args),
-      })
-      return toInvocation(operation, result, null)
+      const result = await this.#callWithDetail(base, configuration =>
+        this.#submodelClient.postInvokeOperationValueOnly({
+          configuration,
+          submodelIdentifier: submodelId,
+          idShortPath,
+          operationRequestValueOnly: operationRequest(invocationBody(operation, args)),
+        }))
+      return toInvocation(operation, result as JsonObject, null)
     }
-    const response = await this.#http.request(await this.#submodelBase(submodelId), `${base}/invoke-async/$value`, {
-      method: 'POST',
-      body: invocationBody(operation, args, asyncInvocationTimeout),
-    })
-    await response.body?.cancel()
-    const handle = handleFromLocation(response.headers.get('location'))
+    const handle = await this.#callWithDetail(base, configuration =>
+      this.#submodelClient.postInvokeOperationAsyncValueOnly({
+        configuration,
+        submodelIdentifier: submodelId,
+        idShortPath,
+        operationRequestValueOnly: operationRequest(invocationBody(operation, args, asyncInvocationTimeout)),
+      }))
     if (!handle) {
       throw new StudioProblem('target_invalid_response', 'The target did not return a handle for the asynchronous invocation.')
     }
-    return { handle, state: 'running', outputs: [], message: null }
+    return { handle: handle.handleId, state: 'running', outputs: [], message: null }
   }
 
   async invocation (submodelId: string, idShortPath: string, handle: string): Promise<Invocation> {
     const operation = await this.#operation(submodelId, idShortPath)
-    const base = `/submodels/${encodeIdentifier(submodelId)}/submodel-elements/${path(idShortPath)}`
-    const submodelBase = await this.#submodelBase(submodelId)
-    const status = await this.#http.json<JsonObject>(submodelBase, `${base}/operation-status/${encodeURIComponent(handle)}`)
-    const state = toInvocation(operation, status, handle)
-    if (state.state !== 'completed') {
-      return state
+    const base = await this.#submodelBase(submodelId)
+    // Once the operation has finished, its status redirects (302) to its result.
+    const status = await this.#send(base, configuration =>
+      this.#submodelClient.getOperationAsyncStatus({ configuration, submodelIdentifier: submodelId, idShortPath, handleId: handle }), { returnRedirects: true })
+    if (status.success) {
+      const state = toInvocation(operation, status.data as JsonObject, handle)
+      if (state.state !== 'completed') {
+        return state
+      }
+    } else if (status.statusCode !== 302) {
+      throw await this.#http.problem(status.statusCode, status.recorder, messageText(status.error))
     }
-    const result = await this.#http.json<JsonObject>(submodelBase, `${base}/operation-results/${encodeURIComponent(handle)}/$value`)
-    return toInvocation(operation, result, handle)
+    const result = await this.#callWithDetail(base, configuration =>
+      this.#submodelClient.getOperationAsyncResultValueOnly({ configuration, submodelIdentifier: submodelId, idShortPath, handleId: handle }))
+    return toInvocation(operation, result as JsonObject, handle)
   }
 
   async conceptDescriptions (limit: number, cursor: string | undefined): Promise<Page<ConceptDescriptionSummary>> {
@@ -1112,8 +1124,21 @@ export class LiveAasTarget implements AasTarget {
     throw await this.#http.problem(result.statusCode, result.recorder)
   }
 
-  async #send<T> (base: TargetBase, operation: (configuration: Configuration) => Promise<SdkResult<T>>): Promise<SdkResult<T> & { recorder: FailureRecorder }> {
+  /** Like `#call`, with the target's message as the problem detail, e.g. why an operation cannot be invoked. */
+  async #callWithDetail<T> (base: TargetBase, operation: (configuration: Configuration) => Promise<SdkResult<T>>): Promise<T> {
+    const result = await this.#send(base, operation)
+    if (result.success) {
+      return result.data
+    }
+    throw await this.#http.problem(result.statusCode, result.recorder, messageText(result.error))
+  }
+
+  async #send<T> (
+    base: TargetBase,
+    operation: (configuration: Configuration) => Promise<SdkResult<T>>,
+    options?: { returnRedirects?: boolean },
+  ): Promise<SdkResult<T> & { recorder: FailureRecorder }> {
     const recorder: FailureRecorder = {}
-    return { ...await operation(this.#http.configuration(base, recorder)), recorder }
+    return { ...await operation(this.#http.configuration(base, recorder, options)), recorder }
   }
 }

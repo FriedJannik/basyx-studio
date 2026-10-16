@@ -258,10 +258,13 @@ function limitBody (response: UndiciResponse, maxBytes: number, onExceeded: (fai
  * IdPs). It enforces the origin allowlist and address policy, never follows
  * redirects, and bounds time and response size. There is no generic proxy:
  * callers only obtain a guarded fetch for a configured target or IdP.
+ *
+ * A redirect is a failure, unless `returnRedirects` hands it to a caller that
+ * reads it as an answer; it is never followed either way.
  */
 export function createGuardedFetch (
   policy: OutboundPolicy,
-  options: { recorder?: FailureRecorder, headers?: Record<string, string> } = {},
+  options: { recorder?: FailureRecorder, headers?: Record<string, string>, returnRedirects?: boolean } = {},
 ): typeof fetch {
   const fail = (failure: NetworkFailure): never => {
     options.recorder && (options.recorder.failure ??= failure)
@@ -325,6 +328,9 @@ export function createGuardedFetch (
 
     if (response.status >= 300 && response.status < 400) {
       await response.body?.cancel()
+      if (options.returnRedirects) {
+        return new Response(null, { status: response.status, statusText: response.statusText, headers: [...response.headers] })
+      }
       return fail(new NetworkFailure('blocked', `redirect to ${response.headers.get('location') ?? 'unknown'} was not followed`))
     }
 

@@ -11,9 +11,14 @@ DATA-001 requires live AAS operations through `basyx-typescript-sdk`.
 Version 2.4.0 covers the standard repository, registry, discovery and query
 endpoints. Some features Studio uses are proprietary BaSyx Go endpoints or
 gaps of the SDK: `/upload`, AASX/JSON/XML serialization, `$history`, the
-event feed (`/events`), access rules (`$access`), and the handle of an
-asynchronous operation invocation (`postInvokeOperationAsync` returns
-nothing).
+event feed (`/events`) and access rules (`$access`).
+
+Operation invocations used the raw layer as well, because
+`postInvokeOperationAsync*` returned no handle and the value-only invocations
+required an AAS identifier that is not part of their path. Version 2.4.1
+fixes both, so invocations go through the SDK. Once an asynchronous
+invocation has finished, its status answers with a redirect (302) to the
+result; Studio reads that redirect as the answer and never follows it.
 
 ## Decision
 
