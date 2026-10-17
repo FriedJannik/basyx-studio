@@ -32,6 +32,15 @@ export function authorizeAppCall (installation: AppInstallationRecord, method: A
   if (permission && !installation.manifest.permissions.includes(permission)) {
     throw new StudioProblem('app_permission_not_declared', `${method} needs the permission ${permission}, which ${installation.appId} did not declare.`)
   }
+  if (isContainerMethod(method) && !installation.bundled) {
+    throw new StudioProblem('app_permission_not_declared', `${method} is reserved for the apps shipped with Studio.`)
+  }
+}
+
+export type ContainerMethodName = Extract<AppMethodName, `studio.containers.${string}`>
+
+export function isContainerMethod (method: AppMethodName): method is ContainerMethodName {
+  return method.startsWith('studio.containers.')
 }
 
 /** An idShortPath of an API-addressable element; operation variables are not. */

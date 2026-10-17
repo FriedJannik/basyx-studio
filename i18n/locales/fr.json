@@ -387,8 +387,10 @@
       "studio_aas_read": "Lire les données AAS auxquelles vous avez accès",
       "studio_aas_write": "Modifier les valeurs AAS que vous pouvez modifier",
       "studio_ui_notifications": "Afficher des notifications",
-      "studio_ui_navigation": "Modifier l'adresse de sa propre page",
-      "studio_backend": "Exécuter du code côté serveur (isolé)"
+      "studio_ui_navigation": "Modifier l'adresse de sa propre page, ouvrir des cibles et ouvrir des liens dans votre navigateur",
+      "studio_backend": "Exécuter du code côté serveur (isolé)",
+      "studio_ui_clipboard": "Copier du texte dans le presse-papiers lorsque vous cliquez",
+      "studio_containers": "Démarrer, arrêter, exporter et supprimer des instances BaSyx locales sur Docker ou Podman (applications fournies avec Studio uniquement)"
     },
     "bundled": "Incluse",
     "bundledHint": "Livrée avec Studio et mise à jour avec lui.",

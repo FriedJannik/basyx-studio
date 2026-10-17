@@ -387,8 +387,10 @@
       "studio_aas_read": "读取你有权访问的 AAS 数据",
       "studio_aas_write": "修改你有权修改的 AAS 值",
       "studio_ui_notifications": "显示通知",
-      "studio_ui_navigation": "更改其自身的页面地址",
-      "studio_backend": "运行服务器端代码（隔离）"
+      "studio_ui_navigation": "更改其自身的页面地址、打开目标并在浏览器中打开链接",
+      "studio_backend": "运行服务器端代码（隔离）",
+      "studio_ui_clipboard": "点击时将文本复制到剪贴板",
+      "studio_containers": "在 Docker 或 Podman 上启动、停止、导出和删除本地 BaSyx 实例（仅限 Studio 自带的应用）"
     },
     "bundled": "内置",
     "bundledHint": "随 Studio 一同提供并随其更新。",

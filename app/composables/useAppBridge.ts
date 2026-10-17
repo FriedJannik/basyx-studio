@@ -1,4 +1,4 @@
-import type { AppCallResult, AppContext, AppContributionInfo, Problem } from '#shared/contract'
+import type { AppCallResult, AppContext, AppContributionInfo, AppMethodName, Problem } from '#shared/contract'
 import type { Ref } from 'vue'
 import { useQueryCache } from '@pinia/colada'
 import { apiBasePath, appHelloSchema, appMethodNameSchema, appMethodParamsSchemas, appProtocol, appRequestMessageSchema } from '#shared/contract'
@@ -14,6 +14,14 @@ export interface AppBridgeOptions {
   /** Opens the frame's view in a full-screen dialog; absent inside that dialog. */
   onOpenFullscreen?: () => void
 }
+
+/** A refusal of the host itself, in the shape of Studio's problems. */
+function hostProblem (code: Problem['code'], title: string, status: number): StudioApiError {
+  return new StudioApiError({ type: 'about:blank', title, status, code, requestId: '', retryable: false })
+}
+
+/** Methods that act outside the app's frame and so need a click or key press in it just before. */
+const activationMethods = new Set<AppMethodName>(['studio.ui.copyText', 'studio.ui.openExternal'])
 
 function problemOf (error: unknown): Problem {
   if (error instanceof StudioApiError && error.problem) {
@@ -34,6 +42,8 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
   const queryCache = useQueryCache()
   const notifications = useNotificationsStore()
   const label = useLocalizedLabel()
+  const copy = useClipboard()
+  const desktop = useDesktopBridge()
   const connected = ref(false)
   /** Content height the app asked for (`studio.ui.setHeight`), or `null`. */
   const height = ref<number | null>(null)
@@ -78,31 +88,78 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
       respond({ type: 'response', id, result: null })
       return
     }
+    // A click in the frame also activates Studio's page (user activation
+    // propagates to ancestor frames); read it before the round trip.
+    const activated = navigator.userActivation?.isActive ?? true
     const contribution = options.contribution()
     try {
+      if (activationMethods.has(method.data) && !activated) {
+        throw hostProblem('forbidden', 'Call this from a click or key press in the app.', 403)
+      }
       const { result } = await api<AppCallResult>('/app-calls', {
         method: 'POST',
         body: { installationId: contribution.installationId, targetId: options.targetId, shellId: options.context().shell?.id ?? null, method: method.data, params },
       })
-      // Studio authorized the call; UI methods are carried out here.
-      if (method.data === 'studio.ui.notify') {
-        const notice = appMethodParamsSchemas['studio.ui.notify'].parse(params)
-        notifications.notify({ text: `${label(contribution.appTitle)}: ${notice.message}`, color: notice.level })
-      } else if (method.data === 'studio.ui.openFile' && options.targetId) {
-        const file = appMethodParamsSchemas['studio.ui.openFile'].parse(params)
-        const url = `${apiBasePath}/targets/${options.targetId}/submodels/${resourceKey(file.submodelId)}/elements/${resourceKey(file.idShortPath)}/attachment${file.download ? '?download' : ''}`
-        window.open(url, '_blank', 'noopener')
-      } else if (method.data === 'studio.ui.navigate' && contribution.kind === 'module') {
-        options.onNavigate(appMethodParamsSchemas['studio.ui.navigate'].parse(params).subPath)
-      } else if (method.data === 'studio.aas.setElementValue' && options.targetId) {
-        // Studio's own views show the new value, and a workspace its unsaved state.
-        void queryCache.invalidateQueries({ key: ['targets', options.targetId], exact: true })
-        void queryCache.invalidateQueries({ key: ['targets', options.targetId, 'details'] })
-      }
-      respond({ type: 'response', id, result })
+      const replaced = await carryOut(method.data, params, contribution)
+      respond({ type: 'response', id, result: replaced ? replaced.result : result })
     } catch (error) {
       respond({ type: 'error', id, problem: problemOf(error) })
     }
+  }
+
+  /** Studio authorized the call; UI methods are carried out here. A returned result replaces Studio's. */
+  async function carryOut (method: AppMethodName, params: unknown, contribution: AppContributionInfo): Promise<{ result: unknown } | null> {
+    switch (method) {
+      case 'studio.ui.notify': {
+        const notice = appMethodParamsSchemas['studio.ui.notify'].parse(params)
+        notifications.notify({ text: `${label(contribution.appTitle)}: ${notice.message}`, color: notice.level })
+        break
+      }
+      case 'studio.ui.openFile': {
+        if (options.targetId) {
+          const file = appMethodParamsSchemas['studio.ui.openFile'].parse(params)
+          const url = `${apiBasePath}/targets/${options.targetId}/submodels/${resourceKey(file.submodelId)}/elements/${resourceKey(file.idShortPath)}/attachment${file.download ? '?download' : ''}`
+          window.open(url, '_blank', 'noopener')
+        }
+        break
+      }
+      case 'studio.ui.navigate': {
+        if (contribution.kind === 'module') {
+          options.onNavigate(appMethodParamsSchemas['studio.ui.navigate'].parse(params).subPath)
+        }
+        break
+      }
+      case 'studio.ui.openTarget': {
+        await navigateTo(`/targets/${encodeURIComponent(appMethodParamsSchemas['studio.ui.openTarget'].parse(params).targetId)}`)
+        break
+      }
+      case 'studio.ui.openExternal': {
+        window.open(appMethodParamsSchemas['studio.ui.openExternal'].parse(params).url, '_blank', 'noopener')
+        break
+      }
+      case 'studio.ui.copyText': {
+        // Frames may not use the clipboard themselves.
+        await copy(appMethodParamsSchemas['studio.ui.copyText'].parse(params).text)
+        break
+      }
+      case 'studio.containers.pickFiles': {
+        // Native dialogs of the BaSyx Docker app (ADR 0033), shown only after Studio authorized the pick.
+        if (!desktop?.chooseStackFiles) {
+          throw hostProblem('unsupported_operation', 'Choosing files needs the desktop app.', 422)
+        }
+        const { kind, suggestedName } = appMethodParamsSchemas['studio.containers.pickFiles'].parse(params)
+        return { result: { files: await desktop.chooseStackFiles(kind, suggestedName) } }
+      }
+      case 'studio.aas.setElementValue': {
+        if (options.targetId) {
+          // Studio's own views show the new value, and a workspace its unsaved state.
+          void queryCache.invalidateQueries({ key: ['targets', options.targetId], exact: true })
+          void queryCache.invalidateQueries({ key: ['targets', options.targetId, 'details'] })
+        }
+        break
+      }
+    }
+    return null
   }
 
   function closePort () {
@@ -113,7 +170,9 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
 
   function onMessage (event: MessageEvent) {
     const window = frame.value?.contentWindow
-    if (!window || event.source !== window || handedOut || !appHelloSchema.safeParse(event.data).success) {
+    // A queued hello from the previous document has the same WindowProxy.
+    // Do not give it the next document's port during a forced entry reload.
+    if (!window || event.source !== window || handedOut || reloading || !appHelloSchema.safeParse(event.data).success) {
       return
     }
     handedOut = true

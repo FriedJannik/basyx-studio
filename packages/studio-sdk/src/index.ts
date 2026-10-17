@@ -6,6 +6,9 @@ import type {
   MethodName,
   Methods,
   Problem,
+  StackComponentId,
+  StackFileKind,
+  StackSpec,
   ThemeTokens,
 } from './protocol'
 import { protocolVersion } from './protocol'
@@ -53,6 +56,52 @@ export class StudioClient {
     openFile: (submodelId: string, idShortPath: string, download = false) => this.call('studio.ui.openFile', { submodelId, idShortPath, download }),
     /** Opens this view again in a full-screen dialog; `context.fullscreen` is true there. */
     openFullscreen: () => this.call('studio.ui.openFullscreen', {}),
+    /** Opens a target in Studio (needs studio.ui.navigation). */
+    openTarget: (targetId: string) => this.call('studio.ui.openTarget', { targetId }),
+    /**
+     * Opens a URL in the system browser (needs studio.ui.navigation): https,
+     * or http to this computer. Call it from a click handler.
+     */
+    openExternal: (url: string) => this.call('studio.ui.openExternal', { url }),
+    /** Copies text to the clipboard (needs studio.ui.clipboard). Call it from a click handler. */
+    copyText: (text: string) => this.call('studio.ui.copyText', { text }),
+  }
+
+  /** Local BaSyx instances on Docker or Podman; desktop and bundled apps only (ADR 0033). */
+  readonly containers = {
+    listEngines: () => this.call('studio.containers.listEngines', {}),
+    selectEngine: (host: string | null) => this.call('studio.containers.selectEngine', { host }),
+    listStacks: () => this.call('studio.containers.listStacks', {}),
+    getStack: (stackId: string) => this.call('studio.containers.getStack', { stackId }),
+    planStack: (spec: StackSpec, stackId?: string) => this.call('studio.containers.planStack', stackId ? { spec, stackId } : { spec }),
+    createStack: (params: Methods['studio.containers.createStack']['params']) => this.call('studio.containers.createStack', params),
+    changeStack: (params: Methods['studio.containers.changeStack']['params']) => this.call('studio.containers.changeStack', params),
+    startStack: (stackId: string) => this.call('studio.containers.startStack', { stackId }),
+    stopStack: (stackId: string) => this.call('studio.containers.stopStack', { stackId }),
+    updateStack: (stackId: string) => this.call('studio.containers.updateStack', { stackId }),
+    removeStack: (params: Methods['studio.containers.removeStack']['params']) => this.call('studio.containers.removeStack', params),
+    getJob: (jobId: string) => this.call('studio.containers.getJob', { jobId }),
+    getLogs: (stackId: string, component: StackComponentId, tail?: number) => this.call('studio.containers.getLogs', tail === undefined ? { stackId, component } : { stackId, component, tail }),
+    getSignIn: (stackId: string) => this.call('studio.containers.getSignIn', { stackId }),
+    /** Lets the user choose files in a native dialog of the host; empty when cancelled. */
+    pickFiles: (kind: StackFileKind, suggestedName?: string) => this.call('studio.containers.pickFiles', suggestedName ? { kind, suggestedName } : { kind }),
+    /** AASX files to load at startup; pass their handles to `createStack` or `changeStack`. */
+    pickAasxFiles: () => this.containers.pickFiles('stack-aasx'),
+    /** Asks where to save, then writes the last 500 lines of a component's log; `null` when cancelled. */
+    saveLogs: async (stackId: string, component: StackComponentId) => {
+      const file = await this.#pickOne('stack-logs')
+      return file ? this.call('studio.containers.saveLogs', { stackId, component, fileHandle: file }) : null
+    },
+    /** Asks where to save (prefilled with `suggestedName`), then writes the export; `null` when cancelled. */
+    exportStack: async (stackId: string, suggestedName?: string) => {
+      const file = await this.#pickOne('stack-export', suggestedName)
+      return file ? this.call('studio.containers.exportStack', { stackId, fileHandle: file }) : null
+    },
+    /** Lets the user choose an exported ZIP or `basyx-stack.json` and reads it; `null` when cancelled. */
+    importStack: async () => {
+      const file = await this.#pickOne('stack-import')
+      return file ? this.call('studio.containers.importStack', { fileHandle: file }) : null
+    },
   }
 
   readonly backend = {
@@ -90,6 +139,12 @@ export class StudioClient {
       this.#pending.set(id, { resolve: resolve as (value: unknown) => void, reject })
       this.#port.postMessage({ type: 'request', id, method, params })
     })
+  }
+
+  /** The handle of the one file the user chose, or `null` when cancelled. */
+  async #pickOne (kind: StackFileKind, suggestedName?: string): Promise<string | null> {
+    const { files } = await this.containers.pickFiles(kind, suggestedName)
+    return files[0]?.handle ?? null
   }
 
   #receive (message: HostMessage) {

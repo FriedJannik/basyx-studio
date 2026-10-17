@@ -7,9 +7,14 @@ import { BackendRunner } from '../lib/apps/runner'
 import { installBundledApp } from '../lib/apps/store'
 import { capabilityTokenKey } from '../lib/apps/tokens'
 import { loadStudioConfig } from '../lib/config'
+import { systemDiscoveryEnvironment } from '../lib/containers/discovery'
+import { infrastructureInputOf } from '../lib/containers/infrastructure'
+import { ContainerManager } from '../lib/containers/manager'
 import { SecretCipher } from '../lib/crypto/cipher'
 import { openDatabase } from '../lib/database/client'
 import { applyMigrations } from '../lib/database/migrate'
+import { FileGrantStore } from '../lib/desktop/grants'
+import { createInfrastructure, deleteInfrastructure } from '../lib/infrastructures'
 import { ensureDesktopSession } from '../lib/sessions'
 import { CredentialBroker } from '../lib/targets/credentials'
 import { WorkspaceWorkerClient } from '../lib/workspaces/client'
@@ -27,6 +32,10 @@ export interface StudioRuntime extends StudioDeps {
   backends: BackendRunner | null
   /** Signs the capability tokens of backend app calls. */
   capabilityKey: Buffer
+  /** Files the user chose in native dialogs for the BaSyx Docker app (desktop). */
+  fileGrants: FileGrantStore
+  /** Local BaSyx instances on Docker or Podman (ADR 0033); `null` when hosted. */
+  containers: ContainerManager | null
   close: () => Promise<void>
 }
 
@@ -94,6 +103,19 @@ async function initialize (): Promise<StudioRuntime> {
           capabilityUrl: config.apps.capabilityUrl,
         })
       : null
+    const fileGrants = new FileGrantStore()
+    const containers = config.containers
+      ? new ContainerManager({
+          deps,
+          dataDir: config.containers.dataDir,
+          discovery: systemDiscoveryEnvironment(),
+          grants: fileGrants,
+          infrastructures: {
+            create: async ({ name, spec, actor, requestId }) => (await createInfrastructure(deps, actor, infrastructureInputOf(name, spec), requestId)).id,
+            remove: (id, actor, requestId) => deleteInfrastructure(deps, actor, id, requestId),
+          },
+        })
+      : null
     console.info(`[studio] ${config.deploymentMode} mode, ${config.database.kind} database, public URL ${config.publicUrl}`)
     return {
       ...deps,
@@ -102,8 +124,11 @@ async function initialize (): Promise<StudioRuntime> {
       inspector,
       backends,
       capabilityKey: capabilityTokenKey(config.dataKey),
+      fileGrants,
+      containers,
       close: async () => {
         backends?.dispose()
+        await containers?.dispose()
         workspaces?.dispose()
         inspector?.close()
         await handle.close()

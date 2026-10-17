@@ -49,6 +49,13 @@ const definitions: Record<ProblemCode, ProblemDefinition> = {
   app_permission_not_declared: { status: 403, title: 'The app did not declare the permission for this call', retryable: false },
   app_backend_unavailable: { status: 503, title: 'The app backend is not available', retryable: true },
   app_backend_failed: { status: 502, title: 'The app backend failed', retryable: false },
+  container_engine_unavailable: { status: 503, title: 'No container engine is running', retryable: true },
+  container_busy: { status: 409, title: 'Another operation is running for this instance', retryable: true },
+  container_port_in_use: { status: 409, title: 'A port is used by another program', retryable: false },
+  container_image_unavailable: { status: 502, title: 'An image could not be downloaded', retryable: true },
+  container_disk_full: { status: 507, title: 'The container engine has no disk space left', retryable: false },
+  container_start_failed: { status: 502, title: 'A component did not start', retryable: true },
+  container_operation_failed: { status: 502, title: 'The container engine refused the operation', retryable: false },
 }
 
 export interface Violation {

@@ -90,9 +90,10 @@ function rejected (findings: Violation[]): StudioProblem {
 /**
  * Validates an uploaded app package (ZIP) completely before anything is
  * stored: archive limits and entry names, allowed file types, the manifest
- * schema and its references, and compatibility with this Studio.
+ * schema and its references, and compatibility with this Studio. With
+ * `deploymentMode` `null`, the caller checks the app's runtimes itself.
  */
-export function readAppPackage (bytes: Uint8Array, deploymentMode: DeploymentMode): AppPackage {
+export function readAppPackage (bytes: Uint8Array, deploymentMode: DeploymentMode | null): AppPackage {
   try {
     inspectArchive(bytes, appArchiveLimits, 'app package (ZIP)')
   } catch (error) {

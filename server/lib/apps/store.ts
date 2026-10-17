@@ -35,6 +35,12 @@ export async function installApp (deps: StudioDeps, actor: Actor, bytes: Uint8Ar
     throw new StudioProblem('app_unsigned_disabled', 'Set STUDIO_APPS_ALLOW_UNSIGNED=true to allow developer-mode installs.')
   }
   const pkg = readAppPackage(bytes, deps.config.deploymentMode)
+  const reserved = pkg.manifest.permissions.filter(permission => (bundledOnlyPermissions as readonly string[]).includes(permission))
+  if (reserved.length > 0) {
+    throw new StudioProblem('app_package_rejected', `${reserved.join(', ')} is reserved for the apps shipped with Studio (ADR 0033).`, {
+      violations: reserved.map(permission => ({ path: 'studio-app.json#permissions', message: `requests ${permission}, which only bundled apps may hold` })),
+    })
+  }
   const id = newInstallationId()
 
   const record = await deps.db.transaction(async tx => {
@@ -72,6 +78,9 @@ export async function installApp (deps: StudioDeps, actor: Actor, bytes: Uint8Ar
   return record
 }
 
+/** Permissions only the apps shipped with Studio may hold: they reach beyond the AAS (ADR 0033). */
+export const bundledOnlyPermissions = ['studio.containers'] as const
+
 /** The subject recorded as installer of bundled apps. */
 export const bundledInstaller = 'studio'
 
@@ -82,7 +91,11 @@ export const bundledInstaller = 'studio'
  * installed is left alone.
  */
 export async function installBundledApp (deps: StudioDeps, bytes: Uint8Array): Promise<'installed' | 'updated' | 'unchanged' | 'skipped'> {
-  const pkg = readAppPackage(bytes, deps.config.deploymentMode)
+  const pkg = readAppPackage(bytes, null)
+  // Apps for the other runtime only, e.g. BaSyx Docker on hosted Studio.
+  if (!pkg.manifest.runtimes.includes(deps.config.deploymentMode)) {
+    return 'skipped'
+  }
   return deps.db.transaction(async tx => {
     const [existing] = await tx.select().from(appInstallations).where(eq(appInstallations.appId, pkg.manifest.id))
     if (existing && !existing.bundled) {

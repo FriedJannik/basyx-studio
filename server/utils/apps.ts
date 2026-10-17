@@ -5,11 +5,12 @@ import type { Actor } from '../lib/deps'
 import type { StudioRuntime } from './studio'
 import type { RequestEvent } from 'nuxt/server'
 import { appMethodParamsSchemas } from '#shared/contract'
-import { authorizeAppCall, executeAasMethod, isAasMethod, isWriteMethod } from '../lib/apps/calls'
+import { authorizeAppCall, executeAasMethod, isAasMethod, isContainerMethod, isWriteMethod } from '../lib/apps/calls'
 import { listAppFilePaths, readAppFiles } from '../lib/apps/store'
 import { issueCapabilityToken } from '../lib/apps/tokens'
 import { recordAudit } from '../lib/audit'
 import { StudioProblem } from '../lib/problem'
+import { performContainerMethod } from './containers'
 import { requestIdOf } from './handler'
 import { useStudio } from './studio'
 import { openTargetFor } from './target'
@@ -72,6 +73,14 @@ export async function performAppCall (event: RequestEvent, call: AppCall): Promi
 
   if (method === 'studio.backend.call') {
     return callBackend(studio, call, params as { method: string, params?: unknown })
+  }
+  if (isContainerMethod(method)) {
+    try {
+      return await performContainerMethod(studio, actor, method, params, requestId)
+    } catch (error) {
+      await auditFailure(error)
+      throw error
+    }
   }
   if (!isAasMethod(method)) {
     return null

@@ -103,3 +103,36 @@ call.
 ## Examples
 
 See [`examples/apps`](../../examples/apps).
+
+## Desktop container capability
+
+`studio.containers` is reserved for bundled desktop apps. Uploaded apps
+requesting it are rejected; backend apps cannot call these methods. The
+service uses a fixed BaSyx catalogue and local Docker/Podman sockets.
+
+- Engines: `listEngines()`, `selectEngine(host | null)` (Unix socket or Windows pipe).
+- Planning and lifecycle: `listStacks()`, `getStack(id)`, `planStack(spec, id?)`,
+  `createStack({ spec, aasxFiles?, importId? })`, `changeStack({ stackId, spec, aasxFiles? })`,
+  `startStack(id)`, `stopStack(id)`, `updateStack(id)`, `removeStack({ stackId, deleteData, removeInfrastructure })`.
+- Progress and inspection: `getJob(id)`, `getLogs(id, component, tail?)`,
+  `saveLogs(id, component)`, `getSignIn(id)`. Sign-in details contain passwords.
+- Files: `pickFiles(kind, suggestedName?)` and its shortcut `pickAasxFiles()`;
+  `exportStack(id, suggestedName?)`, `importStack()` and `saveLogs(id, component)`
+  first pick a file, then call the method with its handle. Studio authorizes
+  every pick before the host opens a native dialog; the app only receives
+  single-use handles, which expire after five minutes. Cancelling returns `null`.
+
+Mutations return jobs; poll `getJob` until it succeeds or fails. Export
+includes current database data, generated credentials and exact image digests.
+Show a password/data warning before calling it. Imports restore the database
+before service startup; edited compose files are ignored. A bare JSON spec
+imports settings without data. Keeping data on removal retains a recoverable
+entry and its encrypted credentials.
+
+Calls travel through `/app-calls`, never directly to the engine.
+`ui.openTarget(id)` and `ui.openExternal(url)` require `studio.ui.navigation`;
+`openExternal` accepts https, and http only to this computer.
+`ui.copyText(text)` requires `studio.ui.clipboard`. Both `openExternal` and
+`copyText` must be called from a click (or key press) in the app: the host
+refuses them without a recent user activation. `presetSpec(preset, name)`
+returns the defaults the wizard starts from.
