@@ -201,3 +201,55 @@ services:
       basyx-large-schema:
         condition: service_completed_successfully
     restart: unless-stopped
+
+  # --- Target "demo" (profile "demo"): the Fleet Atlas demo plant -------------
+  # About 110 twins of a fictitious bottling plant, generated on demand:
+  #   pnpm testenv:demo        (pnpm testenv:demo:live animates its live data)
+  basyx-demo-db:
+    image: postgres:18
+    profiles: [demo]
+    environment:
+      PGPASSWORD: postgres
+    command:
+      - sh
+      - -c
+      - >-
+        psql -h postgres -U postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'basyx_demo'" | grep -q 1 ||
+        (psql -h postgres -U postgres -c "CREATE DATABASE basyx_demo OWNER basyx" &&
+        psql -h postgres -U postgres -d basyx_demo -c "CREATE EXTENSION IF NOT EXISTS ltree; CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  basyx-demo-schema:
+    image: eclipsebasyx/basyxconfigurationservice-go:SNAPSHOT
+    pull_policy: always
+    profiles: [demo]
+    environment:
+      <<: *basyx-env
+      POSTGRES_DBNAME: basyx_demo
+    depends_on:
+      basyx-demo-db:
+        condition: service_completed_successfully
+
+  basyx-demo:
+    image: eclipsebasyx/aasenvironment-go:SNAPSHOT
+    pull_policy: always
+    profiles: [demo]
+    command: ["/app/aasenvironmentservice"]
+    environment:
+      <<: *basyx-env
+      POSTGRES_DBNAME: basyx_demo
+      ABAC_ENABLED: "false"
+      GENERAL_AAS_PRECONFIG_PATHS: /app/preconfiguration
+      GENERAL_AASREGISTRYINTEGRATION: "true"
+      GENERAL_SUBMODELREGISTRYINTEGRATION: "true"
+      GENERAL_EXTERNALURL: http://localhost:18084
+    ports:
+      - "18084:5004"
+    volumes:
+      - ./fixtures/demo:/app/preconfiguration:ro
+    depends_on:
+      basyx-demo-schema:
+        condition: service_completed_successfully
+    restart: unless-stopped

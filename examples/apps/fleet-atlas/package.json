@@ -1,0 +1,21 @@
+{
+  "name": "@basyx/studio-example-fleet-atlas",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@basyx/studio-sdk": "workspace:*",
+    "@mdi/font": "7.4.47",
+    "d3-hierarchy": "3.1.2",
+    "vue": "^3.5.44",
+    "vuetify": "^4.2.5"
+  },
+  "devDependencies": {
+    "@types/d3-hierarchy": "3.1.7",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "vite": "^8.3.2"
+  }
+}

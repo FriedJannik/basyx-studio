@@ -32,3 +32,5 @@ logs
 
 # Generated on demand (pnpm testenv:large)
 /test-setup/fixtures/large
+# Generated on demand (pnpm testenv:demo)
+/test-setup/fixtures/demo

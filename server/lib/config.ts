@@ -165,6 +165,7 @@ export function loadStudioConfig (env: NodeJS.ProcessEnv, deploymentMode: Deploy
       // Off by default for hosted deployments; the desktop user installs for themselves.
       allowUnsigned: (values.STUDIO_APPS_ALLOW_UNSIGNED ?? (deploymentMode === 'desktop' ? 'true' : 'false')) === 'true',
       denoPath: values.STUDIO_DENO_PATH ?? null,
+      // The runner falls back to [::1] when the server listens on IPv6 only.
       capabilityUrl: `http://127.0.0.1:${port}`,
       workDir: resolve(values.STUDIO_DATA_DIR, 'app-backends'),
     },

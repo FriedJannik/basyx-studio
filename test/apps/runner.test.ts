@@ -1,3 +1,4 @@
+import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import type { BackendSource } from '~~/server/lib/apps/runner'
 import { existsSync } from 'node:fs'
@@ -7,7 +8,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { BackendRunner } from '~~/server/lib/apps/runner'
+import { BackendRunner, reachableLoopbackUrl } from '~~/server/lib/apps/runner'
 
 const root = fileURLToPath(new URL('../..', import.meta.url))
 const denoPath = join(root, 'node_modules', 'deno', process.platform === 'win32' ? 'deno.exe' : 'deno')
@@ -128,5 +129,84 @@ describe.runIf(existsSync(denoPath))('BackendRunner (Deno)', () => {
     expect(existsSync(join(workDir, 'app-0123456789abcdef'))).toBe(false)
     await new Promise(resolve => setTimeout(resolve, 200))
     expect(() => process.kill(pid, 0)).toThrow()
+  })
+})
+
+/** An HTTP server on one loopback address, or `null` where it is unavailable (no IPv6). */
+async function listenOn (host: string): Promise<Server | null> {
+  const server = createServer((_request, response) => {
+    response.setHeader('content-type', 'application/json')
+    response.end(JSON.stringify({ result: { items: [], page: { nextCursor: null, hasMore: false } } }))
+  })
+  return new Promise(resolve => {
+    server.once('error', () => resolve(null))
+    server.listen(0, host, () => resolve(server))
+  })
+}
+
+const portOf = (server: Server) => (server.address() as AddressInfo).port
+
+// `nuxt dev` binds `localhost`, which is [::1] only on some machines, while
+// the configured capability URL is http://127.0.0.1:<port>.
+describe('reachableLoopbackUrl', () => {
+  it('keeps the configured address when it answers', async () => {
+    const server = (await listenOn('127.0.0.1'))!
+    try {
+      expect(await reachableLoopbackUrl(`http://127.0.0.1:${portOf(server)}`)).toBe(`http://127.0.0.1:${portOf(server)}`)
+    } finally {
+      server.close()
+    }
+  })
+
+  it('falls back to the other loopback address', async ({ skip }) => {
+    const server = await listenOn('::1')
+    if (!server) {
+      return skip('IPv6 loopback is unavailable')
+    }
+    try {
+      expect(await reachableLoopbackUrl(`http://127.0.0.1:${portOf(server)}`)).toBe(`http://[::1]:${portOf(server)}`)
+    } finally {
+      server.close()
+    }
+  })
+
+  it('reports when nothing answers', async () => {
+    const server = (await listenOn('127.0.0.1'))!
+    const port = portOf(server)
+    await new Promise(resolve => server.close(resolve))
+    expect(await reachableLoopbackUrl(`http://127.0.0.1:${port}`, 200)).toBeNull()
+  })
+})
+
+describe.runIf(existsSync(denoPath))('BackendRunner with an IPv6-only service', () => {
+  it('reaches the capability endpoint on [::1] and nothing on 127.0.0.1', async ({ skip }) => {
+    const server = await listenOn('::1')
+    if (!server) {
+      return skip('IPv6 loopback is unavailable')
+    }
+    const workDir = await mkdtemp(join(tmpdir(), 'studio-backends-'))
+    const port = portOf(server)
+    const runner = new BackendRunner({ denoPath, workDir, capabilityUrl: `http://127.0.0.1:${port}`, callTimeoutMs: 5000 })
+    const code = `
+export async function shells (params, { studio }) { return studio.call('studio.aas.listShells', { limit: 1 }) }
+export async function ipv4 () {
+  try { await fetch('http://127.0.0.1:${port}/'); return 'allowed' } catch (error) { return error.name }
+}
+`
+    const source = async (): Promise<BackendSource> => ({
+      installationId: 'app-00000000000000v6',
+      appId: 'org.example.ipv6',
+      entry: 'backend/main.js',
+      files: new Map([['backend/main.js', new TextEncoder().encode(code)]]),
+    })
+    try {
+      expect(await runner.call('app-00000000000000v6', source, 'shells', {}, 'sct.test-token')).toEqual({ items: [], page: { nextCursor: null, hasMore: false } })
+      // Deno grants only the address that answered.
+      expect(await runner.call('app-00000000000000v6', source, 'ipv4', {}, 'sct.test-token')).toBe('NotCapable')
+    } finally {
+      runner.dispose()
+      server.close()
+      await rm(workDir, { recursive: true, force: true })
+    }
   })
 })

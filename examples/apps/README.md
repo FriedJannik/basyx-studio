@@ -6,6 +6,7 @@ Studio apps that prove the app platform (MVP-3, [ADR 0004](../../docs/adr/0004-r
 | --- | --- | --- |
 | `shell-explorer` | Target module with nested routes; shell module | read, navigation |
 | `backend-demo` | Target module with a Deno backend | read, backend |
+| `fleet-atlas` | Target module with a Deno backend: a zoomable map of the fleet with lenses, questions in plain language and fleet-wide fixes ([README](fleet-atlas/README.md)) | read, write, notifications, backend |
 
 The Digital Nameplate example became Studio's bundled `apps/nameplate` in
 MVP-4; it shows the nameplate and, in edit mode, changes its properties.

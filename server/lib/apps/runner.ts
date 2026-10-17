@@ -2,6 +2,7 @@ import type { ChildProcessWithoutNullStreams } from 'node:child_process'
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { connect } from 'node:net'
 import { dirname, join } from 'node:path'
 import { StudioProblem } from '../problem'
 
@@ -19,7 +20,11 @@ export interface BackendRunnerOptions {
   denoPath: string
   /** Directory for extracted backends and Deno's cache. */
   workDir: string
-  /** The only address the backend may reach: this service on loopback. */
+  /**
+   * The only address the backend may reach: this service on loopback. If the
+   * service does not answer there, the other loopback address (127.0.0.1 or
+   * [::1]) is used, as a server bound to `localhost` may listen on one only.
+   */
   capabilityUrl: string
   callTimeoutMs?: number
   startupTimeoutMs?: number
@@ -31,6 +36,40 @@ export interface BackendRunnerOptions {
 }
 
 const harnessFile = '__studio_host__.mjs'
+
+/** Whether something accepts TCP connections on a host (an IPv6 address in brackets) and port. */
+function accepts (host: string, port: number, timeoutMs: number): Promise<boolean> {
+  return new Promise(resolve => {
+    const socket = connect({ host: host.replace(/^\[(.*)\]$/, '$1'), port, timeout: timeoutMs })
+    const done = (ok: boolean) => {
+      socket.destroy()
+      resolve(ok)
+    }
+    socket.once('connect', () => done(true))
+    socket.once('timeout', () => done(false))
+    socket.once('error', () => done(false))
+  })
+}
+
+/**
+ * The loopback URL on which the service answers: the configured one, else the
+ * same port on the other loopback address. `null` when neither answers.
+ */
+export async function reachableLoopbackUrl (configured: string, timeoutMs = 1000): Promise<string | null> {
+  const url = new URL(configured)
+  const port = Number(url.port || (url.protocol === 'https:' ? 443 : 80))
+  const alternatives: Record<string, string> = { '127.0.0.1': '[::1]', '[::1]': '127.0.0.1' }
+  const alternative = alternatives[url.hostname]
+  const hosts = alternative ? [url.hostname, alternative] : [url.hostname]
+  for (const host of hosts) {
+    if (await accepts(host, port, timeoutMs)) {
+      const reachable = new URL(configured)
+      reachable.hostname = host
+      return reachable.origin
+    }
+  }
+  return null
+}
 
 /**
  * The Deno entry Studio writes next to the backend. It imports the backend
@@ -248,6 +287,7 @@ export class BackendRunner {
   readonly #options: Required<BackendRunnerOptions>
   #processes = new Map<string, { process: BackendProcess, idle: NodeJS.Timeout | undefined }>()
   #starting = new Map<string, Promise<BackendProcess>>()
+  #capabilityUrl: string | undefined
 
   constructor (options: BackendRunnerOptions) {
     this.#options = {
@@ -317,6 +357,12 @@ export class BackendRunner {
     return starting
   }
 
+  /** The capability URL that answers, found once; until one answers, the configured one. */
+  async #reachableCapabilityUrl (): Promise<string> {
+    this.#capabilityUrl ??= await reachableLoopbackUrl(this.#options.capabilityUrl) ?? undefined
+    return this.#capabilityUrl ?? this.#options.capabilityUrl
+  }
+
   async #start (installationId: string, load: () => Promise<BackendSource>): Promise<BackendProcess> {
     if (!existsSync(this.#options.denoPath)) {
       throw new StudioProblem('app_backend_unavailable', 'The Deno runtime for backend apps is not installed.')
@@ -329,9 +375,9 @@ export class BackendRunner {
       await mkdir(dirname(file), { recursive: true })
       await writeFile(file, content)
     }
-    await writeFile(join(directory, harnessFile), harnessSource(source.entry, this.#options.capabilityUrl))
+    const capabilityUrl = await this.#reachableCapabilityUrl()
+    await writeFile(join(directory, harnessFile), harnessSource(source.entry, capabilityUrl))
 
-    const port = new URL(this.#options.capabilityUrl).port
     const child = spawn(this.#options.denoPath, [
       'run',
       '--no-prompt',
@@ -340,7 +386,7 @@ export class BackendRunner {
       '--no-config',
       '--no-lock',
       '--cached-only',
-      `--allow-net=127.0.0.1:${port}`,
+      `--allow-net=${new URL(capabilityUrl).host}`,
       `--v8-flags=--max-old-space-size=${this.#options.memoryMb}`,
       harnessFile,
     ], {

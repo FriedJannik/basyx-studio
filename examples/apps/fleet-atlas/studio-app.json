@@ -1,0 +1,28 @@
+{
+  "$schema": "../../../packages/studio-sdk/app-manifest.schema.json",
+  "manifestVersion": 0,
+  "id": "org.eclipse.basyx.examples.fleet-atlas",
+  "version": "1.1.0",
+  "publisher": { "name": "Eclipse BaSyx" },
+  "title": { "en": "Fleet Atlas", "de": "Flotten-Atlas" },
+  "description": {
+    "en": "A living, zoomable map of every twin on the target: structure, passport readiness, carbon footprint and live status at a glance. Ask the fleet questions in plain language and fix passport gaps across many twins at once.",
+    "de": "Eine lebendige, zoombare Karte aller Zwillinge des Ziels: Struktur, Passbereitschaft, CO₂-Fußabdruck und Live-Zustand auf einen Blick. Stellen Sie der Flotte Fragen in natürlicher Sprache und schließen Sie Passlücken vieler Zwillinge auf einmal."
+  },
+  "studioApi": "^0.1.0",
+  "runtimes": ["hosted", "desktop"],
+  "permissions": ["studio.aas.read", "studio.aas.write", "studio.ui.notifications", "studio.backend"],
+  "backend": { "runtime": "deno", "entry": "backend/main.js" },
+  "contributes": {
+    "modules": [
+      {
+        "id": "atlas",
+        "title": { "en": "Fleet Atlas", "de": "Flotten-Atlas" },
+        "icon": "mdi-orbit",
+        "entry": "ui/index.html",
+        "route": "atlas",
+        "context": "target"
+      }
+    ]
+  }
+}
