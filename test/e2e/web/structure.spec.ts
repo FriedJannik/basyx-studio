@@ -51,8 +51,16 @@ test('creates a shell with an empty submodel through the wizard', async ({ page 
   await page.getByRole('button', { name: 'New shell' }).click()
 
   const dialog = page.getByRole('dialog')
-  await dialog.getByRole('textbox', { name: 'idShort' }).fill('E2EWizardShell')
-  await dialog.getByRole('textbox', { name: 'AAS identifier' }).fill(shellId)
+  const idShort = dialog.getByRole('textbox', { name: 'idShort' })
+  const identifier = dialog.getByRole('textbox', { name: 'AAS identifier' })
+  // While the dialog opens, it focuses its first field again, which can send
+  // keystrokes meant for the identifier into the idShort: fill until both hold.
+  await expect(async () => {
+    await idShort.fill('E2EWizardShell')
+    await identifier.fill(shellId)
+    await expect(idShort).toHaveValue('E2EWizardShell', { timeout: 500 })
+    await expect(identifier).toHaveValue(shellId, { timeout: 500 })
+  }).toPass()
   await dialog.getByRole('button', { name: 'Next' }).click()
 
   await dialog.getByRole('button', { name: 'Add submodel' }).click()
