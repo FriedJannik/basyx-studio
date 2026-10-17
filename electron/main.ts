@@ -9,6 +9,7 @@ import { createServer } from 'node:net'
 import { join } from 'node:path'
 
 import { app, BrowserWindow, dialog, ipcMain, protocol, safeStorage, session, shell } from 'electron'
+import { isSaveKind, isStackFileKind, stackFileExtensions } from '../shared/file-grant-kinds'
 
 const launchSecretHeader = 'X-Studio-Launch-Secret'
 const brokerSecretHeader = 'X-Studio-Broker-Secret'
@@ -340,6 +341,8 @@ function registerDesktopBridge (): void {
     return callService('desktop/file-grants', { method: 'POST', body: { path: result.filePaths[0], purpose: 'open' } })
   })
 
+  ipcMain.handle('studio:choose-stack-files', (event, kind: unknown, suggestedName: unknown) => chooseStackFiles(event, kind, suggestedName))
+
   ipcMain.handle('studio:choose-save-location', async (event, suggestedName: unknown) => {
     if (!isTrustedSender(event)) {
       throw new Error('Untrusted sender.')
@@ -353,6 +356,47 @@ function registerDesktopBridge (): void {
     const path = result.filePath.toLowerCase().endsWith('.aasx') ? result.filePath : `${result.filePath}.aasx`
     return callService('desktop/file-grants', { method: 'POST', body: { path, purpose: 'save' } })
   })
+}
+
+/**
+ * Native dialogs of the BaSyx Docker app (ADR 0033): AASX files to load,
+ * an export to import, and where to save an export. Each chosen path becomes
+ * a single-use grant; the renderer only sees the handles.
+ */
+async function chooseStackFiles (event: Electron.IpcMainInvokeEvent, kind: unknown, suggestedName: unknown): Promise<StudioFileGrantResult[]> {
+  if (!isTrustedSender(event)) {
+    throw new Error('Untrusted sender.')
+  }
+  if (!isStackFileKind(kind)) {
+    throw new Error('Unknown file kind.')
+  }
+  const window = BrowserWindow.fromWebContents(event.sender)
+  const grant = (path: string, purpose: 'open' | 'save') => callService<StudioFileGrantResult>('desktop/file-grants', { method: 'POST', body: { path, purpose, kind } })
+  const extensions = [...stackFileExtensions[kind]]
+  if (isSaveKind(kind)) {
+    const name = typeof suggestedName === 'string' && suggestedName ? suggestedName.replaceAll(/[/\\:*?"<>|]/g, '_').slice(0, 200) : 'basyx'
+    const extension = extensions[0]!
+    const options = { defaultPath: `${name}.${extension}`, filters: [{ name: extension.toUpperCase(), extensions }] }
+    const result = window ? await dialog.showSaveDialog(window, options) : await dialog.showSaveDialog(options)
+    if (result.canceled || !result.filePath) {
+      return []
+    }
+    const path = result.filePath.toLowerCase().endsWith(`.${extension}`) ? result.filePath : `${result.filePath}.${extension}`
+    return [await grant(path, 'save')]
+  }
+  const options: Electron.OpenDialogOptions = kind === 'stack-aasx'
+    ? { properties: ['openFile', 'multiSelections'], filters: aasxFilters }
+    : { properties: ['openFile'], filters: [{ name: 'BaSyx setup', extensions }] }
+  const result = window ? await dialog.showOpenDialog(window, options) : await dialog.showOpenDialog(options)
+  if (result.canceled) {
+    return []
+  }
+  return Promise.all(result.filePaths.slice(0, 20).map(path => grant(path, 'open')))
+}
+
+interface StudioFileGrantResult {
+  handle: string
+  fileName: string
 }
 
 /** Asks before a window with unsaved workspace changes closes. */

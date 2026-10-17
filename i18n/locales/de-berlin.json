@@ -381,7 +381,7 @@
       "studio_aas_read": "AAS-Daten lesen, wo du rankommst",
       "studio_aas_write": "AAS-Werte ändern, die du ändern darfst",
       "studio_ui_notifications": "Bescheid sagen",
-      "studio_ui_navigation": "Die eijene Seitenadresse ändern",
+      "studio_ui_navigation": "Die eijene Seitenadresse ändern, Ziele uffmachen und Links im Browser uffmachen",
       "studio_backend": "Code uff'm Server loofen lassen (für sich)"
     },
     "bundled": "Is dabei",

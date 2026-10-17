@@ -1,4 +1,4 @@
-import type { ClientCertificateSummary, EndpointInput, InfrastructureTemplate, ListSource, Preferences, SecuritySummary, ServiceProfiles, SyncSettings } from '#shared/contract'
+import type { ClientCertificateSummary, EndpointInput, InfrastructureTemplate, ListSource, Preferences, SecuritySummary, ServiceProfiles, StackComponentId, StackSpec, SyncSettings } from '#shared/contract'
 import type { AppManifest } from '@basyx/studio-sdk/protocol'
 import { boolean, customType, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
@@ -127,5 +127,35 @@ export const appFiles = pgTable('app_files', {
 export const userPreferences = pgTable('user_preferences', {
   subject: text('subject').primaryKey(),
   preferences: jsonb('preferences').$type<Preferences>().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/**
+ * Local BaSyx instances on the user's container engine (ADR 0033, desktop
+ * only). The engine holds what runs; this row holds what the user chose, the
+ * generated secrets and the infrastructure Studio created for it.
+ */
+export const containerStacks = pgTable('container_stacks', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  /** The `basyx-stack/1` spec, with its base port. */
+  spec: jsonb('spec').$type<StackSpec>().notNull(),
+  /** Encrypted database, Keycloak and user passwords; never returned except through sign-in details. */
+  secretsCiphertext: text('secrets_ciphertext').notNull(),
+  /** The engine the stack runs on (`unix:///…`, `npipe:////./pipe/…`). */
+  engineHost: text('engine_host').notNull(),
+  /** The image each component was created from. */
+  images: jsonb('images').$type<Partial<Record<StackComponentId, string>>>().notNull().default({}),
+  infrastructureId: text('infrastructure_id').references(() => infrastructures.id, { onDelete: 'set null' }),
+  createdBy: text('created_by').notNull(),
+  ...timestamps,
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/** Container engine settings; one row (`default`). */
+export const containerSettings = pgTable('container_settings', {
+  id: text('id').primaryKey(),
+  /** The chosen engine; `null` picks the first running one. */
+  engineHost: text('engine_host'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

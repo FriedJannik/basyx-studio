@@ -2655,7 +2655,11 @@ paths:
         (`Authorization: Bearer sct.…`, ADR 0019). Studio checks the method
         against the installed manifest's permissions and opens the target with
         the calling user's rights. Refusals and writes are audited with the
-        installation.
+        installation. Desktop bundled apps may also call studio.containers.*
+        (ADR 0033), without a target. This authority is refused to uploaded
+        apps and backend callers and is unavailable in hosted Studio.
+        Lifecycle methods return jobs polled with studio.containers.getJob;
+        export/import/log saving use native file grants added by the host.
       x-requirements: [APP-006, APP-009, APP-010, SEC-005]
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
@@ -5020,6 +5024,7 @@ components:
         - studio.http.request
         - studio.ui.notifications
         - studio.ui.navigation
+        - studio.ui.clipboard
         - studio.ui.commands
         - studio.ui.panels
         - studio.semantic.read
@@ -5030,6 +5035,7 @@ components:
         - studio.views.binding.write
         - studio.views.binding.invoke
         - studio.backend
+        - studio.containers
     AppCapabilityRequest:
       type: object
       additionalProperties: false
@@ -5304,6 +5310,27 @@ components:
             - studio.aas.setElementValue
             - studio.backend.call
             - studio.ui.openFullscreen
+            - studio.ui.openTarget
+            - studio.ui.openExternal
+            - studio.ui.copyText
+            - studio.containers.listEngines
+            - studio.containers.selectEngine
+            - studio.containers.listStacks
+            - studio.containers.getStack
+            - studio.containers.planStack
+            - studio.containers.createStack
+            - studio.containers.changeStack
+            - studio.containers.startStack
+            - studio.containers.stopStack
+            - studio.containers.updateStack
+            - studio.containers.removeStack
+            - studio.containers.getJob
+            - studio.containers.getLogs
+            - studio.containers.saveLogs
+            - studio.containers.getSignIn
+            - studio.containers.pickFiles
+            - studio.containers.exportStack
+            - studio.containers.importStack
         params:
           description: Method parameters as defined by `@basyx/studio-sdk` (`studio-sdk/0`). The context returned by `studio.ui.getContext` includes Studio's `mode` (`view` or `edit`); apps show edit controls only in `edit` (MVP-4, UX-006).
     AppCallResult:

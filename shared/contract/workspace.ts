@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { stackFileKinds } from '../file-grant-kinds'
 
 /** Opaque, single-use reference to a file the user chose in a native dialog. */
 export const fileHandleSchema = z.string().regex(/^[\w-]{32}$/)
@@ -13,6 +14,8 @@ export type ExportWorkspaceInput = z.infer<typeof exportWorkspaceInputSchema>
 export const fileGrantInputSchema = z.object({
   path: z.string().min(1).max(4096),
   purpose: z.enum(['open', 'save']),
+  /** Absent for AASX workspaces; a kind of the BaSyx Docker app otherwise (ADR 0033). */
+  kind: z.enum(stackFileKinds).optional(),
 })
 export type FileGrantInput = z.infer<typeof fileGrantInputSchema>
 

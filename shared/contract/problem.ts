@@ -58,6 +58,21 @@ export const problemCodes = [
   'app_permission_not_declared',
   'app_backend_unavailable',
   'app_backend_failed',
+  // Local BaSyx instances (ADR 0033)
+  /** No container engine answers, or the chosen one is not running. */
+  'container_engine_unavailable',
+  /** Another operation runs for this instance. */
+  'container_busy',
+  /** A port the instance needs is used by another program. */
+  'container_port_in_use',
+  /** An image could not be downloaded. */
+  'container_image_unavailable',
+  /** The engine has no disk space left. */
+  'container_disk_full',
+  /** A component did not get ready; `violations[0].path` names it. */
+  'container_start_failed',
+  /** The engine refused an operation. */
+  'container_operation_failed',
 ] as const
 
 export const problemCodeSchema = z.enum(problemCodes)

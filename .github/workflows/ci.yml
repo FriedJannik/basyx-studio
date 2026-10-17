@@ -124,6 +124,9 @@ jobs:
       - name: Integration tests
         run: pnpm test:integration
 
+      - name: Local container lifecycle and export/import
+        run: STUDIO_CONTAINER_TESTS=1 STUDIO_CONTAINER_COMPOSE_TESTS=1 pnpm exec vitest run test/integration/containers.test.ts
+
       - name: Build hosted Studio
         run: pnpm build
 
@@ -209,7 +212,7 @@ jobs:
         run: |
           dbus-run-session -- bash -c '
             echo -n "ci" | gnome-keyring-daemon --unlock --components=secrets >/dev/null
-            xvfb-run --auto-servernum pnpm test:e2e:desktop
+            STUDIO_CONTAINER_E2E=1 xvfb-run --auto-servernum pnpm test:e2e:desktop
           '
 
       - name: Upload Playwright report on failure

@@ -1,7 +1,9 @@
 import type { MethodName, Methods } from '@basyx/studio-sdk/protocol'
-import { permissions, protocolVersion } from '@basyx/studio-sdk/protocol'
+import { permissions, protocolVersion, stackFileKinds } from '@basyx/studio-sdk/protocol'
 import { z } from 'zod'
+import { engineHostSchema, stackComponentIdSchema, stackSpecSchema } from './containers'
 import { langStringSchema, listQuerySchema } from './target'
+import { fileHandleSchema } from './workspace'
 
 // Runtime-installable apps (ADR 0004, MVP-3). The `studio-sdk/0` message
 // types are defined by @basyx/studio-sdk; these schemas validate what Studio
@@ -102,6 +104,13 @@ export type AppRequestMessage = z.infer<typeof appRequestMessageSchema>
 // Capability calls
 
 const identifier = z.string().min(1).max(2048)
+
+/** URLs an app may open in the system browser: https, or http of this computer, where local BaSyx instances answer. */
+export function isExternalUrl (value: string): boolean {
+  const url = URL.parse(value)
+  return url?.protocol === 'https:' || (url?.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname))
+}
+const stackId = z.string().regex(/^[\w-]{1,64}$/)
 const idShortPath = z.string().min(1).max(4000)
 
 /** Parameters of every capability method; anything else is rejected. */
@@ -135,6 +144,32 @@ export const appMethodParamsSchemas = {
     method: z.string().regex(/^[A-Z]\w{0,63}$/i, 'must be the name of an exported function'),
     params: z.unknown().optional(),
   }).strict(),
+  'studio.ui.openTarget': z.object({ targetId: z.string().min(1).max(200) }).strict(),
+  'studio.ui.openExternal': z.object({ url: z.url({ protocol: /^https?$/ }).max(2000).refine(isExternalUrl, 'must be an https URL, or an http URL of this computer') }).strict(),
+  'studio.ui.copyText': z.object({ text: z.string().max(10_000) }).strict(),
+  'studio.containers.listEngines': z.object({}).strict(),
+  'studio.containers.selectEngine': z.object({ host: engineHostSchema.nullable() }).strict(),
+  'studio.containers.listStacks': z.object({}).strict(),
+  'studio.containers.getStack': z.object({ stackId }).strict(),
+  'studio.containers.planStack': z.object({ spec: stackSpecSchema, stackId: stackId.optional() }).strict(),
+  'studio.containers.createStack': z.object({
+    spec: stackSpecSchema,
+    aasxFiles: z.array(fileHandleSchema).max(20).optional(),
+    importId: z.string().max(64).optional(),
+  }).strict(),
+  'studio.containers.changeStack': z.object({ stackId, spec: stackSpecSchema, aasxFiles: z.array(fileHandleSchema).max(20).optional() }).strict(),
+  'studio.containers.startStack': z.object({ stackId }).strict(),
+  'studio.containers.stopStack': z.object({ stackId }).strict(),
+  'studio.containers.updateStack': z.object({ stackId }).strict(),
+  'studio.containers.removeStack': z.object({ stackId, deleteData: z.boolean(), removeInfrastructure: z.boolean() }).strict(),
+  'studio.containers.getJob': z.object({ jobId: z.string().min(1).max(64) }).strict(),
+  'studio.containers.getLogs': z.object({ stackId, component: stackComponentIdSchema, tail: z.number().int().min(1).max(5000).default(500) }).strict(),
+  'studio.containers.saveLogs': z.object({ stackId, component: stackComponentIdSchema, fileHandle: fileHandleSchema }).strict(),
+  'studio.containers.getSignIn': z.object({ stackId }).strict(),
+  // Studio authorizes the pick; then the host shows the native dialog (ADR 0015).
+  'studio.containers.pickFiles': z.object({ kind: z.enum(stackFileKinds), suggestedName: z.string().max(200).optional() }).strict(),
+  'studio.containers.exportStack': z.object({ stackId, fileHandle: fileHandleSchema }).strict(),
+  'studio.containers.importStack': z.object({ fileHandle: fileHandleSchema }).strict(),
 } satisfies Record<MethodName, z.ZodType>
 
 export type AppMethodParams<M extends MethodName> = Methods[M]['params']

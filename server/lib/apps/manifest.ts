@@ -90,7 +90,7 @@ export function checkManifestConsistency (manifest: AppManifest, files: Readonly
 }
 
 /** Technical compatibility with this Studio: app API range and runtime. */
-export function checkCompatibility (manifest: AppManifest, deploymentMode: DeploymentMode): Violation[] {
+export function checkCompatibility (manifest: AppManifest, deploymentMode: DeploymentMode | null): Violation[] {
   const findings: Violation[] = []
   const range = semver.validRange(manifest.studioApi)
   if (!range) {
@@ -98,7 +98,7 @@ export function checkCompatibility (manifest: AppManifest, deploymentMode: Deplo
   } else if (!semver.satisfies(studioAppApiVersion, range)) {
     findings.push({ path: `${manifestFileName}#studioApi`, message: `requires Studio app API ${manifest.studioApi}; this Studio provides ${studioAppApiVersion}` })
   }
-  if (!manifest.runtimes.includes(deploymentMode)) {
+  if (deploymentMode && !manifest.runtimes.includes(deploymentMode)) {
     findings.push({ path: `${manifestFileName}#runtimes`, message: `does not include ${deploymentMode}` })
   }
   return findings

@@ -245,3 +245,34 @@ implementiert:
 
 Neue Problem-Codes: `idshort_conflict`, `structure_conflict`,
 `identifier_conflict`, `partial_write` (mit `steps`), `template_invalid`.
+
+## Lokale BaSyx-Instanzen (Desktop, ADR 0033)
+
+Die gebündelte App verwendet `POST /app-calls` mit der Berechtigung
+`studio.containers`. Es gibt keine separaten `/containers`-HTTP-Routen.
+Hochgeladene Apps mit dieser Berechtigung werden abgewiesen; Backend-Apps
+dürfen sie nicht aufrufen. Im Hosted-Modus ist der Manager nicht verfügbar.
+
+| Capability-Methode (`studio.containers.*`) | Zweck |
+| --- | --- |
+| `listEngines`, `selectEngine` | Lokale Engine erkennen bzw. Socket/Pipe wählen |
+| `listStacks`, `getStack`, `planStack` | Bestand, Status und Startplan |
+| `createStack`, `changeStack`, `startStack`, `stopStack`, `updateStack`, `removeStack` | Lebenszyklus als Jobs; nur markierte Objekte |
+| `getJob` | Fortschritt und Fehler per Polling |
+| `getLogs`, `saveLogs` | Letzte Logzeilen lesen bzw. in eine mit `pickFiles` gewählte Datei speichern |
+| `getSignIn` | Generierte Zugangsdaten nach expliziter Benutzeraktion anzeigen |
+| `pickFiles` | Native Dateidialoge nach Prüfung durch Studio; liefert einmalige Handles |
+| `exportStack`, `importStack` | Export bzw. Import mit einem Handle aus `pickFiles`; der Export enthält Passwörter und Datenbanksnapshot |
+
+Die Parameter und Resultate stehen in `shared/contract/apps.ts`,
+`shared/contract/containers.ts` und im Studio SDK. Getestete Images sind
+per Digest fixiert; ein fehlender Digest wird nicht durch SNAPSHOT ersetzt.
+Beim Entfernen ohne Datenlöschung bleiben Spec und verschlüsselte Secrets
+für die Wiederherstellung erhalten.
+
+`studio.ui.openTarget` und `studio.ui.openExternal` erfordern
+`studio.ui.navigation`; `openExternal` öffnet nur https-Adressen oder
+http-Adressen dieses Computers. `studio.ui.copyText` erfordert die neue
+Berechtigung `studio.ui.clipboard`. Die Host-Bridge führt `copyText` und
+`openExternal` nur direkt nach einem Klick oder Tastendruck in der App aus.
+Lebenszyklus-Aufrufe werden beim Ende ihres Jobs mit dem Ergebnis auditiert.

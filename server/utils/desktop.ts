@@ -31,6 +31,11 @@ export function hasBrokerSecret (event: RequestEvent): boolean {
  * never this broker secret.
  */
 export async function requireBroker (event: RequestEvent): Promise<WorkspaceManager> {
+  return requireWorkspaces(await requireBrokerSecret(event))
+}
+
+/** Like `requireBroker`, without needing the Workspace Worker. */
+export async function requireBrokerSecret (event: RequestEvent): Promise<StudioRuntime> {
   const studio = await useStudio()
   const expected = process.env.STUDIO_BROKER_SECRET
   const provided = getRequestHeader(event, 'x-studio-broker-secret') ?? ''
@@ -42,5 +47,5 @@ export async function requireBroker (event: RequestEvent): Promise<WorkspaceMana
   if (expectedBytes.length !== providedBytes.length || !timingSafeEqual(expectedBytes, providedBytes)) {
     throw new StudioProblem('forbidden')
   }
-  return requireWorkspaces(studio)
+  return studio
 }

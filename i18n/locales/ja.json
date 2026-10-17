@@ -387,8 +387,10 @@
       "studio_aas_read": "アクセス権のある AAS データの読み取り",
       "studio_aas_write": "変更が許可されている AAS 値の変更",
       "studio_ui_notifications": "通知の表示",
-      "studio_ui_navigation": "自身のページアドレスの変更",
-      "studio_backend": "サーバー側コードの実行（分離）"
+      "studio_ui_navigation": "自身のページアドレスの変更、ターゲットを開く、ブラウザーでリンクを開く",
+      "studio_backend": "サーバー側コードの実行（分離）",
+      "studio_ui_clipboard": "クリック時にテキストをクリップボードへコピー",
+      "studio_containers": "Docker または Podman 上のローカル BaSyx インスタンスの起動、停止、エクスポート、削除（Studio 同梱アプリのみ）"
     },
     "bundled": "同梱",
     "bundledHint": "Studio に同梱され、Studio と一緒に更新されます。",

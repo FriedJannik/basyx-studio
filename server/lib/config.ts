@@ -72,6 +72,8 @@ export interface StudioConfig {
   apps: StudioAppsConfig
   /** Largest AASX, JSON or XML file users may upload to a target (D16). */
   uploadMaxBytes: number
+  /** Local BaSyx instances on Docker or Podman (ADR 0033); desktop only. */
+  containers: { dataDir: string } | null
 }
 
 export class ConfigurationError extends Error {}
@@ -170,5 +172,6 @@ export function loadStudioConfig (env: NodeJS.ProcessEnv, deploymentMode: Deploy
       workDir: resolve(values.STUDIO_DATA_DIR, 'app-backends'),
     },
     uploadMaxBytes: values.STUDIO_UPLOAD_MAX_BYTES,
+    containers: deploymentMode === 'desktop' ? { dataDir: resolve(values.STUDIO_DATA_DIR, 'containers') } : null,
   }
 }

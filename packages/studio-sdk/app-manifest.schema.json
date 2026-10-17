@@ -48,7 +48,7 @@
       "description": "What the app may do. An administrator approves these at install; every call is additionally limited by the user's own rights.",
       "type": "array",
       "uniqueItems": true,
-      "items": { "enum": ["studio.aas.read", "studio.aas.write", "studio.ui.notifications", "studio.ui.navigation", "studio.backend"] }
+      "items": { "enum": ["studio.aas.read", "studio.aas.write", "studio.ui.notifications", "studio.ui.navigation", "studio.ui.clipboard", "studio.backend", "studio.containers"] }
     },
     "backend": {
       "description": "Server-side code, run in an isolated Deno process. Requires the studio.backend permission.",
