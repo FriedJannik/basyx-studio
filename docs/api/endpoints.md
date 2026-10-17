@@ -194,7 +194,7 @@ Service-URLs und Dateisystempfade sind ausgeschlossen.
 | `GET/DELETE /app-installations/{installationId}` | Lifecycle und Berechtigungen anzeigen bzw. Installation entfernen. Mit Studio ausgelieferte Apps (`bundled`, ADR 0023) lassen sich nicht entfernen (MVP-4). |
 | `GET /app-installations/{installationId}/compatibility` | Technische Compatibility und semantische Applicability getrennt bewerten. |
 | `GET /app-contributions` | Module der installierten Apps und, für eine oder mehrere Semantic IDs (wiederholter Parameter, MVP-4), passende Submodell-Views mit Begründung (MVP-3). |
-| `POST /app-calls` | Capability-Aufruf für eine App: von der Host-Bridge per Session oder vom Backend per kurzlebigem Capability-Token; geprüft gegen Manifest und Benutzerrechte (MVP-3, ADR 0018). MVP-4 ergänzt `shellId`, `studio.ui.setHeight` und `studio.ui.openFile`; der App-Kontext nennt den Modus (`view` oder `edit`). |
+| `POST /app-calls` | Capability-Aufruf für eine App: von der Host-Bridge per Session oder vom Backend per kurzlebigem Capability-Token; geprüft gegen Manifest und Benutzerrechte (MVP-3, ADR 0018). MVP-4 ergänzt `shellId`, `studio.ui.setHeight` und `studio.ui.openFile`; der App-Kontext nennt den Modus (`view` oder `edit`). `studio.ui.openFullscreen` öffnet die Ansicht erneut in einem Vollbild-Dialog (ohne Berechtigung, nur in der Host-Bridge); dort ist `fullscreen` im Kontext gesetzt. |
 | `POST/DELETE /app-installations/{installationId}/activations` | Für Target/Kontext aktivieren bzw. deaktivieren. |
 | `POST /app-installations/{installationId}/updates` | Signierte immutable Version prüfen und als Update bereitstellen. |
 | `POST /app-installations/{installationId}/rollbacks` | Auf eine verifizierte vorherige Version zurückrollen. |

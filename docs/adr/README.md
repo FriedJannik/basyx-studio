@@ -40,6 +40,7 @@ changes one, add a new ADR with `Supersedes` and mark the old record
 | [0029](0029-submodel-templates-and-instantiation.md) | Accepted | Bundled IDTA templates, instantiation and partial writes |
 | [0030](0030-workspace-undo-log.md) | Accepted | Undo and redo log in the Workspace Worker |
 | [0031](0031-release-age-exceptions-for-aas-core-works-packages.md) | Accepted | Exact-version release-age exceptions extended to reviewed Eclipse AAS Core Works packages |
+| [0032](0032-overview-grid-layout.md) | Accepted | Overview widgets on a user-arranged 12-column grid, stored per shell |
 
 ## Template
 

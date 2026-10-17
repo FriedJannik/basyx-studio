@@ -51,6 +51,8 @@ export class StudioClient {
     setHeight: (height: number) => this.call('studio.ui.setHeight', { height: Math.ceil(height) }),
     /** Opens a File element's content in a new tab; `download` saves it instead. */
     openFile: (submodelId: string, idShortPath: string, download = false) => this.call('studio.ui.openFile', { submodelId, idShortPath, download }),
+    /** Opens this view again in a full-screen dialog; `context.fullscreen` is true there. */
+    openFullscreen: () => this.call('studio.ui.openFullscreen', {}),
   }
 
   readonly backend = {

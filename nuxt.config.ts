@@ -59,6 +59,9 @@ export default defineNuxtConfig({
     },
   },
 
+  // Theme of the Overview's grid library (ADR 0032).
+  css: ['~/assets/styles/grid-layout.css'],
+
   app: {
     head: {
       title: 'BaSyx Studio',

@@ -42,6 +42,9 @@ async function openModule (title: string) {
 
 test('runs installed apps on a local package', async () => {
   test.setTimeout(120_000)
+  // Match the smaller CI display: the shell header can push the overview
+  // below the viewport, where app frames intentionally remain unloaded.
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setSize(1280, 900))
   // Administration opens as a panel from the rail's footer, not as a page.
   await window.getByRole('listitem', { name: 'Apps', exact: true }).click()
   await install(join(root, 'examples/apps/dist/backend-demo.zip'), 'Target Summary')
@@ -56,6 +59,7 @@ test('runs installed apps on a local package', async () => {
   // The bundled submodel view, served under studio-app:, edits the package in
   // memory in Studio's edit mode.
   await window.getByRole('tab', { name: 'Overview' }).click()
+  await window.locator('[data-test="overview-widget-view"]').filter({ hasText: 'Digital Nameplate' }).scrollIntoViewIfNeeded()
   const nameplate = window.frameLocator('iframe[title="App: Digital Nameplate"]')
   await expect(nameplate.getByText('Industrial Servo Motor DM-3000')).toBeVisible()
   expect(window.frames().some(frame => frame.url().startsWith('studio-app://app-'))).toBe(true)

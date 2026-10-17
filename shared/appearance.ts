@@ -157,6 +157,7 @@ export const roundedDefaults = {
   VBtnPrimary: { rounded: 'pill' },
   VBtnSecondary: { rounded: 'pill' },
   VBtnToggle: { rounded: 'pill' },
+  VBtnWidgetIcon: { rounded: 'pill' },
   VCard: { rounded: 'xl' },
   VCardPane: { rounded: 'xl' },
   VAvatar: { rounded: 'xl' },

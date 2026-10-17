@@ -5303,6 +5303,7 @@ components:
             - studio.aas.getElement
             - studio.aas.setElementValue
             - studio.backend.call
+            - studio.ui.openFullscreen
         params:
           description: Method parameters as defined by `@basyx/studio-sdk` (`studio-sdk/0`). The context returned by `studio.ui.getContext` includes Studio's `mode` (`view` or `edit`); apps show edit controls only in `edit` (MVP-4, UX-006).
     AppCallResult:
