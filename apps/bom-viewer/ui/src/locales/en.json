@@ -1,0 +1,26 @@
+{
+  "bom": {
+    "title": "Bill of Material",
+    "archetype": "Archetype",
+    "archetypeValue": "Archetype: {value}",
+    "mixed": "An entity uses more than one relationship type; only one type is allowed per hierarchical structure.",
+    "graph": "Graph",
+    "tree": "Tree",
+    "fullscreen": "Full screen",
+    "noEntry": "This submodel has no entry node.",
+    "archetypeSet": "Archetype set to {value}.",
+    "conflict": "Someone else changed the archetype in the meantime. Try again.",
+    "forbidden": "You are not permitted to change the archetype."
+  },
+  "archetype": {
+    "Full": "Complete hierarchical structure with all levels.",
+    "OneDown": "Structure showing one level down in the hierarchy.",
+    "OneUp": "Structure showing one level up in the hierarchy."
+  },
+  "graph": {
+    "parts": "Parts: {count}",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fit": "Fit to view"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "bom": {
+    "title": "Stuklijst",
+    "archetype": "Archetype",
+    "archetypeValue": "Archetype: {value}",
+    "mixed": "Een entiteit gebruikt meer dan één relatietype; per hiërarchische structuur is maar één type toegestaan.",
+    "graph": "Graaf",
+    "tree": "Boom",
+    "fullscreen": "Volledig scherm",
+    "noEntry": "Dit submodel heeft geen startknooppunt.",
+    "archetypeSet": "Archetype ingesteld op {value}.",
+    "conflict": "Iemand anders heeft het archetype intussen gewijzigd. Probeer het opnieuw.",
+    "forbidden": "Je mag het archetype niet wijzigen."
+  },
+  "archetype": {
+    "Full": "Volledige hiërarchische structuur met alle niveaus.",
+    "OneDown": "Structuur die één niveau omlaag in de hiërarchie toont.",
+    "OneUp": "Structuur die één niveau omhoog in de hiërarchie toont."
+  },
+  "graph": {
+    "parts": "Onderdelen: {count}",
+    "zoomIn": "Inzoomen",
+    "zoomOut": "Uitzoomen",
+    "fit": "Passend weergeven"
+  }
+}

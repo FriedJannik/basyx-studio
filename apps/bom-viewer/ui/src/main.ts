@@ -1,0 +1,17 @@
+import { VAlert } from 'vuetify/components/VAlert'
+import { VApp } from 'vuetify/components/VApp'
+import { VBtn } from 'vuetify/components/VBtn'
+import { VBtnToggle } from 'vuetify/components/VBtnToggle'
+import { VCard, VCardItem, VCardSubtitle, VCardText, VCardTitle } from 'vuetify/components/VCard'
+import { VChip } from 'vuetify/components/VChip'
+import { VDivider } from 'vuetify/components/VDivider'
+import { VIcon } from 'vuetify/components/VIcon'
+import { VListItem } from 'vuetify/components/VList'
+import { VProgressLinear } from 'vuetify/components/VProgressLinear'
+import { VSelect } from 'vuetify/components/VSelect'
+import { VSheet } from 'vuetify/components/VSheet'
+import { VTreeview } from 'vuetify/components/VTreeview'
+import { mountApp } from '../../../shared/app'
+import App from './App.vue'
+
+await mountApp(App, { VAlert, VApp, VBtn, VBtnToggle, VCard, VCardItem, VCardSubtitle, VCardText, VCardTitle, VChip, VDivider, VIcon, VListItem, VProgressLinear, VSelect, VSheet, VTreeview })

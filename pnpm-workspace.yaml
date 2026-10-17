@@ -35,3 +35,7 @@ allowBuilds:
   # native binary. The devDependency exists for Dependabot version tracking;
   # the pnpm binary in use comes from Corepack (packageManager field).
   pnpm: false
+  # Reviewed and denied: a dependency of Vue Flow (BOM viewer app). Its
+  # install script only switches its shim between Vue 2 and 3; the published
+  # files already target Vue 3.
+  vue-demi: false
