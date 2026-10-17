@@ -1,0 +1,28 @@
+/*
+ * Theme of grid-layout-plus, the Overview's grid (ADR 0032). The library
+ * brings its own styles and exposes only these custom properties; this file
+ * maps them to Vuetify's theme, as settings.scss does for Vuetify's Sass
+ * variables. Studio's components still use Vuetify utility classes only.
+ *
+ * The doubled class outranks the library's styles, which it injects at
+ * runtime after this file.
+ */
+.vgl-layout.vgl-layout {
+  --vgl-placeholder-bg: rgb(var(--v-theme-primary));
+  --vgl-placeholder-opacity: 16%;
+  --vgl-item-resizing-opacity: 100%;
+  --vgl-resizer-size: 14px;
+  --vgl-resizer-border-color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+}
+
+/* The resize corner shows with the pointer over its widget, as the drag handle does. */
+.vgl-layout.vgl-layout .vgl-item__resizer {
+  inset: auto 6px 6px auto;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.vgl-layout.vgl-layout .vgl-item:hover .vgl-item__resizer,
+.vgl-layout.vgl-layout .vgl-item--resizing .vgl-item__resizer {
+  opacity: 1;
+}

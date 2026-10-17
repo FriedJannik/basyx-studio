@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { accentNames, backgroundNames, hexColorPattern, shapes } from '../appearance'
 import { localeCodes } from '../i18n/locales'
+import { overviewsSchema } from '../overview'
 import { syncModes } from './infrastructure'
 
 const shellKey = z.string().regex(/^[\w-]{1,4000}$/)
@@ -46,6 +47,12 @@ export const preferencesSchema = z.object({
   syncOverrides: z.record(z.string().max(100), z.enum(syncModes)).default({}),
   /** Desktop app: the welcome screen at startup, until the user turns it off. */
   showWelcome: z.boolean().default(true),
+  /**
+   * The Overview of each shell (ADR 0032): its layout, hidden widgets and
+   * pinned values, per target and shell key. A shell's stored value that no
+   * longer validates is dropped instead of invalidating every setting.
+   */
+  overviews: overviewsSchema,
 })
 export type Preferences = z.infer<typeof preferencesSchema>
 

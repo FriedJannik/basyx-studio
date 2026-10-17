@@ -72,6 +72,9 @@ export default defineVuetifyConfiguration({
     // 24 px icon; an alias only reads its own defaults, so this one keeps room
     // around a smaller icon.
     VBtnToggleIcon: 'VBtn',
+    // A small icon action in a compact header, e.g. of an Overview widget or
+    // a value tile: comfortable density keeps the header one line high.
+    VBtnWidgetIcon: 'VBtn',
     // Pane container of a full-height page area: fixed height, scrolling body.
     VCardPane: 'VCard',
     // Records in a bordered card (infrastructures, targets, apps), divided by
@@ -95,6 +98,7 @@ export default defineVuetifyConfiguration({
     VBtnToggle: { density: 'compact', rounded: 'lg', color: 'primary', border: true, divided: true, variant: 'text', VBtn: { rounded: false } },
     // As the toggle's own buttons (VBtnGroup sets height, flat and the rest).
     VBtnToggleIcon: { color: 'primary', variant: 'text', flat: true, height: 'auto', rounded: false, density: 'comfortable', VIcon: { size: 'small' } },
+    VBtnWidgetIcon: { variant: 'text', rounded: 'lg', density: 'comfortable', size: 'small' },
     VCard: { flat: true, border: true, rounded: 'lg' },
     VCardPane: {
       flat: true,

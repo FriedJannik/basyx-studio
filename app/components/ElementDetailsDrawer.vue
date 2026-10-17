@@ -119,8 +119,22 @@
         <v-card-title class="text-title-large text-wrap text-break">{{ title }}</v-card-title>
         <v-card-subtitle>{{ item.variableGroup ? t('details.variableGroup') : item.modelType }}</v-card-subtitle>
 
-        <template v-if="path" #append>
+        <template v-if="path || pinnable" #append>
+          <!-- Pins the value to the shell's Overview (ADR 0032). -->
           <v-btn
+            v-if="pinnable"
+            v-tooltip="pinLabel"
+            :aria-label="pinLabel"
+            :color="pinned ? 'primary' : undefined"
+            data-test="details-pin"
+            :disabled="!pinned && overview.pinsFull.value"
+            :icon="pinned ? 'mdi-pin' : 'mdi-pin-outline'"
+            size="small"
+            @click="overview.togglePin({ submodelKey: item.submodelKey, elementKey: item.elementKey!, title })"
+          />
+
+          <v-btn
+            v-if="path"
             v-tooltip="t('details.copyPath')"
             :aria-label="t('details.copyPath')"
             icon="mdi-link-variant"
@@ -308,6 +322,7 @@
   const props = defineProps<{
     target: Target
     shellId: string
+    shellKey: string
     submodelLabel: string | null
     submodelRef: SubmodelRef | null
     item: ShellTreeItem | null
@@ -343,6 +358,18 @@
   const api = useStudioApi()
   const copy = useClipboard()
   const queryCache = useQueryCache()
+  const overview = useShellOverview(() => props.target.id, () => props.shellKey)
+
+  // Values that read well as a tile on the Overview.
+  const pinnableTypes = new Set(['Property', 'Range', 'MultiLanguageProperty'])
+  const pinnable = computed(() => Boolean(props.item?.elementKey && !props.item.draft && pinnableTypes.has(props.item.modelType)))
+  const pinned = computed(() => props.item ? overview.isPinned(props.item.submodelKey, props.item.elementKey) : false)
+  const pinLabel = computed(() => {
+    if (pinned.value) {
+      return t('overview.unpin')
+    }
+    return overview.pinsFull.value ? t('overview.pinsFull') : t('overview.pin')
+  })
   const preferences = usePreferences().preferences
   const { smAndUp, mdAndUp, lgAndUp, width } = useDisplay()
 

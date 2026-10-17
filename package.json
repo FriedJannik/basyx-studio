@@ -52,6 +52,7 @@
     "basyx-typescript-sdk": "^2.4.1",
     "drizzle-orm": "^0.45.4",
     "fflate": "^0.8.3",
+    "grid-layout-plus": "1.1.1",
     "jsqr": "1.4.0",
     "monaco-editor": "^0.56.0",
     "node-forge": "^1.4.0",

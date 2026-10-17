@@ -116,6 +116,7 @@ export const appMethodParamsSchemas = {
   }).strict(),
   'studio.ui.setHeight': z.object({ height: z.number().int().min(0).max(20_000) }).strict(),
   'studio.ui.openFile': z.object({ submodelId: identifier, idShortPath, download: z.boolean().default(false) }).strict(),
+  'studio.ui.openFullscreen': z.object({}).strict(),
   'studio.aas.listShells': listQuerySchema.strict(),
   'studio.aas.getShell': z.object({ shellId: identifier }).strict(),
   'studio.aas.listSubmodels': z.object({ shellId: identifier }).strict(),

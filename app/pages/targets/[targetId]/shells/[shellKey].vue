@@ -395,10 +395,15 @@
           <v-tabs-window-item value="overview">
             <ShellOverview
               v-if="tab === 'overview'"
+              :at="asOfIso"
+              :refresh-seconds="refreshSeconds"
               :refs="submodelRefs"
               :shell-id="shellId"
+              :shell-key="shellKey"
               :signals="liveSignals"
               :target="target.data.value"
+              :unit-of="unitOf"
+              @open="openFromOverview"
               @select="select"
             />
           </v-tabs-window-item>
@@ -621,6 +626,7 @@
       :refreshing="Boolean(refreshSeconds)"
       :shell-detail="shell.data.value"
       :shell-id="shellId"
+      :shell-key="shellKey"
       :submodel-label="selectedSubmodelLabel"
       :submodel-ref="selectedRef"
       :target="target.data.value"
@@ -637,7 +643,7 @@
 <script lang="ts" setup>
   import type { ElementModelType } from '#shared/aas/defaults'
   import type { DeleteResult, EffectiveRights, ElementDetail, ShellCreateResult, ShellDetail, SubmodelRef, Target, TargetCapabilities } from '#shared/contract'
-  import type { LiveSignal } from '~/components/ShellOverview.vue'
+  import type { LiveSignal } from '~/composables/useShellOverview'
   import type { ShellTreeItem } from '~/composables/useShellTrees'
   import type { StructureAction } from '~/stores/structureActions'
   import type { DetailsMode } from '~/utils/aas'
@@ -786,7 +792,7 @@
       const item = new Set(values).size > 1 ? trees.lookup(id) : null
       if (item) {
         const submodel = trees.items.value.find(entry => entry.id === item.submodelKey)?.title ?? item.submodelKey
-        signals.push({ id, title: item.title, submodel, value: item.preview, unit: unitOf(item.semanticId), history: values })
+        signals.push({ id, submodelKey: item.submodelKey, elementKey: item.elementKey!, title: item.title, submodel, value: item.preview, unit: unitOf(item.semanticId), history: values })
       }
     }
     return signals.slice(0, liveSignalLimit)
@@ -888,17 +894,26 @@
     ui.detailsDrawer = Boolean(found)
   }
 
+  /** Opens an element or submodel of the Overview in the drawer; `inTree` also shows it in the tree (the path is revealed below). */
+  function openFromOverview (submodelKey: string, elementKey: string | null, inTree: boolean) {
+    creating.value = null
+    editingShell.value = false
+    void router.replace({ query: { ...route.query, tab: inTree ? undefined : route.query.tab, submodel: submodelKey, element: elementKey ?? undefined } })
+    ui.detailsDrawer = true
+  }
+
   const activated = computed({
     get: () => (selectedId.value ? [selectedId.value] : []),
     set: (ids: unknown[]) => select((ids[0] as string | undefined) ?? null),
   })
 
-  // Open the first submodel when the tree appears.
+  // Open the first submodel when the tree appears, including a tree already
+  // populated by SSR or the query cache before this watcher is installed.
   watch(() => trees.items.value.length, (count, before) => {
     if (count > 0 && !before && opened.value.length === 0) {
       opened.value = trees.items.value.filter(item => !item.unavailable).slice(0, 1).map(item => item.id)
     }
-  })
+  }, { immediate: true })
 
   // A selection made elsewhere (deep link, search): load and open its path,
   // which the element's ancestors name.

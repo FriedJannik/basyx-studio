@@ -76,6 +76,8 @@ export interface AppContext {
   subPath: string
   /** Studio's mode: apps show edit controls only in `edit` (MVP-4). */
   mode: 'view' | 'edit'
+  /** True in the full-screen dialog that `studio.ui.openFullscreen` opens. */
+  fullscreen: boolean
   locale: string
   theme: ThemeTokens
 }
@@ -121,6 +123,8 @@ export interface Methods {
   'studio.ui.setHeight': { params: { height: number }, result: null }
   /** Opens the content of a File element of the active target in a new browser tab (or downloads it). */
   'studio.ui.openFile': { params: { submodelId: string, idShortPath: string, download?: boolean }, result: null }
+  /** Opens the same view again in a full-screen dialog of Studio; ignored inside that dialog. */
+  'studio.ui.openFullscreen': { params: Record<string, never>, result: null }
   'studio.aas.listShells': { params: { limit?: number, cursor?: string }, result: Page<ShellSummary> }
   'studio.aas.getShell': { params: { shellId: string }, result: JsonObject }
   'studio.aas.listSubmodels': { params: { shellId: string }, result: { items: SubmodelSummary[] } }
@@ -141,6 +145,7 @@ export const methodPermissions: Record<MethodName, Permission | null> = {
   'studio.ui.navigate': 'studio.ui.navigation',
   'studio.ui.setHeight': null,
   'studio.ui.openFile': 'studio.aas.read',
+  'studio.ui.openFullscreen': null,
   'studio.aas.listShells': 'studio.aas.read',
   'studio.aas.getShell': 'studio.aas.read',
   'studio.aas.listSubmodels': 'studio.aas.read',

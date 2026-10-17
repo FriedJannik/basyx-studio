@@ -30,6 +30,29 @@
       :title="t('apps.frameTitle', { name: label(contribution.title) })"
       @load="onLoad"
     />
+
+    <!-- The same view again, filling the window (studio.ui.openFullscreen):
+         a second frame, so the embedded one keeps its size and state. -->
+    <v-dialog v-if="!fullscreen" v-model="fullscreenOpen" fullscreen>
+      <v-card class="d-flex flex-column" height="100%">
+        <v-toolbar class="flex-shrink-0" color="transparent" density="compact" :title="label(contribution.title)">
+          <template #append>
+            <v-btn :aria-label="t('common.close')" data-test="app-fullscreen-close" icon="mdi-close" @click="fullscreenOpen = false" />
+          </template>
+        </v-toolbar>
+
+        <v-divider />
+
+        <app-frame
+          :contribution="contribution"
+          fullscreen
+          :shell-id="shellId"
+          :sub-path="subPath"
+          :submodel="submodel"
+          :target="target"
+        />
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -49,8 +72,14 @@
     subPath?: string
     /** Size the frame to the app's content (`studio.ui.setHeight`) instead of filling the container. */
     fit?: boolean
+    /** The frame inside the full-screen dialog; it cannot open another one. */
+    fullscreen?: boolean
   }>()
-  const emit = defineEmits<{ navigate: [subPath: string] }>()
+  const emit = defineEmits<{
+    'navigate': [subPath: string]
+    /** The app's content height (`studio.ui.setHeight`), for a container that sizes itself to it. */
+    'content-height': [height: number]
+  }>()
 
   const { t, locale } = useI18n()
   const theme = useTheme()
@@ -78,11 +107,13 @@
     submodel: props.submodel ? { ...props.submodel } : null,
     subPath: props.subPath ?? '',
     mode: ui.mode,
+    fullscreen: props.fullscreen ?? false,
     locale: locale.value,
     theme: { dark: theme.current.value.dark, colors: themeColors.value },
   }))
 
   const mounted = ref(false)
+  const fullscreenOpen = ref(false)
   /** Seconds an app may take to connect before the frame offers a retry. */
   const startTimeoutMs = 15_000
   const timedOut = ref(false)
@@ -108,7 +139,14 @@
     targetId: props.target?.id ?? null,
     context: () => context.value,
     onNavigate: subPath => emit('navigate', subPath),
+    onOpenFullscreen: props.fullscreen ? undefined : () => (fullscreenOpen.value = true),
   })
+  watch(height, value => {
+    if (value !== null) {
+      emit('content-height', value)
+    }
+  })
+  defineExpose({ openFullscreen: () => (fullscreenOpen.value = true) })
   watch(connected, value => {
     if (value) {
       clearTimeout(startTimer)

@@ -40,10 +40,15 @@ test('shows capabilities on the landing page, opens a shell by asset ID and list
 
 test('shows the bundled apps on the overview', async ({ page }) => {
   await page.goto(`/targets/${targetId}/shells/${key(motorShell)}?tab=overview`)
-  await expect(page.frameLocator('iframe[title="App: Digital Nameplate"]').getByText('SN-2024-DM3000-0042')).toBeVisible()
-  await expect(page.frameLocator('iframe[title="App: Technical Data"]').getByText('Rated power')).toBeVisible()
-  await expect(page.frameLocator('iframe[title="App: Carbon Footprint"]').getByText('Life cycle phase A1')).toBeVisible()
-  await expect(page.frameLocator('iframe[title="App: Documents"]').getByText('Operating Manual DriveMotor DM-3000')).toBeVisible()
+  // App frames load only once their widget scrolls into sight (ADR 0032).
+  const view = async (title: string, text: string) => {
+    await page.locator('[data-test="overview-widget-view"]').filter({ hasText: title }).first().scrollIntoViewIfNeeded()
+    await expect(page.frameLocator(`iframe[title="App: ${title}"]`).getByText(text)).toBeVisible()
+  }
+  await view('Digital Nameplate', 'SN-2024-DM3000-0042')
+  await view('Technical Data', 'Rated power')
+  await view('Carbon Footprint', 'Life cycle phase A1')
+  await view('Documents', 'Operating Manual DriveMotor DM-3000')
 })
 
 test('filters the tree, opens details and remembers the shell for the user', async ({ page }) => {
