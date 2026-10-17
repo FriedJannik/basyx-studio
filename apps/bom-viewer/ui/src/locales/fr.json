@@ -1,0 +1,26 @@
+{
+  "bom": {
+    "title": "Nomenclature",
+    "archetype": "Archétype",
+    "archetypeValue": "Archétype : {value}",
+    "mixed": "Une entité utilise plus d'un type de relation ; un seul type est autorisé par structure hiérarchique.",
+    "graph": "Graphe",
+    "tree": "Arbre",
+    "fullscreen": "Plein écran",
+    "noEntry": "Ce sous-modèle n'a pas de nœud d'entrée.",
+    "archetypeSet": "Archétype défini sur {value}.",
+    "conflict": "Quelqu'un d'autre a modifié l'archétype entre-temps. Réessayez.",
+    "forbidden": "Vous n'êtes pas autorisé à modifier l'archétype."
+  },
+  "archetype": {
+    "Full": "Structure hiérarchique complète avec tous les niveaux.",
+    "OneDown": "Structure montrant un niveau vers le bas dans la hiérarchie.",
+    "OneUp": "Structure montrant un niveau vers le haut dans la hiérarchie."
+  },
+  "graph": {
+    "parts": "Pièces : {count}",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
+    "fit": "Ajuster à la vue"
+  }
+}

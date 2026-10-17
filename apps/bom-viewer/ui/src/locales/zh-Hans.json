@@ -1,0 +1,26 @@
+{
+  "bom": {
+    "title": "物料清单",
+    "archetype": "原型",
+    "archetypeValue": "原型：{value}",
+    "mixed": "某个实体使用了多种关系类型；每个层次结构只允许一种类型。",
+    "graph": "图",
+    "tree": "树",
+    "fullscreen": "全屏",
+    "noEntry": "此子模型没有入口节点。",
+    "archetypeSet": "原型已设为 {value}。",
+    "conflict": "其他人在此期间更改了原型。请重试。",
+    "forbidden": "你无权更改原型。"
+  },
+  "archetype": {
+    "Full": "包含所有层级的完整层次结构。",
+    "OneDown": "向下显示一个层级的结构。",
+    "OneUp": "向上显示一个层级的结构。"
+  },
+  "graph": {
+    "parts": "部件：{count}",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "fit": "适应视图"
+  }
+}

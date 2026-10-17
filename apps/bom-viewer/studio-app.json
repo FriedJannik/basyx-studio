@@ -1,0 +1,30 @@
+{
+  "$schema": "../../packages/studio-sdk/app-manifest.schema.json",
+  "manifestVersion": 0,
+  "id": "org.eclipse.basyx.studio.bom-viewer",
+  "version": "1.0.0",
+  "publisher": { "name": "Eclipse BaSyx" },
+  "title": { "en": "Bill of Material", "de": "Stückliste", "es": "Lista de materiales", "fr": "Nomenclature", "ja": "部品表", "nl": "Stuklijst", "zh-Hans": "物料清单" },
+  "description": {
+    "en": "Shows the Hierarchical Structures enabling Bills of Material (IDTA 02011) of an asset as a graph and a tree; in edit mode, its archetype can be changed.",
+    "de": "Zeigt die hierarchischen Strukturen für Stücklisten (IDTA 02011) eines Assets als Graph und Baum; im Bearbeitungsmodus lässt sich ihr Archetyp ändern.",
+    "es": "Muestra las estructuras jerárquicas para listas de materiales (IDTA 02011) de un activo como grafo y árbol; en el modo de edición se puede cambiar su arquetipo.",
+    "fr": "Affiche les structures hiérarchiques de nomenclature (IDTA 02011) d'un actif sous forme de graphe et d'arbre ; en mode édition, leur archétype peut être modifié.",
+    "ja": "資産の部品表のための階層構造（IDTA 02011）をグラフとツリーで表示します。編集モードではアーキタイプを変更できます。",
+    "nl": "Toont de hiërarchische structuren voor stuklijsten (IDTA 02011) van een asset als graaf en boom; in de bewerkmodus kan het archetype worden gewijzigd.",
+    "zh-Hans": "以图和树的形式显示资产的物料清单层次结构（IDTA 02011）；在编辑模式下可以更改其原型。"
+  },
+  "studioApi": "^0.1.0",
+  "runtimes": ["hosted", "desktop"],
+  "permissions": ["studio.aas.read", "studio.aas.write", "studio.ui.notifications"],
+  "contributes": {
+    "submodelViews": [
+      {
+        "id": "bom",
+        "title": { "en": "Bill of Material", "de": "Stückliste", "es": "Lista de materiales", "fr": "Nomenclature", "ja": "部品表", "nl": "Stuklijst", "zh-Hans": "物料清单" },
+        "entry": "ui/index.html",
+        "semanticIds": ["https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel", "https://admin-shell.io/idta/HierarchicalStructures/1/0/Submodel"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "bom": {
+    "title": "Lista de materiales",
+    "archetype": "Arquetipo",
+    "archetypeValue": "Arquetipo: {value}",
+    "mixed": "Una entidad usa más de un tipo de relación; solo se permite un tipo por estructura jerárquica.",
+    "graph": "Grafo",
+    "tree": "Árbol",
+    "fullscreen": "Pantalla completa",
+    "noEntry": "Este submodelo no tiene nodo de entrada.",
+    "archetypeSet": "Arquetipo cambiado a {value}.",
+    "conflict": "Otra persona cambió el arquetipo mientras tanto. Inténtelo de nuevo.",
+    "forbidden": "No tiene permiso para cambiar el arquetipo."
+  },
+  "archetype": {
+    "Full": "Estructura jerárquica completa con todos los niveles.",
+    "OneDown": "Estructura que muestra un nivel hacia abajo en la jerarquía.",
+    "OneUp": "Estructura que muestra un nivel hacia arriba en la jerarquía."
+  },
+  "graph": {
+    "parts": "Piezas: {count}",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "fit": "Ajustar a la vista"
+  }
+}

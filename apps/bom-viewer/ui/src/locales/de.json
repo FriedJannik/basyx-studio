@@ -1,0 +1,26 @@
+{
+  "bom": {
+    "title": "Stückliste",
+    "archetype": "Archetyp",
+    "archetypeValue": "Archetyp: {value}",
+    "mixed": "Eine Entität verwendet mehr als einen Beziehungstyp; je hierarchischer Struktur ist nur ein Typ erlaubt.",
+    "graph": "Graph",
+    "tree": "Baum",
+    "fullscreen": "Vollbild",
+    "noEntry": "Dieses Teilmodell hat keinen Einstiegsknoten.",
+    "archetypeSet": "Archetyp auf {value} gesetzt.",
+    "conflict": "Jemand anderes hat den Archetyp inzwischen geändert. Versuchen Sie es erneut.",
+    "forbidden": "Sie dürfen den Archetyp nicht ändern."
+  },
+  "archetype": {
+    "Full": "Vollständige hierarchische Struktur mit allen Ebenen.",
+    "OneDown": "Struktur mit einer Ebene nach unten.",
+    "OneUp": "Struktur mit einer Ebene nach oben."
+  },
+  "graph": {
+    "parts": "Teile: {count}",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern",
+    "fit": "Ganz anzeigen"
+  }
+}
