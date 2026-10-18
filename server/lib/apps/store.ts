@@ -29,8 +29,16 @@ function requireAppsEnabled (deps: StudioDeps): void {
  * is stored; the installation, its files and their content-addressed blobs
  * are written in one transaction.
  */
+/** Rejects installs and uninstalls when the deployment fixes its apps (STUDIO_APPS_ALLOW_INSTALL=false). */
+function requireAppChanges (deps: StudioDeps): void {
+  if (!deps.config.deployment.appInstalls) {
+    throw new StudioProblem('forbidden', 'This Studio deployment does not allow installing or removing apps.')
+  }
+}
+
 export async function installApp (deps: StudioDeps, actor: Actor, bytes: Uint8Array, requestId: string): Promise<AppInstallationRecord> {
   requireAppsEnabled(deps)
+  requireAppChanges(deps)
   if (!deps.config.apps.allowUnsigned) {
     throw new StudioProblem('app_unsigned_disabled', 'Set STUDIO_APPS_ALLOW_UNSIGNED=true to allow developer-mode installs.')
   }
@@ -148,6 +156,7 @@ export async function getInstallation (deps: Pick<StudioDeps, 'db'>, id: string)
 
 /** Removes the installation and every blob no other installation uses. */
 export async function uninstallApp (deps: StudioDeps, actor: Actor, id: string, requestId: string): Promise<AppInstallationRecord> {
+  requireAppChanges(deps)
   const record = await getInstallation(deps, id)
   if (record.bundled) {
     throw new StudioProblem('forbidden', 'Apps shipped with Studio cannot be uninstalled.')

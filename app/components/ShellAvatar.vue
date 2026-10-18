@@ -5,7 +5,7 @@
       :alt="shell.idShort ?? ''"
       cover
       :referrerpolicy="shell.thumbnailUrl ? 'no-referrer' : undefined"
-      :src="shell.thumbnailUrl ?? `${apiBasePath}/targets/${targetId}/shells/${shell.key}/thumbnail`"
+      :src="shell.thumbnailUrl ?? studioUrl.api(`/targets/${targetId}/shells/${shell.key}/thumbnail`)"
       @error="failed = true"
     />
 
@@ -15,7 +15,6 @@
 
 <script lang="ts" setup>
   import type { ShellSummary } from '#shared/contract'
-  import { apiBasePath } from '#shared/contract'
 
   const props = defineProps<{
     shell: Pick<ShellSummary, 'key' | 'idShort' | 'assetKind' | 'thumbnail'> & { thumbnailUrl?: string | null }
@@ -25,6 +24,8 @@
     thumbnails: boolean
     iconSize?: string | number
   }>()
+
+  const studioUrl = useStudioUrl()
 
   // An external thumbnail loads from its own address, as BaSyx Go answers it
   // with a redirect that Studio does not follow (no referrer is sent).

@@ -227,6 +227,24 @@
           </template>
         </v-card>
       </v-col>
+
+      <!-- Version, the deployment's legal links and its switches (ADR 0035). -->
+      <v-col v-if="product" cols="12">
+        <v-card :subtitle="t('settings.version', { version: product.version })" :title="t('settings.about', { name: product.name })">
+          <v-card-text class="d-flex flex-column ga-1 text-body-small text-medium-emphasis">
+            <span v-if="product.commit || product.buildDate">
+              {{ [product.commit ? t('settings.commit', { commit: product.commit.slice(0, 7) }) : null, product.buildDate ? t('settings.built', { date: new Date(product.buildDate).toLocaleDateString(locale) }) : null].filter(Boolean).join(' · ') }}
+            </span>
+
+            <span v-if="features?.readOnly">{{ t('settings.readOnly') }}</span>
+            <span v-if="legal?.copyrightName">© {{ legal.copyrightName }}</span>
+          </v-card-text>
+
+          <v-card-actions v-if="legal?.legalNoticeUrl || legal?.privacyPolicyUrl">
+            <LegalLinks />
+          </v-card-actions>
+        </v-card>
+      </v-col>
     </v-row>
   </v-container>
 </template>
@@ -241,6 +259,9 @@
 
   const { t, locale, localeCodes, setLocale } = useI18n()
   const session = useSessionStore()
+  const product = computed(() => session.context?.product)
+  const legal = computed(() => session.context?.legal)
+  const features = computed(() => session.context?.features)
   const panel = usePanel()
   const notifications = useNotificationsStore()
   const store = usePreferences()

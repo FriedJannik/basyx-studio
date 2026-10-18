@@ -1,6 +1,7 @@
 import type { StudioConfig } from '../config'
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core'
 import { mkdir } from 'node:fs/promises'
+import { sql } from 'drizzle-orm'
 import * as schema from '../../database/schema'
 
 export type StudioSchema = typeof schema
@@ -42,5 +43,15 @@ export async function openDatabase (database: StudioConfig['database'] | { kind:
   return {
     db: drizzle(client, { schema }) as unknown as StudioDatabase,
     close: () => client.close(),
+  }
+}
+
+/** Whether the database answers a trivial query, for the readiness probe. */
+export async function databaseReachable (db: StudioDatabase): Promise<boolean> {
+  try {
+    await db.execute(sql`select 1`)
+    return true
+  } catch {
+    return false
   }
 }

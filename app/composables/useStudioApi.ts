@@ -16,7 +16,7 @@ export class StudioApiError extends Error {
 export interface ApiRequest {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   /** Response type; `blob` for file downloads. */
-  responseType?: 'json' | 'blob'
+  responseType?: 'json' | 'blob' | 'text'
   body?: unknown
   query?: Record<string, string | string[] | number | boolean | undefined>
   headers?: Record<string, string>
@@ -29,7 +29,7 @@ export interface ApiRequest {
  * token to state-changing requests.
  */
 export function useStudioApi () {
-  const requestFetch = useRequestFetch()
+  const requestFetch = useStudioFetch()
   const session = useSessionStore()
   const route = useRoute()
 

@@ -9,17 +9,17 @@
 
       <v-btn
         :active="false"
-        :aria-label="lgAndUp ? undefined : t('app.name')"
+        :aria-label="lgAndUp ? undefined : branding.name.value"
         class="ms-2 me-3"
         size="large"
         to="/"
       >
         <template #prepend>
           <!-- Decorative where the name stands next to it; the name otherwise. -->
-          <v-img :alt="lgAndUp ? '' : t('app.name')" :src="basyxLogo" width="28" />
+          <v-img :alt="lgAndUp ? '' : branding.name.value" :src="branding.logo.value" width="28" />
         </template>
 
-        <span v-if="lgAndUp" class="text-title-medium font-weight-bold">{{ t('app.name') }}</span>
+        <span v-if="lgAndUp" class="text-title-medium font-weight-bold">{{ branding.name.value }}</span>
       </v-btn>
 
       <v-btn
@@ -86,7 +86,7 @@
         />
 
         <v-btn-toggle
-          v-if="smAndUp"
+          v-if="smAndUp && canEdit"
           v-model="ui.mode"
           class="me-2"
           mandatory
@@ -96,7 +96,7 @@
         </v-btn-toggle>
 
         <v-btn
-          v-else
+          v-else-if="canEdit"
           :aria-label="ui.editing ? t('app.view') : t('app.edit')"
           :color="ui.editing ? 'primary' : undefined"
           :icon="ui.editing ? 'mdi-pencil' : 'mdi-eye-outline'"
@@ -144,7 +144,7 @@
             <v-list-item
               prepend-icon="mdi-account-circle"
               :subtitle="session.isAdmin ? t('app.administrator') : undefined"
-              :title="session.isDesktop ? t('app.localUser') : session.session.user.name"
+              :title="displayName"
             />
 
             <v-divider class="my-1" />
@@ -175,7 +175,7 @@
             />
 
             <v-list-item
-              v-if="!session.isDesktop"
+              v-if="session.context?.loginRequired"
               prepend-icon="mdi-logout"
               :title="t('app.signOut')"
               @click="session.logout()"
@@ -275,7 +275,6 @@
   import type { PanelName } from '~/composables/usePanel'
   import { useQuery } from '@pinia/colada'
   import { useDisplay, useHotkey, useTheme } from 'vuetify'
-  import basyxLogo from '~/assets/basyx-logo.svg'
   import { sectionOf } from '~/stores/navigation'
 
   const { t } = useI18n()
@@ -284,6 +283,7 @@
   const router = useRouter()
   const api = useStudioApi()
   const session = useSessionStore()
+  const branding = useBranding()
   const notifications = useNotificationsStore()
   const ui = useUiStore()
   const drafts = useDraftStore()
@@ -314,6 +314,16 @@
   // A remembered target that was removed or is no longer listed is not current.
   const activeTargetId = computed(() => targetId.value ?? target.value?.id ?? null)
   const draftCount = computed(() => activeTargetId.value ? drafts.countFor(activeTargetId.value) : 0)
+  /** Edit mode only where the target allows some change (not in a read-only deployment). */
+  const canEdit = computed(() => {
+    const capabilities = target.value?.capabilities
+    return !capabilities || capabilities.write || capabilities.writeStructure || capabilities.createResources || capabilities.deleteShells
+  })
+  watch(canEdit, allowed => {
+    if (!allowed) {
+      ui.mode = 'view'
+    }
+  }, { immediate: true })
   const targetItems = computed(() => (targets.data.value?.items ?? []).map(target => ({ title: target.name, value: target.id })))
 
   function switchTarget (id: string) {
@@ -419,16 +429,23 @@
     void preferences.update(current => ({ ...current, theme: theme.current.value.dark ? 'light' : 'dark' }))
   }
 
+  /** The desktop's local user, the anonymous user without login, or the signed-in user. */
+  const displayName = computed(() => {
+    if (session.isDesktop) {
+      return t('app.localUser')
+    }
+    return session.context?.anonymous ? t('app.anonymous') : (session.session?.user.name ?? '')
+  })
+
   const initials = computed(() => {
-    const name = session.isDesktop ? t('app.localUser') : (session.session?.user.name ?? '')
-    return name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]!.toUpperCase()).join('')
+    return displayName.value.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]!.toUpperCase()).join('')
   })
 
   useHotkey('cmd+k', () => {
     ui.commandOpen = true
   }, { inputs: true })
   useHotkey('cmd+e', () => {
-    if (activeTargetId.value) {
+    if (activeTargetId.value && canEdit.value) {
       ui.toggleMode()
     }
   })

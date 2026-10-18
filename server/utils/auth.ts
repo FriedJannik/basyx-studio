@@ -4,13 +4,8 @@ import type { RequestEvent } from 'nuxt/server'
 import { timingSafeEqual } from 'node:crypto'
 import { getCookie, getRequestHeader } from 'nuxt/server'
 import { StudioProblem } from '../lib/problem'
-import { desktopSessionId, findSession, findSessionById } from '../lib/sessions'
+import { desktopSessionId, findSession, findSessionById, sessionCookieName } from '../lib/sessions'
 import { useStudio } from './studio'
-
-export function sessionCookieName (secure: boolean): string {
-  // The __Host- prefix pins the cookie to this origin, but requires HTTPS.
-  return secure ? '__Host-studio_session' : 'studio_session'
-}
 
 export interface ResolvedSession {
   actor: Actor
@@ -37,7 +32,7 @@ async function resolveSession (event: RequestEvent): Promise<ResolvedSession | n
     // The renderer is authenticated by the launch secret; it acts as the local user.
     session = await findSessionById(studio, desktopSessionId)
   } else {
-    const token = getCookie(event, sessionCookieName(studio.config.secureCookies))
+    const token = getCookie(event, sessionCookieName(studio.config))
     session = token ? await findSession(studio, token) : undefined
   }
   const resolved = session ? { session, actor: actorOf(session, studio.config.adminRole) } : null

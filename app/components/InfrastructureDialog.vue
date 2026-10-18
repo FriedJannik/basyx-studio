@@ -1,8 +1,17 @@
 <template>
   <v-dialog v-model="open" max-width="720" scrollable>
-    <DialogCard :title="existing ? t('admin.edit') : t('admin.add')">
-      <!-- Sections as in the BaSyx AAS Web UI, fields 12 px apart. -->
-      <v-form ref="form" class="d-flex flex-column ga-3" @submit.prevent="save">
+    <DialogCard :title="readonly ? t('admin.view') : (existing ? t('admin.edit') : t('admin.add'))">
+      <!-- Sections as in the BaSyx AAS Web UI, fields 12 px apart. A managed
+           infrastructure, or any when the deployment fixes them, is shown
+           read-only: the form passes `readonly` to every input. -->
+      <v-form ref="form" class="d-flex flex-column ga-3" :readonly="readonly" @submit.prevent="save">
+        <v-alert
+          v-if="readonly"
+          density="compact"
+          :text="existing?.managed ? t('admin.managedHint') : t('admin.fixedByDeployment')"
+          type="info"
+        />
+
         <v-text-field v-model="model.name" :label="t('admin.name')" :rules="[required]" />
         <v-text-field v-model="model.description" :label="t('admin.description')" />
 
@@ -36,7 +45,7 @@
           <div class="text-title-small">{{ t('admin.listSource') }}</div>
 
           <div>
-            <v-btn-toggle v-model="model.listSource" class="d-flex" mandatory>
+            <v-btn-toggle v-model="model.listSource" class="d-flex" :disabled="readonly" mandatory>
               <v-btn class="flex-grow-1" :text="t('admin.listSources.registry')" value="registry" />
               <v-btn class="flex-grow-1" :text="t('admin.listSources.repository')" value="repository" />
             </v-btn-toggle>
@@ -148,6 +157,7 @@
         >
           <template #append>
             <v-btn
+              v-if="!readonly"
               :aria-label="t('admin.clientCertificateRemove')"
               icon="mdi-delete-outline"
               @click="model.removeCertificate = true"
@@ -203,8 +213,8 @@
       </v-form>
 
       <template #actions>
-        <v-btn :text="t('admin.cancel')" @click="open = false" />
-        <v-btn-primary :loading="saving" :text="t('admin.save')" @click="save" />
+        <v-btn :text="readonly ? t('common.close') : t('admin.cancel')" @click="open = false" />
+        <v-btn-primary v-if="!readonly" :loading="saving" :text="t('admin.save')" @click="save" />
       </template>
     </DialogCard>
   </v-dialog>
@@ -215,7 +225,7 @@
   import { defaultSyncSettings, endpointTypes, infrastructureTemplates, maxClientCertificateLength, securityModes, serviceUrl, syncModes, templateRules } from '#shared/contract'
   import { StudioApiError } from '~/composables/useStudioApi'
 
-  const props = defineProps<{ existing: Infrastructure | null }>()
+  const props = defineProps<{ existing: Infrastructure | null, readonly?: boolean }>()
   const emit = defineEmits<{ saved: [Infrastructure] }>()
   const open = defineModel<boolean>({ required: true })
 

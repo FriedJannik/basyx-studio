@@ -7,6 +7,7 @@
     "signIn": "Aanmelden",
     "signOut": "Afmelden",
     "localUser": "Lokale gebruiker",
+    "anonymous": "Anoniem",
     "administrator": "Beheerder",
     "apps": "Apps",
     "appModules": "App-modules",
@@ -17,7 +18,9 @@
     "edit": "Bewerken",
     "account": "Account",
     "arcadeOn": "Arcademodus: +30 levens",
-    "arcadeOff": "Arcademodus uit. Weer aan het werk."
+    "arcadeOff": "Arcademodus uit. Weer aan het werk.",
+    "legalNotice": "Colofon",
+    "privacyPolicy": "Privacybeleid"
   },
   "qr": {
     "title": "QR-code van het asset",
@@ -238,6 +241,34 @@
     "search": "Infrastructuren zoeken",
     "add": "Infrastructuur toevoegen",
     "edit": "Infrastructuur bewerken",
+    "view": "Infrastructuur",
+    "managed": "Beheerd",
+    "managedHint": "Vastgelegd in het infrastructuurbestand van de deployment. Wijzig het daar; Studio past het bestand toe bij het starten.",
+    "fixedByDeployment": "Deze deployment legt zijn infrastructuren vast, dus ze kunnen hier niet worden toegevoegd, gewijzigd of verwijderd.",
+    "import": "Importeren",
+    "exportAll": "Alles exporteren",
+    "copyYaml": "Kopiëren als YAML",
+    "yaml": "YAML",
+    "importTitle": "Infrastructuren importeren",
+    "importHint": "YAML zoals geëxporteerd uit een Studio of geschreven voor STUDIO_INFRASTRUCTURES_FILE",
+    "importDrop": "Zet een YAML-bestand neer",
+    "importDropHint": "De inhoud vervangt de tekst",
+    "importInvalid": "De YAML kan niet worden geïmporteerd",
+    "importReady": "Klaar om te importeren",
+    "importConflict": "Er bestaat al een infrastructuur met de naam {name}",
+    "importUnnamed": "Item {index}",
+    "importAction": "Importeren | {n} infrastructuur importeren | {n} infrastructuren importeren",
+    "importOutcomes": {
+      "created": "Aangemaakt",
+      "replaced": "Vervangen",
+      "skipped": "Overgeslagen",
+      "failed": "Niet geïmporteerd"
+    },
+    "importResolutions": {
+      "skip": "Overslaan",
+      "replace": "Vervangen",
+      "create": "Als nieuw toevoegen"
+    },
     "delete": "Verwijderen",
     "deleteConfirm": "‘{name}’ verwijderen? Hiermee wordt de configuratie uit Studio verwijderd, niet de gegevens in de infrastructuur.",
     "probe": "Verbinding controleren",
@@ -401,7 +432,8 @@
     "bundledHint": "Meegeleverd met Studio en samen ermee bijgewerkt.",
     "backendHint": "Voert code uit op de Studio-server, geïsoleerd van Studio en andere apps.",
     "permissions": "Machtigingen: {list}",
-    "filters": "Soort"
+    "filters": "Soort",
+    "installsFixed": "Deze deployment legt zijn apps vast, dus ze kunnen hier niet worden geïnstalleerd of verwijderd."
   },
   "nav": {
     "targets": "AAS-doelen",
@@ -826,7 +858,12 @@
     "shapes": {
       "normal": "Normaal",
       "rounded": "Ronder"
-    }
+    },
+    "about": "Over {name}",
+    "version": "Versie {version}",
+    "commit": "Commit {commit}",
+    "built": "Gebouwd op {date}",
+    "readOnly": "Deze deployment is alleen-lezen: op de infrastructuren kan niets worden gewijzigd."
   },
   "invite": {
     "title": "Uitnodiging accepteren",

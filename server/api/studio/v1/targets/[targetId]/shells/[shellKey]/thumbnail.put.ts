@@ -7,7 +7,7 @@ import { auditedStructureWrite } from '~~/server/utils/elements'
 import { readFileBody } from '~~/server/utils/files'
 import { defineStudioHandler, routeParam } from '~~/server/utils/handler'
 import { useStudio } from '~~/server/utils/studio'
-import { openTarget, requireCapability } from '~~/server/utils/target'
+import { openTarget, requireCapability, requireFileUploads } from '~~/server/utils/target'
 
 /** Sets the shell's default thumbnail; the body is the image. */
 export default defineStudioHandler(async (event): Promise<ShellDetail> => {
@@ -17,6 +17,7 @@ export default defineStudioHandler(async (event): Promise<ShellDetail> => {
   const file = await readFileBody(event, (await useStudio()).config.uploadMaxBytes)
   const opened = await openTarget(event)
   await requireCapability(opened, 'files')
+  await requireFileUploads()
   await requireCapability(opened, 'createResources')
   const shell = await auditedStructureWrite(
     opened,

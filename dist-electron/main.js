@@ -73,12 +73,13 @@ var g = {
 		vue: "^3.5.44",
 		vuetify: "^4.2.6",
 		"vuetify-nuxt-module": "1.0.0-rc.6",
+		yaml: "^2.9.1",
 		zod: "^4.6.7"
 	},
 	devDependencies: {
 		"@basyx/studio-sdk": "workspace:*",
-		"@intlify/message-compiler": "^11.4.13",
 		"@electric-sql/pglite-tools": "^0.4.10",
+		"@intlify/message-compiler": "^11.4.13",
 		"@nuxt/eslint": "^1.17.0",
 		"@nuxt/fonts": "^1.0.1",
 		"@pinia/nuxt": "^1.0.3",

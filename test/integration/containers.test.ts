@@ -91,7 +91,7 @@ describe.runIf(enabled)('local BaSyx instances on the container engine', () => {
     directory = await mkdtemp(join(tmpdir(), 'studio-containers-'))
     handle = await openDatabase({ kind: 'memory' })
     await applyMigrations(handle.db, await loadMigrationsFromDirectory(migrationsDirectory))
-    deps = { config: { deploymentMode: 'desktop' } as StudioConfig, db: handle.db, cipher: new SecretCipher(randomBytes(32)) }
+    deps = { config: { deploymentMode: 'desktop', infrastructuresEditable: true } as StudioConfig, db: handle.db, cipher: new SecretCipher(randomBytes(32)) }
     grants = new FileGrantStore()
     manager = new ContainerManager({
       deps,

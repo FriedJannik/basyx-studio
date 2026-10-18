@@ -1,15 +1,20 @@
-import type { ClientCertificateSummary, Infrastructure, ProbeResult, SecretInput, ServiceProfiles } from '#shared/contract'
+import type { ClientCertificateSummary, ImportResolution, Infrastructure, InfrastructureImportEntry, InfrastructureImportResult, ProbeResult, SecretInput, ServiceProfiles } from '#shared/contract'
 import type { StoredSecurity } from '../database/schema'
 import type { ClientIdentity } from './crypto/pkcs12'
 import type { Actor, StudioDeps } from './deps'
+import type { DeclaredInfrastructure } from './infrastructure-file'
 import type { ClientCertificate, NetworkFailureKind, OutboundPolicy } from './network/guarded-fetch'
+import { createHmac } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 import { infrastructureInputSchema } from '#shared/contract'
 import { infrastructures } from '../database/schema'
 import { recordAudit } from './audit'
+import { ConfigurationError } from './config'
 import { randomToken } from './crypto/cipher'
 import { Pkcs12Error, readPkcs12 } from './crypto/pkcs12'
+import { analyzeInfrastructureFile, exportInfrastructureFile } from './infrastructure-file'
+import { rejectUrl } from './network/address-policy'
 import { checkHost, createGuardedFetch, NetworkFailure, releaseCertificateAgents } from './network/guarded-fetch'
 import { forgetOidcClients } from './oidc/client'
 import { StudioProblem } from './problem'
@@ -42,6 +47,7 @@ export function toInfrastructure (record: InfrastructureRecord): Infrastructure 
     security: record.security,
     clientCertificate: record.clientCertificate,
     allowPrivateNetwork: record.allowPrivateNetwork,
+    managed: Boolean(record.managedKey),
     revision: record.revision,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
@@ -119,13 +125,18 @@ function parseInput (deps: StudioDeps, raw: unknown): ParsedInput {
   return input
 }
 
-/** Checks endpoint and issuer URLs against the static URL rules and the address policy. */
-async function validateUrls (input: ParsedInput): Promise<void> {
+/** The endpoint and issuer URLs of an input, each with its place. */
+function urlsOf (input: ParsedInput): Array<[string, string]> {
   const urls: Array<[string, string]> = input.endpoints.map(endpoint => [endpoint.type, endpoint.url])
   if (input.security.mode !== 'unsecured') {
     urls.push(['security.issuer', input.security.issuer])
   }
-  for (const [label, url] of urls) {
+  return urls
+}
+
+/** Checks endpoint and issuer URLs against the static URL rules and the address policy. */
+async function validateUrls (input: ParsedInput): Promise<void> {
+  for (const [label, url] of urlsOf(input)) {
     try {
       await checkHost(new URL(url), { allowPrivateNetwork: input.allowPrivateNetwork })
     } catch (error) {
@@ -461,7 +472,21 @@ export async function reprobeInfrastructure (deps: StudioDeps, id: string): Prom
   return probe
 }
 
+/** Rejects changes when the deployment fixes its infrastructures (STUDIO_INFRASTRUCTURES_EDITABLE=false). */
+function requireEditable (deps: StudioDeps): void {
+  if (!deps.config.infrastructuresEditable) {
+    throw new StudioProblem('forbidden', 'This Studio deployment does not allow changing infrastructures.')
+  }
+}
+
+function requireUnmanaged (record: Pick<InfrastructureRecord, 'managedKey'>): void {
+  if (record.managedKey) {
+    throw new StudioProblem('forbidden', 'This infrastructure is managed by the deployment; change it in the deployment\'s infrastructure file.')
+  }
+}
+
 export async function createInfrastructure (deps: StudioDeps, actor: Actor, raw: unknown, requestId: string): Promise<InfrastructureRecord> {
+  requireEditable(deps)
   const input = parseInput(deps, raw)
   await validateUrls(input)
   const { security, secretCiphertext } = resolveSecurityInput(deps, input.security, undefined)
@@ -496,7 +521,9 @@ export async function updateInfrastructure (
   raw: unknown,
   requestId: string,
 ): Promise<InfrastructureRecord> {
+  requireEditable(deps)
   const previous = await getInfrastructure(deps, id)
+  requireUnmanaged(previous)
   const input = parseInput(deps, raw)
   await validateUrls(input)
   const { security, secretCiphertext } = resolveSecurityInput(deps, input.security, previous)
@@ -529,13 +556,212 @@ export async function updateInfrastructure (
 }
 
 export async function deleteInfrastructure (deps: StudioDeps, actor: Actor, id: string, requestId: string): Promise<void> {
-  const [deleted] = await deps.db.delete(infrastructures).where(eq(infrastructures.id, id)).returning({ id: infrastructures.id })
-  if (!deleted) {
+  requireEditable(deps)
+  const [existing] = await deps.db.select({ managedKey: infrastructures.managedKey }).from(infrastructures).where(eq(infrastructures.id, id))
+  if (!existing) {
     throw new StudioProblem('not_found', 'No such infrastructure.')
   }
+  requireUnmanaged(existing)
+  await deps.db.delete(infrastructures).where(eq(infrastructures.id, id))
   forgetOidcClients()
   forgetClientCertificates(id)
   await recordAudit(deps, { action: 'infrastructure.delete', outcome: 'success', requestId, actorSubject: actor.subject, targetId: id })
+}
+
+/**
+ * Checks an infrastructure input against this deployment without contacting
+ * its endpoints: the address policy, the static URL rules, the secret and
+ * certificate rules. Endpoints may not be up yet.
+ */
+async function checkDeclared (deps: StudioDeps, raw: unknown) {
+  const input = parseInput(deps, raw)
+  for (const [label, url] of urlsOf(input)) {
+    const reason = rejectUrl(new URL(url))
+    if (reason) {
+      throw new StudioProblem('endpoint_rejected', `${label}: ${reason}`)
+    }
+  }
+  const { security, secretCiphertext } = resolveSecurityInput(deps, input.security, undefined)
+  const { identity: _identity, ...certificate } = await resolveCertificateInput(deps, input.clientCertificate, undefined)
+  return { input, security, secretCiphertext, certificate }
+}
+
+export interface ReconcileOutcome {
+  created: string[]
+  updated: string[]
+  removed: string[]
+  unchanged: string[]
+}
+
+/** Serializes concurrent reconciles of replicas that start together on one PostgreSQL. */
+const reconcileLockId = 0x53_54_4D_49
+
+function describeFailure (error: unknown): string {
+  if (error instanceof StudioProblem) {
+    return [error.message, ...(error.violations ?? []).map(violation => `${violation.path}: ${violation.message}`)].join(' ')
+  }
+  return error instanceof Error ? error.message : String(error)
+}
+
+/**
+ * Applies the deployment's declared infrastructures (ADR 0037): creates the
+ * new ones, updates the changed ones under their existing ID (so preferences
+ * and target credentials stay attached), and removes managed ones that are no
+ * longer declared. Infrastructures made in Studio are never touched.
+ *
+ * Every entry is validated before anything is written, so a broken file
+ * changes nothing; endpoints are not contacted, as they may start after
+ * Studio. They are probed when first loaded, like any unprobed infrastructure.
+ */
+export async function reconcileManagedInfrastructures (deps: StudioDeps, declared: DeclaredInfrastructure[]): Promise<ReconcileOutcome> {
+  const prepared: Array<{ key: string, digest: string, values: Omit<typeof infrastructures.$inferInsert, 'id' | 'createdBy'> }> = []
+  for (const entry of declared) {
+    try {
+      const { input, security, secretCiphertext, certificate } = await checkDeclared(deps, entry.input)
+      // Keyed with the data key, as the input may hold a desktop secret value.
+      const digest = createHmac('sha256', deps.config.dataKey)
+        .update(JSON.stringify({ input, clientCertificate: certificate.clientCertificate }))
+        .digest('base64url')
+      prepared.push({
+        key: entry.key,
+        digest,
+        values: {
+          name: input.name,
+          description: input.description ?? null,
+          template: input.template,
+          endpoints: input.endpoints,
+          listSource: input.listSource,
+          sync: input.sync,
+          serviceProfiles: {},
+          probedAt: null,
+          security,
+          secretCiphertext,
+          ...certificate,
+          allowPrivateNetwork: input.allowPrivateNetwork,
+          managedKey: entry.key,
+          managedDigest: digest,
+        },
+      })
+    } catch (error) {
+      throw new ConfigurationError(`${entry.source}: infrastructure ${entry.key}: ${describeFailure(error)}`)
+    }
+  }
+
+  const outcome: ReconcileOutcome = { created: [], updated: [], removed: [], unchanged: [] }
+  const audits: Array<{ action: string, targetId: string }> = []
+  await deps.db.transaction(async tx => {
+    await tx.execute(sql`select pg_advisory_xact_lock(${reconcileLockId})`)
+    const existing = await tx
+      .select({ id: infrastructures.id, managedKey: infrastructures.managedKey, managedDigest: infrastructures.managedDigest, revision: infrastructures.revision })
+      .from(infrastructures)
+      .where(isNotNull(infrastructures.managedKey))
+    const byKey = new Map(existing.map(row => [row.managedKey!, row]))
+    for (const entry of prepared) {
+      const current = byKey.get(entry.key)
+      byKey.delete(entry.key)
+      if (!current) {
+        const id = randomToken(12)
+        await tx.insert(infrastructures).values({ id, ...entry.values, createdBy: 'deployment' })
+        outcome.created.push(entry.key)
+        audits.push({ action: 'infrastructure.create', targetId: id })
+      } else if (current.managedDigest === entry.digest) {
+        outcome.unchanged.push(entry.key)
+      } else {
+        await tx.update(infrastructures)
+          .set({ ...entry.values, revision: current.revision + 1, updatedAt: new Date() })
+          .where(eq(infrastructures.id, current.id))
+        outcome.updated.push(entry.key)
+        audits.push({ action: 'infrastructure.update', targetId: current.id })
+      }
+    }
+    for (const [key, row] of byKey) {
+      await tx.delete(infrastructures).where(eq(infrastructures.id, row.id))
+      outcome.removed.push(key)
+      audits.push({ action: 'infrastructure.delete', targetId: row.id })
+    }
+  })
+
+  if (outcome.updated.length > 0 || outcome.removed.length > 0) {
+    forgetOidcClients()
+  }
+  for (const { action, targetId } of audits) {
+    if (action !== 'infrastructure.create') {
+      forgetClientCertificates(targetId)
+    }
+    await recordAudit(deps, { action, outcome: 'success', actorSubject: 'deployment', targetId })
+  }
+  return outcome
+}
+
+/** The infrastructures (all, or those with the given IDs) in the file format. */
+export async function exportInfrastructures (deps: StudioDeps, ids?: string[]): Promise<string> {
+  const records = await deps.db.select().from(infrastructures).where(ids ? inArray(infrastructures.id, ids) : undefined).orderBy(asc(infrastructures.name))
+  if (ids && records.length !== new Set(ids).size) {
+    throw new StudioProblem('not_found', 'No such infrastructure.')
+  }
+  return exportInfrastructureFile(records)
+}
+
+/**
+ * Checks (`dryRun`) or imports infrastructures in the file format as ordinary
+ * infrastructures of this Studio. Each entry is created, or replaces the one
+ * with its name, on its own, probing its endpoints as a save in the form
+ * does; one that fails is reported and the others are still imported.
+ */
+export async function importInfrastructures (
+  deps: StudioDeps,
+  actor: Actor,
+  request: { yaml: string, dryRun: boolean, resolutions: Record<string, ImportResolution> },
+  requestId: string,
+): Promise<InfrastructureImportResult> {
+  requireEditable(deps)
+  const analyzed = analyzeInfrastructureFile(request.yaml, { requireKey: false })
+  if (analyzed.problems.length > 0) {
+    return { problems: analyzed.problems, entries: [] }
+  }
+  const existing = await deps.db
+    .select({ id: infrastructures.id, name: infrastructures.name, managedKey: infrastructures.managedKey, revision: infrastructures.revision })
+    .from(infrastructures)
+  const byName = new Map(existing.map(row => [row.name.trim().toLowerCase(), row]))
+
+  const entries: Array<InfrastructureImportEntry & { input: unknown, revision: number | null }> = []
+  for (const entry of analyzed.entries) {
+    const problems = [...entry.problems]
+    if (entry.input) {
+      await checkDeclared(deps, entry.input).catch(error => problems.push(describeFailure(error)))
+    }
+    const match = entry.name ? byName.get(entry.name.trim().toLowerCase()) : undefined
+    const conflict = match ? { id: match.id, name: match.name, managed: match.managedKey !== null } : null
+    const resolution = request.resolutions[String(entry.index)] ?? (conflict ? 'skip' : 'create')
+    if (resolution === 'replace' && (!conflict || conflict.managed)) {
+      problems.push(conflict ? 'A managed infrastructure cannot be replaced by an import.' : 'There is no infrastructure with this name to replace.')
+    }
+    entries.push({ index: entry.index, key: entry.key, name: entry.name, problems, conflict, resolution, outcome: null, infrastructureId: null, input: entry.input, revision: match?.revision ?? null })
+  }
+
+  if (!request.dryRun) {
+    for (const entry of entries) {
+      if (entry.problems.length > 0) {
+        entry.outcome = 'failed'
+        continue
+      }
+      if (entry.resolution === 'skip') {
+        entry.outcome = 'skipped'
+        continue
+      }
+      try {
+        const record = entry.resolution === 'replace'
+          ? await updateInfrastructure(deps, actor, entry.conflict!.id, entry.revision!, entry.input, requestId)
+          : await createInfrastructure(deps, actor, entry.input, requestId)
+        entry.outcome = entry.resolution === 'replace' ? 'replaced' : 'created'
+        entry.infrastructureId = record.id
+      } catch (error) {
+        entry.outcome = 'failed'
+        entry.problems.push(describeFailure(error))
+      }
+    }
+  }
+  return { problems: [], entries: entries.map(({ input: _input, revision: _revision, ...entry }) => entry) }
 }
 
 export { type InfrastructureInput } from '#shared/contract'

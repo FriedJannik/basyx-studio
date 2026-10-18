@@ -2,13 +2,19 @@
   <v-container>
     <v-empty-state
       v-if="session.needsLogin"
-      :image="basyxLogo"
+      :image="branding.logo.value"
       size="96"
       :text="t('home.signInText')"
       :title="t('home.signInTitle')"
     >
       <template #actions>
-        <v-btn-primary :loading="signingIn" prepend-icon="mdi-login" :text="t('app.signIn')" @click="signIn" />
+        <div class="d-flex flex-column align-center ga-4">
+          <v-btn-primary :loading="signingIn" prepend-icon="mdi-login" :text="t('app.signIn')" @click="signIn" />
+
+          <div class="d-flex flex-wrap justify-center">
+            <LegalLinks />
+          </div>
+        </div>
       </template>
     </v-empty-state>
 
@@ -16,7 +22,7 @@
       <PageHeader :subtitle="items.length > 3 ? t('home.subtitleCount', items.length) : t('home.subtitle')" :title="t('home.title')">
         <template #actions>
           <v-btn-secondary
-            v-if="session.isAdmin"
+            v-if="session.canEditInfrastructures"
             prepend-icon="mdi-plus"
             :text="t('home.addInfrastructure')"
             @click="addOpen = true"
@@ -140,15 +146,15 @@
       <v-empty-state
         v-else-if="targets.data.value"
         icon="mdi-server-network-off"
-        :text="session.isAdmin ? t('home.noTargetsAdmin') : t('home.noTargetsUser')"
+        :text="session.canEditInfrastructures ? t('home.noTargetsAdmin') : t('home.noTargetsUser')"
         :title="t('home.noTargets')"
       >
-        <template v-if="session.isAdmin" #actions>
+        <template v-if="session.canEditInfrastructures" #actions>
           <v-btn-primary :text="t('home.addInfrastructure')" @click="addOpen = true" />
         </template>
       </v-empty-state>
 
-      <InfrastructureDialog v-if="session.isAdmin" v-model="addOpen" :existing="null" @saved="added" />
+      <InfrastructureDialog v-if="session.canEditInfrastructures" v-model="addOpen" :existing="null" @saved="added" />
     </template>
   </v-container>
 </template>
@@ -158,7 +164,6 @@
   import type { DesktopBridge } from '~/composables/useDesktopBridge'
   import type { FilterGroup } from '~/utils/records'
   import { useQuery } from '@pinia/colada'
-  import basyxLogo from '~/assets/basyx-logo.svg'
   import { StudioApiError } from '~/composables/useStudioApi'
   import { securityModeIcons, targetIcon, targetSubtitle } from '~/utils/aas'
   import { filterRecords } from '~/utils/records'
@@ -166,6 +171,7 @@
   const { t } = useI18n()
   const route = useRoute()
   const session = useSessionStore()
+  const branding = useBranding()
   const api = useStudioApi()
 
   const targets = useQuery({

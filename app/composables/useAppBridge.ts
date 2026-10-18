@@ -1,7 +1,7 @@
 import type { AppCallResult, AppContext, AppContributionInfo, AppMethodName, Problem } from '#shared/contract'
 import type { Ref } from 'vue'
 import { useQueryCache } from '@pinia/colada'
-import { apiBasePath, appHelloSchema, appMethodNameSchema, appMethodParamsSchemas, appProtocol, appRequestMessageSchema } from '#shared/contract'
+import { appHelloSchema, appMethodNameSchema, appMethodParamsSchemas, appProtocol, appRequestMessageSchema } from '#shared/contract'
 import { StudioApiError } from '~/composables/useStudioApi'
 import { resourceKey } from '~/utils/aas'
 
@@ -44,6 +44,7 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
   const label = useLocalizedLabel()
   const copy = useClipboard()
   const desktop = useDesktopBridge()
+  const studioUrl = useStudioUrl()
   const connected = ref(false)
   /** Content height the app asked for (`studio.ui.setHeight`), or `null`. */
   const height = ref<number | null>(null)
@@ -118,7 +119,7 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
       case 'studio.ui.openFile': {
         if (options.targetId) {
           const file = appMethodParamsSchemas['studio.ui.openFile'].parse(params)
-          const url = `${apiBasePath}/targets/${options.targetId}/submodels/${resourceKey(file.submodelId)}/elements/${resourceKey(file.idShortPath)}/attachment${file.download ? '?download' : ''}`
+          const url = studioUrl.api(`/targets/${options.targetId}/submodels/${resourceKey(file.submodelId)}/elements/${resourceKey(file.idShortPath)}/attachment${file.download ? '?download' : ''}`)
           window.open(url, '_blank', 'noopener')
         }
         break

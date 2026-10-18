@@ -338,6 +338,94 @@ paths:
         '422': { $ref: '#/components/responses/Unprocessable' }
         default: { $ref: '#/components/responses/Problem' }
 
+  /infrastructures/export:
+    get:
+      tags: [Infrastructures]
+      operationId: exportInfrastructures
+      summary: Export infrastructures in the file format (YAML)
+      description: |
+        Administrators only. All infrastructures, or those named by `ids`, in
+        the format of `STUDIO_INFRASTRUCTURES_FILE` (ADR 0037). References to
+        deployment secrets are kept; secrets and certificates stored in Studio
+        are left out and replaced by a comment.
+      x-requirements: [DATA-002, SEC-004]
+      parameters:
+        - name: ids
+          in: query
+          description: Comma-separated infrastructure IDs; all when omitted.
+          schema: { type: string }
+        - name: download
+          in: query
+          description: Present to answer with `Content-Disposition attachment`.
+          allowEmptyValue: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The infrastructures as YAML
+          content:
+            application/yaml:
+              schema: { type: string }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /infrastructures/import:
+    post:
+      tags: [Infrastructures]
+      operationId: importInfrastructures
+      summary: Check or import infrastructures given in the file format
+      description: |
+        Administrators only, unless the deployment fixes its infrastructures.
+        `dryRun` checks every entry against the API rules and this deployment
+        and reports name conflicts; otherwise each entry is created, or
+        replaces the infrastructure with its name, one by one, probing its
+        endpoints as a save in the form does (ADR 0037).
+      x-requirements: [DATA-002, SEC-004, SEC-008]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [yaml]
+              properties:
+                yaml: { type: string, maxLength: 1000000 }
+                dryRun: { type: boolean, default: true }
+                resolutions:
+                  type: object
+                  description: Per entry index, what to do with a name conflict.
+                  additionalProperties: { type: string, enum: [skip, replace, create] }
+      responses:
+        '200':
+          description: Problems of the file, and each entry with its problems, conflict, resolution and outcome
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [problems, entries]
+                properties:
+                  problems: { type: array, items: { type: string } }
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      required: [index, key, name, problems, conflict, resolution, outcome, infrastructureId]
+                      properties:
+                        index: { type: integer }
+                        key: { type: [string, 'null'] }
+                        name: { type: [string, 'null'] }
+                        problems: { type: array, items: { type: string } }
+                        conflict:
+                          type: [object, 'null']
+                          properties:
+                            id: { type: string }
+                            name: { type: string }
+                            managed: { type: boolean }
+                        resolution: { type: string, enum: [skip, replace, create] }
+                        outcome: { type: [string, 'null'], enum: [created, replaced, skipped, failed, null] }
+                        infrastructureId: { type: [string, 'null'] }
+        default: { $ref: '#/components/responses/Problem' }
+
   /infrastructures/{infrastructureId}:
     parameters:
       - $ref: '#/components/parameters/InfrastructureId'
@@ -1600,7 +1688,7 @@ paths:
       tags: [AAS]
       operationId: validateAasJson
       summary: AAS Core findings for a JSON value; nothing is written
-      description: Body `{ kind: element | submodel | shell, value }`. Used by the insert dialog while the user types.
+      description: 'Body `{ kind: element | submodel | shell, value }`. Used by the insert dialog while the user types.'
       x-requirements: [DATA-007]
       parameters:
         - $ref: '#/components/parameters/TargetId'
@@ -3134,6 +3222,38 @@ components:
           type: array
           items: { type: string }
         session: { $ref: '#/components/schemas/Session' }
+        loginRequired: { type: boolean, description: Users sign in to Studio (OIDC). }
+        anonymous: { type: boolean, description: 'Hosted without login (STUDIO_AUTH_MODE=none, ADR 0036).' }
+        infrastructuresEditable: { type: boolean, description: 'Administrators may change infrastructures (STUDIO_INFRASTRUCTURES_EDITABLE, ADR 0037).' }
+        product:
+          type: object
+          description: Product name, version and build (ADR 0035).
+          properties:
+            name: { type: string }
+            version: { type: string }
+            commit: { type: [string, 'null'] }
+            buildDate: { type: [string, 'null'] }
+        branding:
+          type: object
+          description: Logos (absolute URL or Studio path under the base path) and default accent; null keeps BaSyx's.
+          properties:
+            logoLight: { type: [string, 'null'] }
+            logoDark: { type: [string, 'null'] }
+            accentLight: { type: [string, 'null'] }
+            accentDark: { type: [string, 'null'] }
+        legal:
+          type: object
+          properties:
+            copyrightName: { type: [string, 'null'] }
+            legalNoticeUrl: { type: [string, 'null'] }
+            privacyPolicyUrl: { type: [string, 'null'] }
+        features:
+          type: object
+          description: Deployment switches; they only narrow what roles allow.
+          properties:
+            readOnly: { type: boolean }
+            uploads: { type: boolean }
+            appInstalls: { type: boolean }
     User:
       type: object
       additionalProperties: false
@@ -3551,7 +3671,7 @@ components:
     Infrastructure:
       type: object
       additionalProperties: false
-      required: [id, name, description, template, endpoints, listSource, sync, serviceProfiles, probedAt, announced, security, clientCertificate, allowPrivateNetwork, revision, createdAt, updatedAt]
+      required: [id, name, description, template, endpoints, listSource, sync, serviceProfiles, probedAt, announced, security, clientCertificate, allowPrivateNetwork, managed, revision, createdAt, updatedAt]
       properties:
         id: { $ref: '#/components/schemas/TargetId' }
         name: { type: string }
@@ -3585,6 +3705,9 @@ components:
             - { $ref: '#/components/schemas/ClientCertificateSummary' }
             - { type: 'null' }
         allowPrivateNetwork: { type: boolean }
+        managed:
+          type: boolean
+          description: Declared in the deployment's infrastructure file; read-only in Studio (ADR 0037).
         revision:
           type: integer
           description: Sent back as `If-Match` (`"<revision>"`) when replacing the configuration; also returned as `ETag`.

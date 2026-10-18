@@ -30,9 +30,26 @@ Start with:
 - [Runtime-installable app platform](docs/architecture/app-platform.md)
 - [Graphical views and dashboards](docs/architecture/views-and-dashboards.md)
 - [Architecture decision records](docs/adr/README.md)
+- [Deploying BaSyx Studio](docs/deployment/README.md) (container image, configuration, Compose examples)
 - [Development setup](setup.md)
 
 Coding agents and LLM-based development tools must also follow [AGENTS.md](AGENTS.md).
+
+## Run with Docker
+
+```bash
+docker run -p 127.0.0.1:3000:3000 \
+  -e STUDIO_PUBLIC_URL=http://localhost:3000 \
+  -e STUDIO_DATA_KEY="$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')" \
+  -e STUDIO_AUTH_MODE=none -e STUDIO_ANONYMOUS_ROLES=studio-admin \
+  -v studio-data:/data \
+  eclipsebasyx/basyx-studio:SNAPSHOT
+```
+
+This runs Studio without login on <http://localhost:3000>. The
+[deployment guide](docs/deployment/README.md) covers login, a base path,
+declared infrastructures, branding, and the Compose examples in
+[examples/deployment](examples/deployment).
 
 ## Technology direction
 

@@ -70,7 +70,7 @@
   // is checked against `schemas`.
   const props = defineProps<{
     label: string
-    language: 'json' | 'xml' | 'plaintext'
+    language: 'json' | 'xml' | 'yaml' | 'plaintext'
     editable?: boolean
     fileName?: string
     /** A fixed height; without it, the view fills its flex parent. */

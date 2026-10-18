@@ -53,7 +53,6 @@
 
 <script lang="ts" setup>
   import type { ElementDetail } from '#shared/contract'
-  import { apiBasePath } from '#shared/contract'
 
   const props = defineProps<{ targetId: string, submodelKey: string, detail: ElementDetail, canReplace: boolean }>()
   const emit = defineEmits<{ changed: [detail: ElementDetail] }>()
@@ -69,7 +68,8 @@
   const isImage = computed(() => contentType.value.startsWith('image/'))
   const external = computed(() => typeof element.value.value === 'string' && /^https?:\/\//i.test(element.value.value) ? element.value.value : null)
   const isPdf = computed(() => contentType.value === 'application/pdf')
-  const url = computed(() => `${apiBasePath}/targets/${props.targetId}/submodels/${props.submodelKey}/elements/${props.detail.key}/attachment`)
+  const studioUrl = useStudioUrl()
+  const url = computed(() => studioUrl.api(`/targets/${props.targetId}/submodels/${props.submodelKey}/elements/${props.detail.key}/attachment`))
 
   const dialog = ref(false)
   const file = ref<File | null>(null)

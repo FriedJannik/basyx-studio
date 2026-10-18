@@ -1,4 +1,6 @@
+import type { StudioConfig } from './config'
 import type { StudioDeps } from './deps'
+import { createHash } from 'node:crypto'
 import { and, eq, gt, isNull, lt, or } from 'drizzle-orm'
 import { oidcTransactions, studioSessions } from '../database/schema'
 import { randomToken, sha256 } from './crypto/cipher'
@@ -7,6 +9,31 @@ export type SessionRecord = typeof studioSessions.$inferSelect
 
 /** The desktop Studio has exactly one local user and no session cookie. */
 export const desktopSessionId = 'desktop-local'
+
+/**
+ * The session cookie's name. The __Host- prefix pins the cookie to this
+ * origin, but requires HTTPS and `Path=/`; so instead of a narrower path,
+ * a Studio under a base path gets its own name, from a hash of the whole
+ * path, and two Studios on one origin (`/a/b/`, `/a_b/`) keep their sessions
+ * apart.
+ */
+export function sessionCookieName (config: Pick<StudioConfig, 'secureCookies' | 'basePath'>): string {
+  const suffix = config.basePath === '/' ? '' : createHash('sha256').update(config.basePath).digest('base64url').slice(0, 16)
+  const name = suffix ? `studio_session_${suffix}` : 'studio_session'
+  return config.secureCookies ? `__Host-${name}` : name
+}
+
+/** Options of the session cookie; also for anonymous sessions (ADR 0036). */
+export function sessionCookieOptions (config: Pick<StudioConfig, 'secureCookies' | 'sessionTtlMs'>) {
+  return {
+    httpOnly: true,
+    secure: config.secureCookies,
+    // Lax: the cookie must accompany the top-level redirect back from the IdP.
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: Math.floor(config.sessionTtlMs / 1000),
+  }
+}
 
 export async function createSession (
   deps: StudioDeps,

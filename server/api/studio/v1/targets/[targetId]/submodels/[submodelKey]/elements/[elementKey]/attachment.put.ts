@@ -6,7 +6,7 @@ import { elementRoute, toElementDetail } from '~~/server/utils/elements'
 import { readFileBody } from '~~/server/utils/files'
 import { defineStudioHandler } from '~~/server/utils/handler'
 import { useStudio } from '~~/server/utils/studio'
-import { openTarget, requireCapability } from '~~/server/utils/target'
+import { openTarget, requireCapability, requireFileUploads } from '~~/server/utils/target'
 
 /** Replaces the content of a File element; the body is the file. Requires `If-Match`. */
 export default defineStudioHandler(async (event): Promise<ElementDetail> => {
@@ -19,6 +19,7 @@ export default defineStudioHandler(async (event): Promise<ElementDetail> => {
   const file = await readFileBody(event, (await useStudio()).config.uploadMaxBytes)
   const opened = await openTarget(event)
   await requireCapability(opened, 'files')
+  await requireFileUploads()
   const details = { operation: 'replaceAttachment', submodelId: route.submodelId, path: route.idShortPath, size: file.bytes.length }
   try {
     const snapshot = await opened.target.replaceAttachment(route.submodelId, route.idShortPath, file, revision)

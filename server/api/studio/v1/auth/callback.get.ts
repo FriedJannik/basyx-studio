@@ -6,8 +6,8 @@ import { getInfrastructure } from '~~/server/lib/infrastructures'
 import { completeAuthorization, getOidcClient, readRoles } from '~~/server/lib/oidc/client'
 import { consumeTransaction } from '~~/server/lib/oidc/transactions'
 import { StudioProblem } from '~~/server/lib/problem'
-import { createSession } from '~~/server/lib/sessions'
-import { sessionCookieName } from '~~/server/utils/auth'
+import { createSession, sessionCookieName, sessionCookieOptions } from '~~/server/lib/sessions'
+import { studioPath } from '~~/server/lib/urls'
 import { requestIdOf } from '~~/server/utils/handler'
 import { useStudio } from '~~/server/utils/studio'
 
@@ -49,14 +49,7 @@ async function completeLogin (event: RequestEvent, transaction: AuthorizationTra
     roles: readRoles(claims, studio.config.rolesClaim),
     idToken: tokens.idToken,
   })
-  setCookie(event, sessionCookieName(studio.config.secureCookies), token, {
-    httpOnly: true,
-    secure: studio.config.secureCookies,
-    // Lax: the cookie must accompany the top-level redirect back from the IdP.
-    sameSite: 'lax',
-    path: '/',
-    maxAge: Math.floor(studio.config.sessionTtlMs / 1000),
-  })
+  setCookie(event, sessionCookieName(studio.config), token, sessionCookieOptions(studio.config))
   await recordAudit(studio, { action: 'studio.login', outcome: 'success', requestId: requestIdOf(event), actorSubject: subject })
 }
 
@@ -72,12 +65,12 @@ export default defineEventHandler(async event => {
       setResponseStatus(event, 400)
       return desktopPage(event, 'Sign-in link expired', 'Start the authorization again in BaSyx Studio.')
     }
-    return sendRedirect(event, withQuery('/', 'authError', 'expired'))
+    return sendRedirect(event, withQuery(studioPath(studio.config, '/'), 'authError', 'expired'))
   }
 
   const failed = (reason: string) => desktop
     ? desktopPage(event, 'Authorization failed', `BaSyx Studio could not complete the authorization (${reason}). Return to Studio and try again.`)
-    : sendRedirect(event, withQuery(transaction.returnTo, 'authError', reason))
+    : sendRedirect(event, withQuery(studioPath(studio.config, transaction.returnTo), 'authError', reason))
 
   if (typeof query.error === 'string') {
     return failed(query.error === 'access_denied' ? 'access_denied' : 'idp_error')
@@ -107,5 +100,5 @@ export default defineEventHandler(async event => {
   if (desktop) {
     return desktopPage(event, 'Authorization complete', 'You can close this browser tab and return to BaSyx Studio.')
   }
-  return sendRedirect(event, transaction.returnTo)
+  return sendRedirect(event, studioPath(studio.config, transaction.returnTo))
 })

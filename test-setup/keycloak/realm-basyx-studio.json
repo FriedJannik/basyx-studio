@@ -147,7 +147,8 @@
       "serviceAccountsEnabled": false,
       "redirectUris": [
         "http://localhost:3000/api/studio/v1/auth/callback",
-        "http://localhost:3100/api/studio/v1/auth/callback"
+        "http://localhost:3100/api/studio/v1/auth/callback",
+        "http://localhost:3100/studio/api/studio/v1/auth/callback"
       ],
       "webOrigins": [],
       "attributes": {

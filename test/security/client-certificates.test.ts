@@ -163,7 +163,7 @@ describe('mutual TLS against a local HTTPS server', () => {
     handle = await openDatabase({ kind: 'memory' })
     await applyMigrations(handle.db, await loadMigrationsFromDirectory(migrationsDirectory))
     const cipher = new SecretCipher(randomBytes(32))
-    const config = { deploymentMode: 'desktop', allowPrivateNetworkTargets: true } as StudioConfig
+    const config = { deploymentMode: 'desktop', allowPrivateNetworkTargets: true, infrastructuresEditable: true } as StudioConfig
     desktop = { config, db: handle.db, cipher }
     hosted = { config: { ...config, deploymentMode: 'hosted' } as StudioConfig, db: handle.db, cipher }
   })

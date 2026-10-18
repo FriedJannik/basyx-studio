@@ -7,6 +7,7 @@
     "signIn": "サインイン",
     "signOut": "サインアウト",
     "localUser": "ローカルユーザー",
+    "anonymous": "匿名ユーザー",
     "administrator": "管理者",
     "apps": "アプリ",
     "appModules": "アプリモジュール",
@@ -17,7 +18,9 @@
     "edit": "編集",
     "account": "アカウント",
     "arcadeOn": "アーケードモード：残機 +30",
-    "arcadeOff": "アーケードモードを終了しました。仕事に戻りましょう。"
+    "arcadeOff": "アーケードモードを終了しました。仕事に戻りましょう。",
+    "legalNotice": "法的情報",
+    "privacyPolicy": "プライバシーポリシー"
   },
   "qr": {
     "title": "アセットの QR コード",
@@ -238,6 +241,34 @@
     "search": "インフラストラクチャを検索",
     "add": "インフラストラクチャを追加",
     "edit": "インフラストラクチャを編集",
+    "view": "インフラストラクチャ",
+    "managed": "管理対象",
+    "managedHint": "デプロイのインフラストラクチャファイルで定義されています。変更はそのファイルで行ってください。Studio は起動時にファイルを適用します。",
+    "fixedByDeployment": "このデプロイではインフラストラクチャが固定されているため、ここで追加、変更、削除することはできません。",
+    "import": "インポート",
+    "exportAll": "すべてエクスポート",
+    "copyYaml": "YAML としてコピー",
+    "yaml": "YAML",
+    "importTitle": "インフラストラクチャのインポート",
+    "importHint": "Studio からエクスポートした YAML、または STUDIO_INFRASTRUCTURES_FILE 用に書いた YAML",
+    "importDrop": "YAML ファイルをドロップ",
+    "importDropHint": "その内容でテキストを置き換えます",
+    "importInvalid": "この YAML はインポートできません",
+    "importReady": "インポートできます",
+    "importConflict": "{name} という名前のインフラストラクチャが既にあります",
+    "importUnnamed": "エントリ {index}",
+    "importAction": "インポート | {n} 件のインフラストラクチャをインポート | {n} 件のインフラストラクチャをインポート",
+    "importOutcomes": {
+      "created": "作成済み",
+      "replaced": "置き換え済み",
+      "skipped": "スキップ",
+      "failed": "インポートされませんでした"
+    },
+    "importResolutions": {
+      "skip": "スキップ",
+      "replace": "置き換える",
+      "create": "新規に追加"
+    },
     "delete": "削除",
     "deleteConfirm": "「{name}」を削除しますか？Studio から構成が削除されるだけで、インフラストラクチャ内のデータは削除されません。",
     "probe": "接続を確認",
@@ -401,7 +432,8 @@
     "bundledHint": "Studio に同梱され、Studio と一緒に更新されます。",
     "backendHint": "Studio や他のアプリから分離して、Studio サーバー上でコードを実行します。",
     "permissions": "権限: {list}",
-    "filters": "種類"
+    "filters": "種類",
+    "installsFixed": "このデプロイではアプリが固定されているため、ここでインストールまたは削除することはできません。"
   },
   "nav": {
     "targets": "AAS ターゲット",
@@ -826,7 +858,12 @@
     "shapes": {
       "normal": "標準",
       "rounded": "より丸く"
-    }
+    },
+    "about": "{name} について",
+    "version": "バージョン {version}",
+    "commit": "コミット {commit}",
+    "built": "ビルド日 {date}",
+    "readOnly": "このデプロイは読み取り専用です。インフラストラクチャ上では何も変更できません。"
   },
   "invite": {
     "title": "招待を承諾",

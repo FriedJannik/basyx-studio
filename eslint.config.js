@@ -64,6 +64,21 @@ export default withNuxt(
     ],
   },
 }).append({
+  // Studio may run under a base path (STUDIO_BASE_PATH). Plain `href` and
+  // `src` values must come from useStudioUrl(); only the fetch helpers, which
+  // add the base path themselves, build URLs from apiBasePath.
+  files: ['app/**/*.{ts,vue}'],
+  ignores: ['app/composables/useStudioUrl.ts', 'app/composables/useStudioApi.ts', 'app/stores/session.ts'],
+  rules: {
+    'no-restricted-imports': ['error', {
+      paths: [{
+        name: '#shared/contract',
+        importNames: ['apiBasePath'],
+        message: 'Use useStudioUrl().api() for links, or useStudioApi() for requests, so the base path is applied.',
+      }],
+    }],
+  },
+}).append({
   // The local test environment is plain HTTP on loopback by design; the
   // autofix of this rule would silently break its URLs.
   files: ['test/**', 'test-setup/**'],

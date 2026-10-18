@@ -117,6 +117,9 @@ flowchart LR
     AASRepo -.->|"BaSyx telemetry"| Observability
 ```
 
+The container image and every setting of a hosted deployment are described in
+[Deploying BaSyx Studio](../deployment/README.md).
+
 ### Apps origin and backend runtime (MVP-3)
 
 Until the App Asset Service and App Runner exist as separate services, the

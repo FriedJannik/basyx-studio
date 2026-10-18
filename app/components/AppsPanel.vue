@@ -24,6 +24,8 @@
     <template v-else-if="list.data.value">
       <v-alert v-if="!list.data.value.enabled" class="mb-4" :text="t('apps.disabled')" type="info" />
 
+      <v-alert v-else-if="!appChanges" class="mb-4" :text="t('apps.installsFixed')" type="info" />
+
       <v-alert v-else-if="!list.data.value.allowUnsigned" class="mb-4" :text="t('apps.unsignedDisabled')" type="info" />
 
       <v-card v-else class="mb-4" :subtitle="t('apps.installHint')" :title="t('apps.install')">
@@ -139,7 +141,7 @@
                 <span class="text-body-small text-medium-emphasis text-no-wrap">{{ item.version }}</span>
               </template>
 
-              <template v-if="!item.bundled" #actions>
+              <template v-if="!item.bundled && appChanges" #actions>
                 <v-btn
                   v-tooltip="t('apps.uninstall')"
                   :aria-label="t('apps.uninstall')"
@@ -178,6 +180,9 @@
   import { filterRecords } from '~/utils/records'
 
   const { t } = useI18n()
+  const session = useSessionStore()
+  /** Whether the deployment lets administrators install and remove apps (STUDIO_APPS_ALLOW_INSTALL). */
+  const appChanges = computed(() => session.context?.features.appInstalls ?? true)
   const api = useStudioApi()
   const invalidate = useInvalidate()
   const label = useLocalizedLabel()

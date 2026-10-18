@@ -1,0 +1,84 @@
+# BaSyx Studio quick start: Studio without login and one BaSyx Go AAS
+# environment, declared as a managed infrastructure.
+#
+#   cp .env.example .env      # and set STUDIO_DATA_KEY (see the file)
+#   docker compose up -d
+#   open http://localhost:3000
+#
+# Anyone who reaches port 3000 uses Studio as an administrator, so the port
+# is published on loopback only. examples/deployment/production-like adds a
+# login.
+
+name: basyx-studio-quickstart
+
+services:
+  studio:
+    image: ${STUDIO_IMAGE:-eclipsebasyx/basyx-studio:SNAPSHOT}
+    ports:
+      # Loopback only: every visitor is an administrator.
+      - "127.0.0.1:3000:3000"
+    environment:
+      STUDIO_PUBLIC_URL: http://localhost:3000
+      STUDIO_DATA_KEY: ${STUDIO_DATA_KEY:?set STUDIO_DATA_KEY in .env (see .env.example)}
+      # No Studio login (ADR 0036): every visitor is the anonymous user.
+      STUDIO_AUTH_MODE: none
+      STUDIO_ANONYMOUS_ROLES: studio-admin
+      # The BaSyx service below is on the compose network, a private network.
+      STUDIO_PRIVATE_NETWORK_TARGETS: allow
+      STUDIO_INFRASTRUCTURES_FILE: /etc/basyx-studio/infrastructures.yaml
+    volumes:
+      # PGlite database and app backends.
+      - studio-data:/data
+      - ./infrastructures.yaml:/etc/basyx-studio/infrastructures.yaml:ro
+    depends_on:
+      basyx:
+        condition: service_started
+    restart: unless-stopped
+
+  basyx-postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: basyx
+      POSTGRES_PASSWORD: basyx
+      POSTGRES_DB: basyx
+    volumes:
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - basyx-db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U basyx"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  basyx-schema:
+    image: eclipsebasyx/basyxconfigurationservice-go:SNAPSHOT
+    environment: &basyx-db
+      POSTGRES_HOST: basyx-postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: basyx
+      POSTGRES_PASSWORD: basyx
+      POSTGRES_DBNAME: basyx
+    depends_on:
+      basyx-postgres:
+        condition: service_healthy
+
+  basyx:
+    image: eclipsebasyx/aasenvironment-go:SNAPSHOT
+    command: ["/app/aasenvironmentservice"]
+    environment:
+      <<: *basyx-db
+      SERVER_PORT: "5004"
+      ABAC_ENABLED: "false"
+      # Repository writes keep the registries filled. Descriptors name the
+      # URL Studio uses, so they lie under the infrastructure's URL.
+      GENERAL_AASREGISTRYINTEGRATION: "true"
+      GENERAL_SUBMODELREGISTRYINTEGRATION: "true"
+      GENERAL_EXTERNALURL: http://basyx:5004
+    depends_on:
+      basyx-schema:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  studio-data:
+  basyx-db:

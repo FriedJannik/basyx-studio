@@ -6,6 +6,10 @@ functional level without duplicating the OpenAPI schemas.
 
 ## Common rules
 
+- Under a base path (`STUDIO_BASE_PATH`, [ADR 0035](../adr/0035-container-image-and-base-path.md))
+  every path moves below it, e.g. `/studio/api/studio/v1`. Outside the API
+  are the probes `GET <base>health/live` and `GET <base>health/ready` and the
+  deployment's logos at `GET <base>branding/logo-light` and `-dark`.
 - Base: `/api/studio/v1`; the same contract applies to the browser and Electron.
 - The session is an opaque, server-side HttpOnly cookie. OAuth tokens and
   downstream credentials never reach the frontend.
@@ -45,6 +49,8 @@ functional level without duplicating the OpenAPI schemas.
 | `GET /infrastructures/{infrastructureId}` | Returns sanitized configuration details, endpoints, service profiles (`serviceProfiles`, `probedAt`, `announced`) and revision. |
 | `PUT /infrastructures/{infrastructureId}` | Replaces the configuration with `If-Match`, renewed validation and a probe. An omitted `clientCertificate` is kept; `null` removes it. |
 | `DELETE /infrastructures/{infrastructureId}` | Removes the Studio configuration, not the data of the infrastructure. |
+| `GET /infrastructures/export` | Exports all infrastructures, or those named by `ids`, in the format of `STUDIO_INFRASTRUCTURES_FILE` (YAML, [ADR 0037](../adr/0037-declared-infrastructures-export-and-import.md)). References to deployment secrets are kept; secrets and certificates stored in Studio are replaced by a comment. `?download` answers with a file. |
+| `POST /infrastructures/import` | Checks (`dryRun`) or imports YAML in the same format: reports problems and name conflicts per entry, and creates or replaces entries one by one (`resolutions`), each with a probe. Refused when the deployment fixes its infrastructures. |
 | `POST /infrastructures/{infrastructureId}/probe` | Queries `/description` of each endpoint again, returns reachability and profiles per endpoint and replaces the stored profiles. |
 
 ## AAS and target data

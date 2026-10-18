@@ -7,6 +7,7 @@
     "signIn": "Anmelden",
     "signOut": "Abmelden",
     "localUser": "Lokaler Benutzer",
+    "anonymous": "Anonym",
     "administrator": "Administrator",
     "apps": "Apps",
     "appModules": "App-Module",
@@ -18,7 +19,9 @@
     "account": "Konto",
     "arcadeOn": "Arcade-Modus: +30 Leben",
     "arcadeOff": "Arcade-Modus aus. Zurück an die Arbeit.",
-    "drafts": "keine Entwürfe | {count} Entwurf | {count} Entwürfe"
+    "drafts": "keine Entwürfe | {count} Entwurf | {count} Entwürfe",
+    "legalNotice": "Impressum",
+    "privacyPolicy": "Datenschutz"
   },
   "qr": {
     "title": "QR-Code des Assets",
@@ -318,6 +321,34 @@
     "search": "Infrastrukturen suchen",
     "add": "Infrastruktur hinzufügen",
     "edit": "Infrastruktur bearbeiten",
+    "view": "Infrastruktur",
+    "managed": "Verwaltet",
+    "managedHint": "In der Infrastrukturdatei des Deployments festgelegt. Ändern Sie sie dort; Studio übernimmt die Datei beim Start.",
+    "fixedByDeployment": "Dieses Deployment legt seine Infrastrukturen fest, daher können sie hier nicht hinzugefügt, geändert oder entfernt werden.",
+    "import": "Importieren",
+    "exportAll": "Alle exportieren",
+    "copyYaml": "Als YAML kopieren",
+    "yaml": "YAML",
+    "importTitle": "Infrastrukturen importieren",
+    "importHint": "YAML, wie aus einem Studio exportiert oder für STUDIO_INFRASTRUCTURES_FILE geschrieben",
+    "importDrop": "YAML-Datei ablegen",
+    "importDropHint": "Ihr Inhalt ersetzt den Text",
+    "importInvalid": "Das YAML kann nicht importiert werden",
+    "importReady": "Bereit zum Import",
+    "importConflict": "Eine Infrastruktur namens {name} existiert bereits",
+    "importUnnamed": "Eintrag {index}",
+    "importAction": "Importieren | {n} Infrastruktur importieren | {n} Infrastrukturen importieren",
+    "importOutcomes": {
+      "created": "Angelegt",
+      "replaced": "Ersetzt",
+      "skipped": "Übersprungen",
+      "failed": "Nicht importiert"
+    },
+    "importResolutions": {
+      "skip": "Überspringen",
+      "replace": "Ersetzen",
+      "create": "Neu hinzufügen"
+    },
     "delete": "Löschen",
     "deleteConfirm": "„{name}“ löschen? Damit wird die Konfiguration aus Studio entfernt, keine Daten in der Infrastruktur.",
     "probe": "Verbindung prüfen",
@@ -489,7 +520,8 @@
     "bundledHint": "Mit Studio ausgeliefert und mit ihm aktuell gehalten.",
     "backendHint": "Führt Code auf dem Studio-Server aus, isoliert von Studio und anderen Apps.",
     "permissions": "Berechtigungen: {list}",
-    "filters": "Art"
+    "filters": "Art",
+    "installsFixed": "Dieses Deployment legt seine Apps fest, daher können sie hier nicht installiert oder entfernt werden."
   },
   "nav": {
     "targets": "AAS-Ziele",
@@ -922,7 +954,12 @@
     "shapes": {
       "normal": "Normal",
       "rounded": "Runder"
-    }
+    },
+    "about": "Über {name}",
+    "version": "Version {version}",
+    "commit": "Commit {commit}",
+    "built": "Erstellt am {date}",
+    "readOnly": "Dieses Deployment ist schreibgeschützt: An seinen Infrastrukturen lässt sich nichts ändern."
   },
   "invite": {
     "title": "Einladung annehmen",

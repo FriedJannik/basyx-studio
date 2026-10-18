@@ -20,6 +20,7 @@ This directory is the central source of product, architecture, decision, and dev
 - [Overview](architecture/overview.md): system context, boundaries, shared abstractions, and current gaps
 - [Technology stack](architecture/technology-stack.md): pragmatic implementation defaults and qualification gates
 - [Deployment variants](architecture/deployment-variants.md): the three primary runtime/data-location combinations
+- [Deploying BaSyx Studio](deployment/README.md): container image, configuration reference, base path, declared infrastructures, Compose and Kubernetes
 - [Mechanisms](architecture/mechanisms.md): canonical sequence diagrams for authentication, AAS access/copy, packages, views, apps, target switching, and updates
 - [Data sources and workspaces](architecture/data-and-workspaces.md): live servers, multiple authenticated targets, and desktop-local AASX behavior
 - [Graphical views and dashboards](architecture/views-and-dashboards.md): declarative UI building, AAS bindings, and app widgets

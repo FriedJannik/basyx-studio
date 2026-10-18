@@ -21,6 +21,7 @@ function configWith (apps: Partial<StudioConfig['apps']>): StudioConfig {
     deploymentMode: 'hosted',
     publicUrl: 'http://localhost:3000',
     adminRole: 'studio-admin',
+    deployment: { appInstalls: true },
     apps: { baseUrl: 'http://apps.localhost:3000/app/', allowUnsigned: true, denoPath: null, capabilityUrl: 'http://127.0.0.1:3000', workDir: '/tmp', ...apps },
   } as StudioConfig
 }
@@ -77,6 +78,9 @@ describe('app installations', () => {
     expect((await failure(installApp(disabled, admin, zipApp(manifestOf({ id: 'org.example.other' })), 'r3'))).code).toBe('app_unsigned_disabled')
     const noOrigin = { ...deps, config: configWith({ baseUrl: null }) }
     expect((await failure(installApp(noOrigin, admin, zipApp(manifestOf({ id: 'org.example.other' })), 'r4'))).code).toBe('unsupported_operation')
+    const fixed = { ...deps, config: { ...configWith({}), deployment: { appInstalls: false } } as StudioConfig }
+    expect((await failure(installApp(fixed, admin, zipApp(manifestOf({ id: 'org.example.other' })), 'r4b'))).code).toBe('forbidden')
+    expect((await failure(uninstallApp(fixed, admin, 'any', 'r4c'))).code).toBe('forbidden')
   })
 
   it('leaves nothing behind when a package is rejected', async () => {

@@ -4,7 +4,7 @@ import { toWorkspaceTarget } from '~~/server/lib/workspaces/manager'
 import { requireActor } from '~~/server/utils/auth'
 import { defineStudioHandler } from '~~/server/utils/handler'
 import { useStudio } from '~~/server/utils/studio'
-import { toTarget } from '~~/server/utils/target'
+import { capabilityRestrictions, toTarget } from '~~/server/utils/target'
 
 export default defineStudioHandler(async (event): Promise<{ items: Target[] }> => {
   const actor = await requireActor(event)
@@ -14,7 +14,7 @@ export default defineStudioHandler(async (event): Promise<{ items: Target[] }> =
   return {
     items: [
       ...workspaces.map(info => toWorkspaceTarget(info)),
-      ...await Promise.all(records.map(async record => toTarget(record, await studio.broker.authenticationState(record, actor.sessionId)))),
+      ...await Promise.all(records.map(async record => toTarget(record, await studio.broker.authenticationState(record, actor.sessionId), capabilityRestrictions(studio.config)))),
     ],
   }
 })

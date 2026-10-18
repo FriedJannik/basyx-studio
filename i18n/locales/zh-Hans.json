@@ -7,6 +7,7 @@
     "signIn": "登录",
     "signOut": "退出登录",
     "localUser": "本地用户",
+    "anonymous": "匿名用户",
     "administrator": "管理员",
     "apps": "应用",
     "appModules": "应用模块",
@@ -17,7 +18,9 @@
     "edit": "编辑",
     "account": "账户",
     "arcadeOn": "街机模式：+30 条命",
-    "arcadeOff": "街机模式已关闭。继续工作吧。"
+    "arcadeOff": "街机模式已关闭。继续工作吧。",
+    "legalNotice": "法律声明",
+    "privacyPolicy": "隐私政策"
   },
   "qr": {
     "title": "资产二维码",
@@ -238,6 +241,34 @@
     "search": "搜索基础设施",
     "add": "添加基础设施",
     "edit": "编辑基础设施",
+    "view": "基础设施",
+    "managed": "受管理",
+    "managedHint": "在部署的基础设施文件中声明。请在该文件中修改；Studio 会在启动时应用该文件。",
+    "fixedByDeployment": "此部署固定了其基础设施，因此无法在此处添加、更改或删除。",
+    "import": "导入",
+    "exportAll": "全部导出",
+    "copyYaml": "复制为 YAML",
+    "yaml": "YAML",
+    "importTitle": "导入基础设施",
+    "importHint": "从 Studio 导出的 YAML，或为 STUDIO_INFRASTRUCTURES_FILE 编写的 YAML",
+    "importDrop": "拖放 YAML 文件",
+    "importDropHint": "其内容将替换文本",
+    "importInvalid": "无法导入此 YAML",
+    "importReady": "可以导入",
+    "importConflict": "已存在名为 {name} 的基础设施",
+    "importUnnamed": "条目 {index}",
+    "importAction": "导入 | 导入 {n} 个基础设施 | 导入 {n} 个基础设施",
+    "importOutcomes": {
+      "created": "已创建",
+      "replaced": "已替换",
+      "skipped": "已跳过",
+      "failed": "未导入"
+    },
+    "importResolutions": {
+      "skip": "跳过",
+      "replace": "替换",
+      "create": "作为新项添加"
+    },
     "delete": "删除",
     "deleteConfirm": "删除“{name}”？这只会从 Studio 中移除配置，不会删除基础设施中的任何数据。",
     "probe": "检查连接",
@@ -401,7 +432,8 @@
     "bundledHint": "随 Studio 一同提供并随其更新。",
     "backendHint": "在 Studio 服务器上运行代码，与 Studio 及其他应用隔离。",
     "permissions": "权限：{list}",
-    "filters": "类型"
+    "filters": "类型",
+    "installsFixed": "此部署固定了其应用，因此无法在此处安装或删除。"
   },
   "nav": {
     "targets": "AAS 目标",
@@ -826,7 +858,12 @@
     "shapes": {
       "normal": "标准",
       "rounded": "更圆润"
-    }
+    },
+    "about": "关于 {name}",
+    "version": "版本 {version}",
+    "commit": "提交 {commit}",
+    "built": "构建于 {date}",
+    "readOnly": "此部署为只读：无法更改其基础设施上的任何内容。"
   },
   "invite": {
     "title": "接受邀请",

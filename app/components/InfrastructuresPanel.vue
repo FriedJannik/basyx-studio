@@ -2,7 +2,17 @@
   <v-container>
     <PageHeader :subtitle="t('admin.subtitle')" :title="t('admin.title')">
       <template #actions>
-        <v-btn-primary prepend-icon="mdi-plus" :text="t('admin.add')" @click="edit(null)" />
+        <v-btn
+          v-if="items.length > 0"
+          download
+          :href="studioUrl.api('/infrastructures/export?download')"
+          prepend-icon="mdi-file-export-outline"
+          :text="t('admin.exportAll')"
+        />
+
+        <v-btn v-if="editable" prepend-icon="mdi-file-import-outline" :text="t('admin.import')" @click="importOpen = true" />
+
+        <v-btn-primary v-if="editable" prepend-icon="mdi-plus" :text="t('admin.add')" @click="edit(null)" />
 
         <v-btn
           v-tooltip="t('common.close')"
@@ -22,6 +32,14 @@
     />
 
     <ProblemAlert v-if="actionError" class="mb-4" :error="actionError" />
+
+    <v-alert
+      v-if="!editable"
+      class="mb-4"
+      density="compact"
+      :text="t('admin.fixedByDeployment')"
+      type="info"
+    />
 
     <v-progress-linear v-if="list.isPending.value" />
 
@@ -53,6 +71,14 @@
                 <span class="me-1">{{ item.name }}</span>
 
                 <v-chip
+                  v-if="item.managed"
+                  v-tooltip="t('admin.managedHint')"
+                  prepend-icon="mdi-file-lock-outline"
+                  size="x-small"
+                  :text="t('admin.managed')"
+                />
+
+                <v-chip
                   v-for="feature in features(item)"
                   :key="feature.key"
                   v-tooltip="feature.hint"
@@ -82,6 +108,13 @@
             <!-- Clicking the row edits it, so there is no edit button. -->
             <template #actions>
               <v-btn
+                v-tooltip="t('admin.copyYaml')"
+                :aria-label="t('admin.copyYaml')"
+                icon="mdi-content-copy"
+                @click.stop="copyYaml(item)"
+              />
+
+              <v-btn
                 v-tooltip="t('admin.probe')"
                 :aria-label="t('admin.probe')"
                 icon="mdi-lan-connect"
@@ -90,6 +123,7 @@
               />
 
               <v-btn
+                v-if="editable && !item.managed"
                 v-tooltip="t('admin.delete')"
                 :aria-label="t('admin.delete')"
                 icon="mdi-delete-outline"
@@ -105,7 +139,14 @@
       <v-card-text v-else class="text-medium-emphasis">{{ t('admin.noInfrastructures') }}</v-card-text>
     </v-card>
 
-    <InfrastructureDialog v-model="dialogOpen" :existing="editing" @saved="refresh" />
+    <InfrastructureImportDialog v-model="importOpen" @imported="refresh" />
+
+    <InfrastructureDialog
+      v-model="dialogOpen"
+      :existing="editing"
+      :readonly="!editable || Boolean(editing?.managed)"
+      @saved="refresh"
+    />
 
     <v-dialog max-width="480" :model-value="confirmDelete !== null" @update:model-value="confirmDelete = null">
       <DialogCard :title="t('admin.delete')">
@@ -133,6 +174,21 @@
   const invalidate = useInvalidate()
   const notifications = useNotificationsStore()
   const panel = usePanel()
+  const session = useSessionStore()
+  const studioUrl = useStudioUrl()
+  const copy = useClipboard()
+  const editable = computed(() => session.canEditInfrastructures)
+  const importOpen = ref(false)
+
+  /** One infrastructure in the file format, for another Studio or the deployment's file. */
+  async function copyYaml (item: Infrastructure) {
+    actionError.value = null
+    try {
+      await copy(await api<string>(`/infrastructures/export?ids=${encodeURIComponent(item.id)}`, { responseType: 'text' }), t('admin.yaml'))
+    } catch (error) {
+      actionError.value = error
+    }
+  }
 
   const featureIcons: Record<keyof Infrastructure['announced'], string> = {
     history: 'mdi-history',

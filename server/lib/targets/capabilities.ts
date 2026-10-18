@@ -43,6 +43,25 @@ export function liveCapabilities (record: Pick<InfrastructureRecord, 'endpoints'
   }
 }
 
+/** The deployment's switches that narrow capabilities (ADR 0035). */
+export interface CapabilityRestrictions {
+  /** STUDIO_READ_ONLY: nothing on any target changes. */
+  readOnly: boolean
+  /** STUDIO_ALLOW_UPLOADS=false: no file uploads to targets. */
+  uploads: boolean
+}
+
+/**
+ * The capabilities a deployment allows. The UI hides what a target cannot do,
+ * and routes check the same capabilities, so a switch both hides and blocks.
+ */
+export function restrictCapabilities (capabilities: TargetCapabilities, restrictions: CapabilityRestrictions): TargetCapabilities {
+  if (restrictions.readOnly) {
+    return { ...capabilities, write: false, writeStructure: false, createResources: false, deleteShells: false, upload: false, operations: false, sharing: false }
+  }
+  return restrictions.uploads ? capabilities : { ...capabilities, upload: false }
+}
+
 /** Desktop AASX workspaces: local editing without server-only features (D13). */
 export const workspaceCapabilities: TargetCapabilities = {
   write: true,

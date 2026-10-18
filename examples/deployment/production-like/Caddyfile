@@ -1,0 +1,25 @@
+{
+	# Plain HTTP for the example; drop this and use real host names for TLS.
+	auto_https off
+}
+
+# Studio under /studio/ and Keycloak under /auth/ on one host. Caddy passes
+# the original Host header, which Studio needs to tell its origins apart.
+http://studio.localhost:8080 {
+	handle /studio* {
+		reverse_proxy studio:3000
+	}
+	handle /auth* {
+		reverse_proxy keycloak:8080
+	}
+	handle {
+		redir * /studio/
+	}
+}
+
+# The apps origin (STUDIO_APPS_URL), routed to the same Studio service. Do not
+# add X-Frame-Options or a Content-Security-Policy here: Studio sets the
+# headers the app sandbox needs (docs/architecture/deployment-variants.md).
+http://apps.studio.localhost:8080 {
+	reverse_proxy studio:3000
+}

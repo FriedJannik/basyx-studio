@@ -7,6 +7,7 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "localUser": "Local user",
+    "anonymous": "Anonymous",
     "administrator": "Administrator",
     "apps": "Apps",
     "appModules": "App modules",
@@ -18,7 +19,9 @@
     "account": "Account",
     "arcadeOn": "Arcade mode: +30 lives",
     "arcadeOff": "Arcade mode off. Back to work.",
-    "drafts": "no drafts | {count} draft | {count} drafts"
+    "drafts": "no drafts | {count} draft | {count} drafts",
+    "legalNotice": "Legal notice",
+    "privacyPolicy": "Privacy policy"
   },
   "qr": {
     "title": "QR code of the asset",
@@ -318,6 +321,34 @@
     "search": "Search infrastructures",
     "add": "Add infrastructure",
     "edit": "Edit infrastructure",
+    "view": "Infrastructure",
+    "managed": "Managed",
+    "managedHint": "Declared in the deployment's infrastructure file. Change it there; Studio applies the file at startup.",
+    "fixedByDeployment": "This deployment fixes its infrastructures, so they cannot be added, changed or removed here.",
+    "import": "Import",
+    "exportAll": "Export all",
+    "copyYaml": "Copy as YAML",
+    "yaml": "YAML",
+    "importTitle": "Import infrastructures",
+    "importHint": "YAML as exported from a Studio or written for STUDIO_INFRASTRUCTURES_FILE",
+    "importDrop": "Drop a YAML file",
+    "importDropHint": "Its content replaces the text",
+    "importInvalid": "The YAML cannot be imported",
+    "importReady": "Ready to import",
+    "importConflict": "An infrastructure named {name} exists",
+    "importUnnamed": "Entry {index}",
+    "importAction": "Import | Import {n} infrastructure | Import {n} infrastructures",
+    "importOutcomes": {
+      "created": "Created",
+      "replaced": "Replaced",
+      "skipped": "Skipped",
+      "failed": "Not imported"
+    },
+    "importResolutions": {
+      "skip": "Skip",
+      "replace": "Replace it",
+      "create": "Add as new"
+    },
     "delete": "Delete",
     "deleteConfirm": "Delete \"{name}\"? This removes the configuration from Studio, not any data in the infrastructure.",
     "probe": "Check connection",
@@ -489,7 +520,8 @@
     "bundledHint": "Shipped with Studio and kept up to date with it.",
     "backendHint": "Runs code on the Studio server, isolated from Studio and other apps.",
     "permissions": "Permissions: {list}",
-    "filters": "Kind"
+    "filters": "Kind",
+    "installsFixed": "This deployment fixes its apps, so they cannot be installed or removed here."
   },
   "nav": {
     "targets": "AAS targets",
@@ -922,7 +954,12 @@
     "shapes": {
       "normal": "Normal",
       "rounded": "More rounded"
-    }
+    },
+    "about": "About {name}",
+    "version": "Version {version}",
+    "commit": "Commit {commit}",
+    "built": "Built {date}",
+    "readOnly": "This deployment is read-only: nothing on its infrastructures can be changed."
   },
   "invite": {
     "title": "Accept invitation",

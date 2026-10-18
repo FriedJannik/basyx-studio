@@ -26,6 +26,8 @@ export interface BackendRunnerOptions {
    * [::1]) is used, as a server bound to `localhost` may listen on one only.
    */
   capabilityUrl: string
+  /** Path of the app-calls endpoint there, under the deployment's base path. */
+  callPath?: string
   callTimeoutMs?: number
   startupTimeoutMs?: number
   idleTimeoutMs?: number
@@ -77,9 +79,9 @@ export async function reachableLoopbackUrl (configured: string, timeoutMs = 1000
  * gives each call a Studio client that carries the call's capability token.
  * The backend's console output goes to stderr, so it cannot forge answers.
  */
-function harnessSource (entry: string, capabilityUrl: string): string {
+function harnessSource (entry: string, endpoint: string): string {
   return String.raw`import * as app from ${JSON.stringify(`./${entry}`)}
-const endpoint = ${JSON.stringify(`${capabilityUrl}/api/studio/v1/app-calls`)}
+const endpoint = ${JSON.stringify(endpoint)}
 const encoder = new TextEncoder()
 const stdout = Deno.stdout
 let queue = Promise.resolve()
@@ -296,6 +298,7 @@ export class BackendRunner {
       idleTimeoutMs: 5 * 60_000,
       memoryMb: 256,
       maxMessageBytes: 16 * 1024 * 1024,
+      callPath: '/api/studio/v1/app-calls',
       ...options,
     }
   }
@@ -376,7 +379,8 @@ export class BackendRunner {
       await writeFile(file, content)
     }
     const capabilityUrl = await this.#reachableCapabilityUrl()
-    await writeFile(join(directory, harnessFile), harnessSource(source.entry, capabilityUrl))
+    const endpoint = `${capabilityUrl}${this.#options.callPath}`
+    await writeFile(join(directory, harnessFile), harnessSource(source.entry, endpoint))
 
     const child = spawn(this.#options.denoPath, [
       'run',

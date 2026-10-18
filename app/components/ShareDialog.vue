@@ -108,6 +108,7 @@
   const { t } = useI18n()
   const api = useStudioApi()
   const copy = useClipboard()
+  const studioUrl = useStudioUrl()
   const notifications = useNotificationsStore()
 
   const grants = ref<AccessGrant[]>([])
@@ -190,7 +191,7 @@
     error.value = null
     try {
       const invitation = await api<InvitationResult>(`${accessUrl()}/invitations`, { method: 'POST', body: { relation: relation.value } })
-      await copy(`${window.location.origin}/targets/${props.targetId}/invite/${encodeURIComponent(invitation.token)}`, t('share.invitationLink'))
+      await copy(`${window.location.origin}${studioUrl.page(`/targets/${props.targetId}/invite/${encodeURIComponent(invitation.token)}`)}`, t('share.invitationLink'))
     } catch (error_) {
       error.value = error_
     } finally {

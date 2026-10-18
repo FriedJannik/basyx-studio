@@ -244,6 +244,44 @@ export const infrastructureInputSchema = z.object({
 })
 export type InfrastructureInput = z.input<typeof infrastructureInputSchema>
 
+/** What an import does with an entry whose name an infrastructure already has. */
+export const importResolutions = ['skip', 'replace', 'create'] as const
+export type ImportResolution = (typeof importResolutions)[number]
+
+/** Infrastructures in the file format (YAML), checked (`dryRun`) or imported as ordinary infrastructures. */
+export const infrastructureImportRequestSchema = z.object({
+  yaml: z.string().max(1_000_000),
+  dryRun: z.boolean().default(true),
+  /** Per entry index; entries with a conflict are skipped unless resolved otherwise. */
+  resolutions: z.record(z.string().regex(/^\d+$/), z.enum(importResolutions)).default({}),
+})
+export type InfrastructureImportRequest = z.input<typeof infrastructureImportRequestSchema>
+
+export const infrastructureImportEntrySchema = z.object({
+  index: z.number().int(),
+  key: z.string().nullable(),
+  name: z.string().nullable(),
+  /** Why the entry cannot be imported as it is; empty when it can. */
+  problems: z.array(z.string()),
+  /** The infrastructure that already has this name. */
+  conflict: z.object({ id: z.string(), name: z.string(), managed: z.boolean() }).nullable(),
+  resolution: z.enum(importResolutions),
+  /** What the import did; `null` in a dry run. */
+  outcome: z.enum(['created', 'replaced', 'skipped', 'failed']).nullable(),
+  infrastructureId: z.string().nullable(),
+})
+export type InfrastructureImportEntry = z.infer<typeof infrastructureImportEntrySchema>
+
+export const infrastructureImportResultSchema = z.object({
+  /** Problems of the file as a whole; nothing is imported while there are any. */
+  problems: z.array(z.string()),
+  entries: z.array(infrastructureImportEntrySchema),
+})
+export type InfrastructureImportResult = z.infer<typeof infrastructureImportResultSchema>
+
+/** Stable identity of an infrastructure in the deployment's infrastructure file (ADR 0037). */
+export const managedInfrastructureKeySchema = z.string().regex(/^[a-z0-9][a-z0-9-]{0,62}$/, 'use 1 to 63 lowercase letters, digits and hyphens, starting with a letter or digit')
+
 /** The `/description` profiles of each endpoint at the last probe; `null` where the endpoint did not answer with them. */
 export const serviceProfilesSchema = z.partialRecord(endpointTypeSchema, z.array(z.string()).nullable())
 export type ServiceProfiles = z.infer<typeof serviceProfilesSchema>
@@ -264,6 +302,8 @@ export const infrastructureSchema = z.object({
   security: securitySummarySchema,
   clientCertificate: clientCertificateSummarySchema.nullable(),
   allowPrivateNetwork: z.boolean(),
+  /** Declared in the deployment's infrastructure file: read-only in Studio. */
+  managed: z.boolean(),
   revision: z.number().int(),
   createdAt: z.string(),
   updatedAt: z.string(),

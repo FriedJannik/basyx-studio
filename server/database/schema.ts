@@ -28,6 +28,10 @@ export const infrastructures = pgTable('infrastructures', {
   /** Encrypted PKCS#12 bundle and passphrase of desktop `stored` certificates; never returned by the API. */
   clientCertificateCiphertext: text('client_certificate_ciphertext'),
   allowPrivateNetwork: boolean('allow_private_network').notNull().default(false),
+  /** Key of the entry in the deployment's infrastructure file; `null` for infrastructures made in Studio. */
+  managedKey: text('managed_key').unique(),
+  /** HMAC of the declared entry, so an unchanged entry is not written again at startup. */
+  managedDigest: text('managed_digest'),
   revision: integer('revision').notNull().default(1),
   createdBy: text('created_by').notNull(),
   ...timestamps,

@@ -6,6 +6,10 @@ import { useStudio } from '../utils/studio'
  * the Studio API, so app code cannot reach them as same-origin requests.
  */
 export default defineEventHandler(async event => {
+  // Probes answer on every host and before the Studio runtime is ready.
+  if (event.url.pathname.startsWith('/health/')) {
+    return
+  }
   const studio = await useStudio()
   const { baseUrl } = studio.config.apps
   if (!baseUrl || studio.config.deploymentMode === 'desktop' || event.url.pathname.startsWith('/app/')) {

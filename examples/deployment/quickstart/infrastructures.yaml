@@ -1,0 +1,17 @@
+# Infrastructures declared by this deployment (ADR 0037). Studio applies the
+# file at every start; they are read-only in Studio. Export more from the
+# admin panel (Infrastructures → Export all) and paste them here.
+version: 1
+infrastructures:
+  - key: local-basyx
+    name: Local BaSyx
+    description: BaSyx Go AAS environment of the quick start
+    template: mono-all
+    endpoints:
+      - type: aasEnvironment
+        url: http://basyx:5004
+    listSource: registry
+    security:
+      mode: unsecured
+    # basyx resolves to an address on the compose network.
+    allowPrivateNetwork: true

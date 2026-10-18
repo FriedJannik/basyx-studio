@@ -41,7 +41,7 @@
 
       <div class="flex-grow-1 overflow-y-auto">
         <ShellForm
-          :can-upload="capabilities.files"
+          :can-upload="fileUploads"
           :explicit-save="capabilities.persistence === 'explicit_save'"
           :shell="shellDetail"
           :target-id="targetId"
@@ -181,7 +181,7 @@
           <ElementValueView
             v-if="!form || keepsView"
             :can-invoke="canInvoke"
-            :can-replace="canWrite && capabilities.files"
+            :can-replace="canWrite && fileUploads"
             :detail="detail"
             :history="history"
             :item="item"
@@ -348,6 +348,10 @@
     editingShell: boolean
     shellDetail: ShellDetail | null | undefined
   }>()
+
+  const session = useSessionStore()
+  /** Replacing File contents and thumbnails, unless the deployment turns uploads off. */
+  const fileUploads = computed(() => props.capabilities.files && (session.context?.features.uploads ?? true))
   const emit = defineEmits<{
     'select': [id: string]
     'created': [detail: ElementDetail]

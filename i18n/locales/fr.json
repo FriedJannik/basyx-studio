@@ -7,6 +7,7 @@
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",
     "localUser": "Utilisateur local",
+    "anonymous": "Anonyme",
     "administrator": "Administrateur",
     "apps": "Applications",
     "appModules": "Modules d'application",
@@ -17,7 +18,9 @@
     "edit": "Modifier",
     "account": "Compte",
     "arcadeOn": "Mode arcade : +30 vies",
-    "arcadeOff": "Mode arcade désactivé. Au travail !"
+    "arcadeOff": "Mode arcade désactivé. Au travail !",
+    "legalNotice": "Mentions légales",
+    "privacyPolicy": "Politique de confidentialité"
   },
   "qr": {
     "title": "Code QR de l'actif",
@@ -238,6 +241,34 @@
     "search": "Rechercher des infrastructures",
     "add": "Ajouter une infrastructure",
     "edit": "Modifier l'infrastructure",
+    "view": "Infrastructure",
+    "managed": "Gérée",
+    "managedHint": "Déclarée dans le fichier d’infrastructures du déploiement. Modifiez-la là ; Studio applique le fichier au démarrage.",
+    "fixedByDeployment": "Ce déploiement fixe ses infrastructures : elles ne peuvent pas être ajoutées, modifiées ou supprimées ici.",
+    "import": "Importer",
+    "exportAll": "Tout exporter",
+    "copyYaml": "Copier en YAML",
+    "yaml": "YAML",
+    "importTitle": "Importer des infrastructures",
+    "importHint": "YAML exporté d’un Studio ou écrit pour STUDIO_INFRASTRUCTURES_FILE",
+    "importDrop": "Déposez un fichier YAML",
+    "importDropHint": "Son contenu remplace le texte",
+    "importInvalid": "Le YAML ne peut pas être importé",
+    "importReady": "Prête à importer",
+    "importConflict": "Une infrastructure nommée {name} existe déjà",
+    "importUnnamed": "Entrée {index}",
+    "importAction": "Importer | Importer {n} infrastructure | Importer {n} infrastructures",
+    "importOutcomes": {
+      "created": "Créée",
+      "replaced": "Remplacée",
+      "skipped": "Ignorée",
+      "failed": "Non importée"
+    },
+    "importResolutions": {
+      "skip": "Ignorer",
+      "replace": "La remplacer",
+      "create": "Ajouter comme nouvelle"
+    },
     "delete": "Supprimer",
     "deleteConfirm": "Supprimer « {name} » ? Cela retire la configuration de Studio, pas les données de l'infrastructure.",
     "probe": "Vérifier la connexion",
@@ -401,7 +432,8 @@
     "bundledHint": "Livrée avec Studio et mise à jour avec lui.",
     "backendHint": "Exécute du code sur le serveur Studio, isolé de Studio et des autres applications.",
     "permissions": "Autorisations : {list}",
-    "filters": "Type"
+    "filters": "Type",
+    "installsFixed": "Ce déploiement fixe ses applications : elles ne peuvent pas être installées ou supprimées ici."
   },
   "nav": {
     "targets": "Cibles AAS",
@@ -826,7 +858,12 @@
     "shapes": {
       "normal": "Normale",
       "rounded": "Plus arrondie"
-    }
+    },
+    "about": "À propos de {name}",
+    "version": "Version {version}",
+    "commit": "Commit {commit}",
+    "built": "Compilé le {date}",
+    "readOnly": "Ce déploiement est en lecture seule : rien ne peut être modifié sur ses infrastructures."
   },
   "invite": {
     "title": "Accepter l'invitation",

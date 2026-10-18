@@ -60,7 +60,7 @@ describe('address policy', () => {
 describe('configuration', () => {
   const dataKey = randomBytes(32).toString('base64url')
   const hosted = {
-    STUDIO_PUBLIC_URL: 'https://studio.example.com/some/path',
+    STUDIO_PUBLIC_URL: 'https://studio.example.com/',
     STUDIO_DATA_KEY: dataKey,
     STUDIO_OIDC_ISSUER: 'https://idp.example.com/realms/x',
     STUDIO_OIDC_CLIENT_ID: 'studio',

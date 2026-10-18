@@ -43,6 +43,9 @@ changes one, add a new ADR with `Supersedes` and mark the old record
 | [0032](0032-overview-grid-layout.md) | Accepted | Overview widgets on a user-arranged 12-column grid, stored per shell |
 | [0033](0033-desktop-container-capability.md) | Proposed | Desktop-only `studio.containers` capability: BaSyx Go stacks from a fixed catalogue on Docker or Podman |
 | [0034](0034-bom-viewer-graph-library.md) | Accepted | Vue Flow for the graph of the bundled BOM viewer app |
+| [0035](0035-container-image-and-base-path.md) | Accepted | One multi-arch container image, configured by environment, served under a runtime base path |
+| [0036](0036-anonymous-mode.md) | Accepted | Hosted Studio without login: per-browser sessions as the shared `anonymous` user |
+| [0037](0037-declared-infrastructures-export-and-import.md) | Accepted | Infrastructures declared in a YAML file, applied at startup and read-only; export and import in the same format |
 
 ## Template
 

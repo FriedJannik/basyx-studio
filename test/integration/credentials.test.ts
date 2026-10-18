@@ -25,6 +25,7 @@ describe.runIf(testenvAvailable)('CredentialBroker against the test environment'
     const config = {
       deploymentMode: 'desktop',
       publicUrl: 'http://127.0.0.1:45000',
+      basePath: '/',
       adminRole: 'studio-admin',
       allowPrivateNetworkTargets: true,
     } as StudioConfig

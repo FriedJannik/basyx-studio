@@ -1,0 +1,150 @@
+# BaSyx Studio as a hosted deployment would run it (ADR 0035 to 0037):
+#
+# - Caddy serves Studio under http://studio.localhost:8080/studio/, Keycloak
+#   under /auth, and the apps origin http://apps.studio.localhost:8080.
+# - Studio keeps its metadata in PostgreSQL, logs in with Keycloak, reads its
+#   data key from a file (a Docker secret) and declares one infrastructure.
+# - A BaSyx Go AAS environment serves as that infrastructure.
+#
+#   cp .env.example .env && mkdir -p secrets
+#   node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))" > secrets/studio-data-key
+#   docker compose up -d --wait
+#   open http://studio.localhost:8080/studio/   (user admin, password admin)
+#
+# *.localhost resolves to your machine in browsers. Inside the compose
+# network, studio.localhost is an alias of Caddy, so Studio reaches Keycloak
+# under the same issuer URL as the browser. Plain HTTP keeps the example
+# simple; put TLS in front in a real deployment, and Studio then uses
+# __Host- cookies.
+
+name: basyx-studio-production-like
+
+services:
+  proxy:
+    image: caddy:2
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      default:
+        aliases:
+          - studio.localhost
+          - apps.studio.localhost
+    restart: unless-stopped
+
+  studio:
+    image: ${STUDIO_IMAGE:-eclipsebasyx/basyx-studio:SNAPSHOT}
+    environment:
+      STUDIO_BASE_PATH: /studio
+      STUDIO_PUBLIC_URL: http://studio.localhost:8080/studio
+      # The apps origin is routed to this same service by the proxy (ADR 0017).
+      STUDIO_APPS_URL: http://apps.studio.localhost:8080
+      STUDIO_DATABASE_URL: postgres://studio:${STUDIO_DB_PASSWORD:?set STUDIO_DB_PASSWORD in .env}@postgres:5432/studio
+      STUDIO_DATA_KEY_FILE: /run/secrets/studio_data_key
+      STUDIO_OIDC_ISSUER: http://studio.localhost:8080/auth/realms/basyx-studio
+      STUDIO_OIDC_CLIENT_ID: studio-web
+      STUDIO_OIDC_CLIENT_SECRET: ${STUDIO_OIDC_CLIENT_SECRET:?set STUDIO_OIDC_CLIENT_SECRET in .env}
+      STUDIO_ADMIN_ROLE: studio-admin
+      STUDIO_PRIVATE_NETWORK_TARGETS: allow
+      STUDIO_INFRASTRUCTURES_FILE: /etc/basyx-studio/infrastructures.yaml
+      # Optional deployment settings (docs/deployment/README.md):
+      # STUDIO_PRODUCT_NAME: Factory Studio
+      # STUDIO_PRIMARY_COLOR: "#0077A6"
+      # STUDIO_LEGAL_NOTICE_URL: https://example.org/legal-notice
+      # STUDIO_PRIVACY_POLICY_URL: https://example.org/privacy
+    secrets:
+      - studio_data_key
+    volumes:
+      - studio-data:/data
+      - ../quickstart/infrastructures.yaml:/etc/basyx-studio/infrastructures.yaml:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      basyx:
+        condition: service_started
+    restart: unless-stopped
+
+  keycloak:
+    image: keycloak/keycloak:26.8.1
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: keycloak-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_HOSTNAME: http://studio.localhost:8080/auth
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      # Placeholder in realm-basyx-studio.json.
+      STUDIO_OIDC_CLIENT_SECRET: ${STUDIO_OIDC_CLIENT_SECRET}
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /auth/health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          grep -q '200 OK' <&3
+      interval: 5s
+      timeout: 5s
+      retries: 60
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      STUDIO_DB_PASSWORD: ${STUDIO_DB_PASSWORD}
+      BASYX_DB_PASSWORD: ${BASYX_DB_PASSWORD:?set BASYX_DB_PASSWORD in .env}
+    volumes:
+      - ./postgres-init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  basyx-schema:
+    image: eclipsebasyx/basyxconfigurationservice-go:SNAPSHOT
+    environment: &basyx-db
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: basyx
+      POSTGRES_PASSWORD: ${BASYX_DB_PASSWORD}
+      POSTGRES_DBNAME: basyx
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  basyx:
+    image: eclipsebasyx/aasenvironment-go:SNAPSHOT
+    command: ["/app/aasenvironmentservice"]
+    environment:
+      <<: *basyx-db
+      SERVER_PORT: "5004"
+      ABAC_ENABLED: "false"
+      GENERAL_AASREGISTRYINTEGRATION: "true"
+      GENERAL_SUBMODELREGISTRYINTEGRATION: "true"
+      GENERAL_EXTERNALURL: http://basyx:5004
+    depends_on:
+      basyx-schema:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+secrets:
+  studio_data_key:
+    file: ./secrets/studio-data-key
+
+volumes:
+  studio-data:
+  postgres-data:

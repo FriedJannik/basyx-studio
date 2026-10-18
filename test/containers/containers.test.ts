@@ -54,7 +54,7 @@ async function finish (job: { id: string }) {
 beforeAll(async () => {
   database = await openDatabase({ kind: 'memory' })
   await applyMigrations(database.db, await loadMigrationsFromDirectory(new URL('../../server/database/migrations', import.meta.url).pathname))
-  deps = { db: database.db, cipher: new SecretCipher(randomBytes(32)), config: { deploymentMode: 'desktop', apps: { baseUrl: 'http://apps.localhost/app/', allowUnsigned: true } } as StudioConfig }
+  deps = { db: database.db, cipher: new SecretCipher(randomBytes(32)), config: { deploymentMode: 'desktop', infrastructuresEditable: true, deployment: { appInstalls: true }, apps: { baseUrl: 'http://apps.localhost/app/', allowUnsigned: true } } as StudioConfig }
 })
 afterAll(async () => database.close())
 

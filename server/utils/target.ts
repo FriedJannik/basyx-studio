@@ -1,9 +1,11 @@
 import type { IdScheme } from '#shared/aas/identifiers'
 import type { AuthenticationState, Target } from '#shared/contract'
 import type { SyncPlan } from '../lib/aas/sync'
+import type { StudioConfig } from '../lib/config'
 import type { Actor } from '../lib/deps'
 import type { InfrastructureRecord } from '../lib/infrastructures'
 import type { AasTarget } from '../lib/targets/aas-target'
+import type { CapabilityRestrictions } from '../lib/targets/capabilities'
 import type { RequestEvent } from 'nuxt/server'
 import { defaultIdScheme, workspaceIdScheme } from '#shared/aas/identifiers'
 import { serviceUrl } from '#shared/contract'
@@ -13,7 +15,7 @@ import { recordAudit } from '../lib/audit'
 import { getInfrastructure, resolveClientCertificate, targetPolicy } from '../lib/infrastructures'
 import { getPreferences } from '../lib/preferences'
 import { StudioProblem } from '../lib/problem'
-import { liveCapabilities } from '../lib/targets/capabilities'
+import { liveCapabilities, restrictCapabilities } from '../lib/targets/capabilities'
 import { LiveAasTarget } from '../lib/targets/live-target'
 import { isWorkspaceId } from '../lib/workspaces/manager'
 import { requireActor } from './auth'
@@ -75,6 +77,11 @@ export async function openTargetFor (access: TargetAccess): Promise<OpenedTarget
     }
   }
 
+  // A read-only deployment refuses every change before it reaches the target;
+  // capabilities hide the actions, this also covers value writes and apps.
+  if (studio.config.deployment.readOnly && !access.read) {
+    throw new StudioProblem('forbidden', 'This Studio deployment is read-only.')
+  }
   const record = await getInfrastructure(studio, targetId)
   const grant = await studio.broker.access(record, actor.sessionId)
   const audit = (action: string, outcome: 'success' | 'failure', details: Record<string, unknown>) => recordAudit(studio, {
@@ -100,6 +107,7 @@ export async function openTargetFor (access: TargetAccess): Promise<OpenedTarget
     requestId,
     onUnauthorized: () => studio.broker.invalidate(record, actor.sessionId),
     shellContext: access.shellId,
+    restrictions: capabilityRestrictions(studio.config),
   })
   return {
     actor,
@@ -117,18 +125,26 @@ function shellOf (event: RequestEvent): string | undefined {
 }
 
 /** Opens the target of the `targetId` route parameter for the signed-in user. */
+/** POST routes that only read: searches, availability checks and validations. */
+const readingPosts = /\/api\/studio\/v1\/targets\/[^/]+\/(?:searches|shell-availability|validations)$/
+
 export async function openTarget (event: RequestEvent): Promise<OpenedTarget> {
   return openTargetFor({
     actor: await requireActor(event),
     targetId: routeParam(event, 'targetId'),
     requestId: requestIdOf(event),
     operation: event.url.pathname,
-    read: event.req.method === 'GET',
+    read: event.req.method === 'GET' || readingPosts.test(event.url.pathname),
     shellId: shellOf(event),
   })
 }
 
-export function toTarget (record: InfrastructureRecord, authenticationState: AuthenticationState): Target {
+/** The deployment's switches that narrow what targets allow. */
+export function capabilityRestrictions (config: StudioConfig): CapabilityRestrictions {
+  return { readOnly: config.deployment.readOnly, uploads: config.deployment.uploads }
+}
+
+export function toTarget (record: InfrastructureRecord, authenticationState: AuthenticationState, restrictions: CapabilityRestrictions): Target {
   return {
     id: record.id,
     kind: 'live',
@@ -136,7 +152,7 @@ export function toTarget (record: InfrastructureRecord, authenticationState: Aut
     description: record.description,
     securityMode: record.security.mode,
     authenticationState,
-    capabilities: liveCapabilities(record),
+    capabilities: restrictCapabilities(liveCapabilities(record), restrictions),
     workspace: null,
     registrySync: studioSyncs(record) ? { studioDefault: record.sync.studioDefault, userOverride: record.sync.userOverride } : null,
   }
@@ -149,6 +165,17 @@ function studioSyncs (record: InfrastructureRecord): boolean {
 }
 
 type FlagCapability = Exclude<keyof Target['capabilities'], 'persistence' | 'search'>
+
+/**
+ * Fails when the deployment turns file uploads off (STUDIO_ALLOW_UPLOADS=false):
+ * File contents and thumbnails, besides the AASX/JSON/XML uploads that the
+ * `upload` capability covers. Downloads stay.
+ */
+export async function requireFileUploads (): Promise<void> {
+  if (!(await useStudio()).config.deployment.uploads) {
+    throw new StudioProblem('forbidden', 'This Studio deployment does not allow file uploads.')
+  }
+}
 
 /** Fails unless the target supports a capability, before any downstream request. */
 export async function requireCapability (opened: OpenedTarget, capability: FlagCapability): Promise<void> {

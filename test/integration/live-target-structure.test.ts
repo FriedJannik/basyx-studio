@@ -124,6 +124,28 @@ describe.runIf(testenvAvailable)('LiveAasTarget structural writes against the te
     expect(await target.submodelIds(shellId)).toHaveLength(2)
   })
 
+  it('keeps Blob values when it writes the whole submodel', async () => {
+    const [, workbench] = await target.submodelIds(shells[0]!)
+    const id = workbench!
+    const blobValue = async () => ((await target.element(id, 'Picture')).value as { value?: string }).value
+    await target.addElement(id, null, { ...newElement('Blob', 'Picture'), contentType: 'text/plain', value: 'aGVsbG8gc3R1ZGlv' }, null, await topRevision(id))
+    expect(await blobValue()).toBe('aGVsbG8gc3R1ZGlv')
+
+    // Adding at the top level writes the submodel with all its elements.
+    await target.addElement(id, null, newElement('Property', 'AfterPicture'), null, await topRevision(id))
+    expect(await blobValue()).toBe('aGVsbG8gc3R1ZGlv')
+
+    const metadata = await target.submodelMetadata(id)
+    await target.replaceSubmodelMetadata(id, { ...metadata, category: 'VARIABLE' }, revisionOf(metadata))
+    expect(await blobValue()).toBe('aGVsbG8gc3R1ZGlv')
+
+    // The JSON editor edits the submodel as Studio shows it, without Blob values.
+    const shown = await target.submodel(id)
+    expect((shown.submodelElements as Array<{ idShort: string, value?: unknown }>).find(element => element.idShort === 'Picture')?.value).toBeUndefined()
+    await target.replaceSubmodel(id, { ...shown, category: 'PARAMETER' }, revisionOf(shown))
+    expect(await blobValue()).toBe('aGVsbG8gc3R1ZGlv')
+  })
+
   it('adds and removes submodels and creates instances from a type', async () => {
     const shellId = shells[0]!
     const added = await addSubmodel(context, shellId, { source: 'empty', idShort: 'Extra' })
