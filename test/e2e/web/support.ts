@@ -1,4 +1,4 @@
-import type { APIRequestContext, Page } from '@playwright/test'
+import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import { expect } from '@playwright/test'
 
 export const openTargetUrl = 'http://localhost:18081'
@@ -8,6 +8,24 @@ export const edgeCasesSubmodel = 'urn:studio:test:sm:edge-cases'
 
 export function key (value: string): string {
   return Buffer.from(value, 'utf8').toString('base64url')
+}
+
+/**
+ * Waits until an element keeps its place and size for a moment. An app
+ * frame grows to its content after it connects (`studio.ui.setHeight`) and
+ * the Overview's grid then places it again; Playwright's stability check
+ * looks only inside the frame, so a click into a moving frame can land
+ * between its mousedown and mouseup and never reach the button.
+ */
+export async function waitUntilSettled (locator: Locator): Promise<void> {
+  let previous = ''
+  let unchanged = 0
+  await expect.poll(async () => {
+    const box = JSON.stringify(await locator.boundingBox())
+    unchanged = box === previous ? unchanged + 1 : 0
+    previous = box
+    return unchanged
+  }, { intervals: [150], timeout: 15_000 }).toBeGreaterThanOrEqual(2)
 }
 
 /** Signs in through the test realm (users' passwords equal their names). */

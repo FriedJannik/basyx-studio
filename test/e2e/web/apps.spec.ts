@@ -6,7 +6,7 @@ import { expect, test } from '@playwright/test'
 import { strToU8, zipSync } from 'fflate'
 import pg from 'pg'
 import { fixturesDirectory, zipDirectory } from '../../apps/support'
-import { installApp, key, registerOpenTarget, registerSecuredServiceTarget, registerSecuredUserTarget, setAtSource, setMode, signIn, studioApi, uninstallAllApps } from './support'
+import { installApp, key, registerOpenTarget, registerSecuredServiceTarget, registerSecuredUserTarget, setAtSource, setMode, signIn, studioApi, uninstallAllApps, waitUntilSettled } from './support'
 
 // MVP-3 definition of done in the hosted build: runtime install, submodel
 // views, modules, writes through apps, refused permissions, isolation,
@@ -48,11 +48,21 @@ async function openNameplateView (page: Page, targetId: string, shell = motorShe
   await setMode(page, 'Edit')
 }
 
+/**
+ * Clicks a button of the nameplate app once its frame stopped growing and
+ * moving: a click into a frame the Overview is still placing can be lost.
+ */
+async function clickInNameplate (page: Page, name: string) {
+  const button = appFrame(page, 'Digital Nameplate').getByRole('button', { name })
+  await expect(button).toBeVisible()
+  await waitUntilSettled(page.locator('iframe[title="App: Digital Nameplate"]'))
+  await button.click()
+}
+
 async function editInNameplate (page: Page, label: string, value: string) {
-  const frame = appFrame(page, 'Digital Nameplate')
-  await frame.getByRole('button', { name: `Edit ${label}` }).click()
-  await frame.getByRole('textbox', { name: label }).fill(value)
-  await frame.getByRole('button', { name: 'Save' }).click()
+  await clickInNameplate(page, `Edit ${label}`)
+  await appFrame(page, 'Digital Nameplate').getByRole('textbox', { name: label }).fill(value)
+  await clickInNameplate(page, 'Save')
 }
 
 let openTargetId: string
@@ -148,10 +158,10 @@ test('writes through the app with the core UI\'s conflict handling (DoD 4)', asy
 
   // A change by someone else between reading and saving is a conflict; the draft stays.
   const frame = appFrame(page, 'Digital Nameplate')
-  await frame.getByRole('button', { name: 'Edit Serial number' }).click()
+  await clickInNameplate(page, 'Edit Serial number')
   await frame.getByRole('textbox', { name: 'Serial number' }).fill('SN-E2E-APP-DRAFT')
   await setAtSource(request, motorNameplate, 'SerialNumber', 'SN-CHANGED-ELSEWHERE')
-  await frame.getByRole('button', { name: 'Save' }).click()
+  await clickInNameplate(page, 'Save')
   await expect(frame.locator('[data-test="edit-error"]')).toContainText('Someone else changed this value')
   await expect(frame.getByRole('textbox', { name: 'Serial number' })).toHaveValue('SN-E2E-APP-DRAFT')
 })
