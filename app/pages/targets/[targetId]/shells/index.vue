@@ -7,8 +7,7 @@
     @file="ui.openUpload($event)"
   >
     <!-- Files dropped on the welcome page are imported into the target.
-         The drawers register with the app layout from inside the page. -->
-    <ShellListDrawer :active-key="null" :target-id="targetId" />
+         The shell list is the layout's (default.vue). -->
 
     <v-container class="fill-height" max-width="720">
       <ProblemAlert v-if="target.error.value" :error="target.error.value" retry @retry="target.refetch()" />

@@ -77,6 +77,12 @@ export default defineVuetifyConfiguration({
     VBtnWidgetIcon: 'VBtn',
     // Pane container of a full-height page area: fixed height, scrolling body.
     VCardPane: 'VCard',
+    // The card of a full-screen dialog: edge to edge, without radius or border.
+    VCardFullscreen: 'VCard',
+    // The header of a container card (dialogs, Overview widgets, panes): a
+    // tinted band that sets the title apart from the content. Value cards
+    // and list rows keep their plain surface.
+    VCardHeader: 'VCardItem',
     // Records in a bordered card (infrastructures, targets, apps), divided by
     // v-divider: slim, square rows, and the row icon (RecordListItem) as far
     // from the left edge as from the top and bottom.
@@ -100,6 +106,8 @@ export default defineVuetifyConfiguration({
     VBtnToggleIcon: { color: 'primary', variant: 'text', flat: true, height: 'auto', rounded: false, density: 'comfortable', VIcon: { size: 'small' } },
     VBtnWidgetIcon: { variant: 'text', rounded: 'lg', density: 'comfortable', size: 'small' },
     VCard: { flat: true, border: true, rounded: 'lg' },
+    VCardFullscreen: { flat: true, border: false, rounded: 0 },
+    VCardHeader: { class: 'bg-card-header' },
     VCardPane: {
       flat: true,
       border: true,
@@ -123,10 +131,15 @@ export default defineVuetifyConfiguration({
     // menu card (8 px), so their highlight follows the card's corners. Lists
     // are transparent elsewhere (below); the menus of selects, comboboxes and
     // autocompletes have no card around their list, so it brings the surface.
+    // Every menu looks the same, with or without a card around its list: a
+    // bare list brings the card's border, radius and shadow itself; inside a
+    // card (as the account menu) the card has them.
     VMenu: {
-      VCard: { flat: false },
-      VList: { density: 'compact', slim: true, bgColor: 'surface', class: 'pa-1 text-body-medium' },
+      VCard: { flat: false, VList: { border: false, rounded: 0, elevation: 0 } },
+      VList: { density: 'compact', slim: true, bgColor: 'surface', class: 'pa-1 text-body-medium', border: true, rounded: 'lg', elevation: 1 },
       VListItem: { minHeight: 36, rounded: true },
+      // A menu's search is its header: lower than a dialog's or the command palette's.
+      VTextField: { density: 'compact' },
     },
     // Compact lists throughout: more rows on screen, as in the BaSyx Web UI and shadcn.
     VList: { color: 'primary', density: 'compact', bgColor: 'transparent' },

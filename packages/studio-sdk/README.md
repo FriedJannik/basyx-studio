@@ -28,7 +28,8 @@ declares, limited by the signed-in user's own rights.
       "id": "nameplate",
       "title": { "en": "Nameplate" },
       "entry": "ui/index.html",
-      "semanticIds": ["https://admin-shell.io/idta/nameplate/3/0/Nameplate"]
+      "semanticIds": ["https://admin-shell.io/idta/nameplate/3/0/Nameplate"],
+      "columns": { "md": 12, "lg": 6, "xxl": 4 }
     }]
   }
 }
@@ -80,7 +81,18 @@ click handlers instead of `submit` events.
 `studio.context.mode` is Studio's mode, `view` or `edit`. Show edit controls
 only in `edit`, as Studio does; `onContext` reports when the user switches.
 Views on the overview are sized to their content (`fitHeight`), so edit in
-place rather than in dialogs.
+place rather than in dialogs. Measure the content itself: a root that is at
+least as tall as the frame (Vuetify's `v-app`, `min-height: 100vh`) lets the
+frame grow but never shrink. Studio draws the view's card, border and title,
+so render the view flat, without a title of its own and with a transparent
+background.
+
+`columns` gives the view's default width as a widget on a shell's Overview,
+in columns of 12, per breakpoint of the Overview's width (Vuetify's names, as
+in `v-col`): a breakpoint without a value uses the nearest smaller one, and
+without any the view starts full width, half wide from `lg`. Widgets in a
+row share its width and height, so the widths are a starting point; users
+arrange each breakpoint themselves.
 
 ## Backend
 

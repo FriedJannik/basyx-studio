@@ -1,7 +1,8 @@
 <template>
+  <!-- Widened up to the rail, whose own border then separates them: no second line. -->
   <v-navigation-drawer
     v-model="ui.detailsDrawer"
-    border="s"
+    :border="wide && lgAndUp ? 0 : 's'"
     disable-route-watcher
     location="end"
     :temporary="!lgAndUp"

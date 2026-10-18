@@ -2,7 +2,7 @@
   "$schema": "../../packages/studio-sdk/app-manifest.schema.json",
   "manifestVersion": 0,
   "id": "org.eclipse.basyx.studio.bom-viewer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": { "name": "Eclipse BaSyx" },
   "title": { "en": "Bill of Material", "de": "Stückliste", "es": "Lista de materiales", "fr": "Nomenclature", "ja": "部品表", "nl": "Stuklijst", "zh-Hans": "物料清单" },
   "description": {
@@ -23,7 +23,8 @@
         "id": "bom",
         "title": { "en": "Bill of Material", "de": "Stückliste", "es": "Lista de materiales", "fr": "Nomenclature", "ja": "部品表", "nl": "Stuklijst", "zh-Hans": "物料清单" },
         "entry": "ui/index.html",
-        "semanticIds": ["https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel", "https://admin-shell.io/idta/HierarchicalStructures/1/0/Submodel"]
+        "semanticIds": ["https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel", "https://admin-shell.io/idta/HierarchicalStructures/1/0/Submodel"],
+        "columns": { "md": 12, "xxl": 8 }
       }
     ]
   }

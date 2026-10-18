@@ -34,6 +34,7 @@ export function contributionsFor (installations: AppInstallationRecord[], baseUr
             title: view.title,
             entryUrl: appFileUrl(baseUrl, installation.id, view.entry),
             reason: { semanticId },
+            columns: view.columns ?? {},
           })
         }
       }

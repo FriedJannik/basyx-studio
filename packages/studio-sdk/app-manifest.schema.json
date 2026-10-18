@@ -121,9 +121,23 @@
           "maxItems": 64,
           "uniqueItems": true,
           "items": { "type": "string", "minLength": 1, "maxLength": 2048 }
+        },
+        "columns": {
+          "description": "Default width as a widget on a shell's Overview, in columns of 12, per breakpoint of the Overview's width (Vuetify's names, as in v-col). A breakpoint without a value uses the nearest smaller one; without any, the view starts half wide from lg and full width below.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "xs": { "$ref": "#/$defs/columns" },
+            "sm": { "$ref": "#/$defs/columns" },
+            "md": { "$ref": "#/$defs/columns" },
+            "lg": { "$ref": "#/$defs/columns" },
+            "xl": { "$ref": "#/$defs/columns" },
+            "xxl": { "$ref": "#/$defs/columns" }
+          }
         }
       }
     },
+    "columns": { "type": "integer", "minimum": 3, "maximum": 12 },
     "module": {
       "description": "A page with its own route and navigation entry. context: global (always), target (a target is open), shell (a shell is selected).",
       "type": "object",

@@ -129,7 +129,8 @@ test('adds, renames and deletes an element, and edits the shell', async ({ page 
   await expect(page.getByText('Edit shell')).toBeVisible()
   await page.getByText('Names and description', { exact: true }).click()
   await page.getByRole('button', { name: 'Add text' }).first().click()
-  await page.getByRole('textbox', { name: 'Text' }).first().fill('Edited by e2e')
+  // A new translation starts in the first unused language (English) and is labelled with it.
+  await page.getByRole('textbox', { name: 'English' }).first().fill('Edited by e2e')
   await page.getByRole('button', { name: 'Apply' }).click()
   await expect(page.getByRole('heading', { name: 'Edited by e2e' })).toBeVisible()
 })

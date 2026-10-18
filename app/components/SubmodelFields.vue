@@ -33,15 +33,17 @@
       </v-btn-toggle>
     </FormSection>
 
-    <FormSection v-model:open="openNames" :badge="hasNames ? '✓' : undefined" collapsible :title="t('editor.sections.names')">
+    <FormSection v-model:open="openNames" collapsible :title="t('editor.sections.names')">
       <LangStringsInput
         :label="t('details.displayName')"
+        :max-length="langStringMaxLength.name"
         :model-value="langStrings('displayName')"
         @update:model-value="strings => set('displayName', strings)"
       />
 
       <LangStringsInput
         :label="t('details.description')"
+        :max-length="langStringMaxLength.text"
         :model-value="langStrings('description')"
         @update:model-value="strings => set('description', strings)"
       />
@@ -50,19 +52,21 @@
         clearable
         :items="categories"
         :label="t('details.category')"
-        :model-value="String(submodel.category ?? '')"
+        :model-value="typeof submodel.category === 'string' && submodel.category ? submodel.category : null"
         @update:model-value="value => set('category', value)"
       />
     </FormSection>
 
-    <FormSection v-model:open="openSemantics" collapsible :hint="t('editor.semanticsHint')" :title="t('editor.sections.semantics')">
-      <ReferenceInput
-        :error-messages="errorsFor(findings, 'semanticId')"
-        :label="t('details.semanticId')"
-        :model-value="submodel.semanticId"
-        @update:model-value="reference => set('semanticId', reference)"
-      />
-    </FormSection>
+    <SemanticsSection
+      v-model:open="openSemantics"
+      :can-create="canCreateConcept"
+      :error-messages="errorsFor(findings, 'semanticId')"
+      :link-concepts="linkConcepts"
+      :node="submodel"
+      :semantic-id="submodel.semanticId"
+      :target-id="targetId"
+      @update:semantic-id="reference => set('semanticId', reference)"
+    />
 
     <FormSection v-model:open="openSupplemental" :badge="supplemental.length || undefined" collapsible :title="t('editor.sections.supplemental')">
       <div v-for="(reference, index) in supplemental" :key="index">
@@ -98,7 +102,13 @@
       </div>
     </FormSection>
 
-    <FormSection v-model:open="openQualifiers" :badge="qualifiers.length || undefined" collapsible :title="t('editor.sections.qualifiers')">
+    <FormSection
+      v-model:open="openQualifiers"
+      :badge="qualifiers.length || undefined"
+      collapsible
+      last
+      :title="t('editor.sections.qualifiers')"
+    >
       <QualifiersInput :model-value="qualifiers" @update:model-value="list => set('qualifiers', list)" />
     </FormSection>
   </v-form-fields>
@@ -108,7 +118,7 @@
   import type { LangString } from '#shared/contract'
   import type { Json } from '~/utils/editor'
   import { withField } from '~/utils/editor'
-  import { categories, errorsFor, idShortPattern } from '~/utils/languages'
+  import { categories, errorsFor, idShortPattern, langStringMaxLength } from '~/utils/languages'
 
   // The fields of a submodel's own metadata, for editing and for creating
   // (the wizard and *Add submodel*): the same inputs in both.
@@ -118,6 +128,10 @@
     /** A template's copy is always an instance. */
     hideKind?: boolean
     autofocus?: boolean
+    /** The target, to resolve and link concept descriptions in the Semantics section. */
+    targetId?: string
+    linkConcepts?: boolean
+    canCreateConcept?: boolean
   }>()
   const submodel = defineModel<Json>({ required: true })
 

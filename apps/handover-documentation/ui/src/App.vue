@@ -1,10 +1,7 @@
 <template>
   <v-app>
-    <v-card>
-      <v-card-item prepend-icon="mdi-file-document-multiple-outline">
-        <v-card-title>Documents</v-card-title>
-        <v-card-subtitle>Handover documentation · VDI 2770</v-card-subtitle>
-      </v-card-item>
+    <!-- Studio's card shows the view's title. -->
+    <v-view-card>
 
       <v-progress-linear v-if="loading" />
 
@@ -37,7 +34,7 @@
       </v-list>
 
       <v-card-text v-else class="text-medium-emphasis">No documents.</v-card-text>
-    </v-card>
+    </v-view-card>
   </v-app>
 </template>
 

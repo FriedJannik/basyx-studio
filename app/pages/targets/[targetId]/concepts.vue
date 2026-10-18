@@ -169,9 +169,10 @@
   import { useQuery, useQueryCache } from '@pinia/colada'
   import { useDisplay } from 'vuetify'
   import { noCapabilities } from '#shared/contract'
+  import { formatFilter } from '#shared/search/expression'
   import { conceptDescriptionPageSizes } from '~/composables/useConceptDescriptionSearch'
   import { conceptDescriptionDraftSlot } from '~/stores/drafts'
-  import { resourceKey } from '~/utils/aas'
+  import { decodeResourceKey, resourceKey } from '~/utils/aas'
 
   type Row = ConceptDescriptionRow & { key: string }
 
@@ -196,13 +197,23 @@
 
   // The search, kept per target while the user visits other pages (usePageState), one page at a time (S1).
   const pageSize = usePageState<number>(() => `concepts:${targetId.value}:pageSize`, () => 25)
+  const search = usePageState<string | null>(() => `concepts:${targetId.value}:search`, () => '')
+  const sourceFilters = usePageState<string[]>(() => `concepts:${targetId.value}:filters`, () => [])
+  // A jump to a concept description (a deep link, or a link from an element)
+  // searches for its ID instead of the last search, so the list shows it,
+  // selected, whatever page it is on.
+  const jumpedTo = typeof route.query.cd === 'string' ? decodeResourceKey(route.query.cd) : null
+  if (jumpedTo) {
+    search.value = formatFilter({ field: 'id', operator: 'equals', value: jumpedTo })
+    sourceFilters.value = []
+  }
   const cds = useConceptDescriptionSearch({
     targetId,
     capabilities,
     enabled: () => target.data.value !== undefined,
     state: {
-      search: usePageState<string | null>(() => `concepts:${targetId.value}:search`, () => ''),
-      selected: usePageState<string[]>(() => `concepts:${targetId.value}:filters`, () => []),
+      search,
+      selected: sourceFilters,
       pageSize,
     },
   })

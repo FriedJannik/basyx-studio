@@ -130,7 +130,23 @@ Studio Service serves both roles ([ADR 0017](../adr/0017-app-origin-and-content-
 | `STUDIO_DENO_PATH` | Deno executable for backend apps. Defaults to the pnpm-managed runtime in `node_modules/deno`. |
 
 The reverse proxy must pass the original `Host` header, because the service
-tells Studio and app requests apart by host. Backend apps run as Deno child
+tells Studio and app requests apart by host. The service sets every header
+the app sandbox needs itself (ADR 0017), so the proxy must leave them as they
+are on the apps origin:
+
+- no `X-Frame-Options`: Studio frames app files from another origin, and
+  `DENY` or `SAMEORIGIN` blocks every app view;
+- no added `Content-Security-Policy`: browsers enforce every policy they
+  receive, so a global `frame-ancestors 'self'` or `script-src` blocks the
+  apps; the service's own policy must not be removed or replaced either, or an
+  app file opened in a tab is no longer sandboxed;
+- `Access-Control-Allow-Origin: *` and `Cross-Origin-Resource-Policy:
+  cross-origin` kept, since the frames' opaque origin loads module scripts as
+  CORS requests;
+- no `Domain` attribute on the session cookie, so it never reaches the apps
+  origin.
+
+Backend apps run as Deno child
 processes in the Studio container and reach it on `127.0.0.1`; hosted
 production needs the container isolation described in
 [app-platform.md](app-platform.md#isolation-rules) before third-party backends

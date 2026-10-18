@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="open" max-width="760" persistent scrollable>
+  <v-dialog v-model="open" persistent scrollable width="960">
     <DialogCard :title="t('wizard.title')">
       <v-stepper v-model="step" alt-labels flat>
         <v-stepper-header>

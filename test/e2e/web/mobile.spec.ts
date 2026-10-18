@@ -13,6 +13,8 @@ test('works on a phone-sized screen', async ({ page }) => {
   await expect(page.locator('.v-navigation-drawer--rail')).toHaveCount(0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 
+  // Submodels start closed.
+  await page.getByRole('button', { name: 'Expand all' }).click()
   await page.getByRole('tree').locator('.v-list-item-title').getByText('SimpleString', { exact: true }).click()
   await expect(page.getByText('hello studio').first()).toBeVisible()
 

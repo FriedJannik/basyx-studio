@@ -28,12 +28,12 @@ export const hexColorPattern = /^#[0-9A-F]{6}$/i
 /** The BaSyx orange: the secondary colour with every accent. */
 export const secondary = { light: '#A65400', dark: '#F69222' } as const
 
-/** The colours a background sets: the page, cards, raised controls and dialog headers. */
+/** The colours a background sets: the page, cards, raised controls and the headers of dialogs and container cards. */
 interface Tone {
   'background': string
   'surface': string
   'surface-light': string
-  'dialog-header': string
+  'card-header': string
 }
 
 /**
@@ -42,24 +42,24 @@ interface Tone {
  */
 export const backgrounds: Record<'neutral' | 'slate' | 'warm' | 'midnight' | 'contrast', { light: Tone, dark: Tone }> = {
   neutral: {
-    light: { 'background': '#FFFFFF', 'surface': '#FFFFFF', 'surface-light': '#EEEEEE', 'dialog-header': '#F5F5F5' },
-    dark: { 'background': '#121212', 'surface': '#212121', 'surface-light': '#424242', 'dialog-header': '#282828' },
+    light: { 'background': '#FFFFFF', 'surface': '#FFFFFF', 'surface-light': '#EEEEEE', 'card-header': '#F5F5F5' },
+    dark: { 'background': '#121212', 'surface': '#212121', 'surface-light': '#424242', 'card-header': '#282828' },
   },
   slate: {
-    light: { 'background': '#F4F6F9', 'surface': '#FFFFFF', 'surface-light': '#E6EAF0', 'dialog-header': '#EEF1F5' },
-    dark: { 'background': '#16191D', 'surface': '#1F2328', 'surface-light': '#363C44', 'dialog-header': '#272C32' },
+    light: { 'background': '#F4F6F9', 'surface': '#FFFFFF', 'surface-light': '#E6EAF0', 'card-header': '#EEF1F5' },
+    dark: { 'background': '#16191D', 'surface': '#1F2328', 'surface-light': '#363C44', 'card-header': '#272C32' },
   },
   warm: {
-    light: { 'background': '#FAF7F2', 'surface': '#FFFFFF', 'surface-light': '#EFE9E0', 'dialog-header': '#F5F0E8' },
-    dark: { 'background': '#1A1714', 'surface': '#24201C', 'surface-light': '#3D3730', 'dialog-header': '#2D2924' },
+    light: { 'background': '#FAF7F2', 'surface': '#FFFFFF', 'surface-light': '#EFE9E0', 'card-header': '#F5F0E8' },
+    dark: { 'background': '#1A1714', 'surface': '#24201C', 'surface-light': '#3D3730', 'card-header': '#2D2924' },
   },
   midnight: {
-    light: { 'background': '#F3F6FC', 'surface': '#FFFFFF', 'surface-light': '#E3E9F5', 'dialog-header': '#ECF0F8' },
-    dark: { 'background': '#0B1220', 'surface': '#131C2E', 'surface-light': '#2A3550', 'dialog-header': '#1A2438' },
+    light: { 'background': '#F3F6FC', 'surface': '#FFFFFF', 'surface-light': '#E3E9F5', 'card-header': '#ECF0F8' },
+    dark: { 'background': '#0B1220', 'surface': '#131C2E', 'surface-light': '#2A3550', 'card-header': '#1A2438' },
   },
   contrast: {
-    light: { 'background': '#FFFFFF', 'surface': '#FFFFFF', 'surface-light': '#E0E0E0', 'dialog-header': '#F0F0F0' },
-    dark: { 'background': '#000000', 'surface': '#0E0E0E', 'surface-light': '#2B2B2B', 'dialog-header': '#1A1A1A' },
+    light: { 'background': '#FFFFFF', 'surface': '#FFFFFF', 'surface-light': '#E0E0E0', 'card-header': '#F0F0F0' },
+    dark: { 'background': '#000000', 'surface': '#0E0E0E', 'surface-light': '#2B2B2B', 'card-header': '#1A1A1A' },
   },
 }
 export const backgroundNames = ['neutral', 'slate', 'warm', 'midnight', 'contrast'] as const satisfies ReadonlyArray<keyof typeof backgrounds>
@@ -141,7 +141,7 @@ export function themeColors (accent: string, background: BackgroundName, dark: b
   return {
     ...withOnColors({ primary: accentShade(accent, dark), secondary: secondary[mode], background: tone.background, surface: tone.surface }),
     'surface-light': tone['surface-light'],
-    'dialog-header': tone['dialog-header'],
+    'card-header': tone['card-header'],
   }
 }
 

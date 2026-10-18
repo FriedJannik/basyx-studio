@@ -375,7 +375,6 @@
     "needsShell": "Mach e Verwaltungsschal uff, donn geht des Modul.",
     "connecting": "Die App kummt glei…",
     "notStarted": "Die App will net",
-    "notStartedText": "Se hot sich in 15 Sekunde net beim Studio gemeldt. Vielleicht kummt mer net oo ihr Dateie, odder se is umgfalle.",
     "frameTitle": "App: {name}",
     "permission": {
       "studio_aas_read": "AAS-Date lese, wo du drokummscht",
@@ -569,7 +568,6 @@
     "valueType": "Sort vum Wert",
     "contentType": "Sort vum Inhalt",
     "version": "Version",
-    "children": "Kinner",
     "idShortPath": "idShortPath",
     "idShort": "idShort",
     "displayName": "Name, wo mer sieht",

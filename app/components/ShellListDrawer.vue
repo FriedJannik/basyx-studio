@@ -1,8 +1,12 @@
 <template>
-  <v-navigation-drawer v-model="open" width="340">
+  <!-- The content of the shell list's drawer, which the layout renders
+       (default.vue): this component loads data on the server, which renders
+       it after its siblings, so a drawer of its own would register with the
+       layout only after v-main has left out its room. -->
+  <div class="d-flex flex-column h-100">
     <!-- Files dropped on the list are imported into the target. -->
     <FileDropZone
-      class="d-flex flex-column h-100"
+      class="d-flex flex-column flex-grow-1 overflow-hidden"
       :disabled="!canImport"
       :text="t('upload.dropTypes')"
       :title="t('upload.dropHere', { name: target?.name ?? '' })"
@@ -150,19 +154,17 @@
       <v-progress-linear v-if="loadingMore" class="flex-shrink-0" />
     </FileDropZone>
 
-    <template #append>
-      <v-divider />
+    <v-divider />
 
-      <v-list class="px-2">
-        <v-list-item
-          :prepend-icon="target ? targetIcon(target) : 'mdi-server-network'"
-          :subtitle="preferences.preferences.value.autoRefresh ? t('shells.refreshOn', { seconds: preferences.preferences.value.refreshIntervalSeconds }) : t('shells.refreshOff')"
-          :title="target?.name"
-          :to="`/targets/${targetId}`"
-        />
-      </v-list>
-    </template>
-  </v-navigation-drawer>
+    <v-list class="px-2 flex-shrink-0">
+      <v-list-item
+        :prepend-icon="target ? targetIcon(target) : 'mdi-server-network'"
+        :subtitle="preferences.preferences.value.autoRefresh ? t('shells.refreshOn', { seconds: preferences.preferences.value.refreshIntervalSeconds }) : t('shells.refreshOff')"
+        :title="target?.name"
+        :to="`/targets/${targetId}`"
+      />
+    </v-list>
+  </div>
 
   <ShellQueryDialog
     v-if="queryTarget"
@@ -193,7 +195,7 @@
   const api = useStudioApi()
   const ui = useUiStore()
   const preferences = usePreferences()
-  const { mdAndUp, mobile } = useDisplay()
+  const { mobile } = useDisplay()
   const targetQuery = useTarget(() => props.targetId)
   const target = targetQuery.data
   // Lookup by asset ID needs discovery or queries on the repository (lookupShells).
@@ -208,11 +210,6 @@
     await queryCache.invalidateQueries({ key: ['targets', props.targetId] })
     await router.push(`/targets/${props.targetId}/shells/${result.shell.key}`)
   }
-
-  const open = computed({
-    get: () => ui.listDrawer ?? mdAndUp.value,
-    set: (value: boolean) => (ui.listDrawer = value),
-  })
 
   const route = useRoute()
   const router = useRouter()

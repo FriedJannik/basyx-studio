@@ -1,278 +1,277 @@
-# Endpunktübersicht: Frontend ↔ BFF
+# Endpoint overview: Frontend ↔ BFF
 
-Die vollständige maschinenlesbare Definition steht in
-[openapi.yaml](openapi.yaml). Dieses Dokument erklärt die Endpunkte auf
-Funktionsebene, ohne die OpenAPI-Schemas zu duplizieren.
+The complete machine-readable definition is in
+[openapi.yaml](openapi.yaml). This document explains the endpoints at the
+functional level without duplicating the OpenAPI schemas.
 
-## Gemeinsame Regeln
+## Common rules
 
-- Basis: `/api/studio/v1`; derselbe Vertrag gilt für Browser und Electron.
-- Die Session ist ein opaker, serverseitiger HttpOnly-Cookie. OAuth-Tokens und
-  Downstream-Credentials erreichen nie das Frontend.
-- Jede fachliche Target-Anfrage enthält ein opakes `targetId`. Das Frontend
-  sendet keine BaSyx-Service-URL als Routing-Entscheidung.
-- Mutationen benötigen `X-CSRF-Token`; revisionsgeschützte Mutationen zusätzlich
-  `If-Match`. Antworten liefern die neue Revision als `ETag`.
-- Listen verwenden `limit` und einen opaken `cursor`.
-- Wiederholbare Commands verwenden `Idempotency-Key`.
-- Längere Abläufe liefern `202 Accepted` und eine Operation-Ressource. Fortschritt
-  kann per SSE oder ersatzweise durch Polling abgefragt werden.
-- Fehler verwenden `application/problem+json` mit stabilem `code`,
-  `requestId`, `correlationId` und `retryable`.
+- Base: `/api/studio/v1`; the same contract applies to the browser and Electron.
+- The session is an opaque, server-side HttpOnly cookie. OAuth tokens and
+  downstream credentials never reach the frontend.
+- Every domain target request contains an opaque `targetId`. The frontend does
+  not send a BaSyx service URL as a routing decision.
+- Mutations require `X-CSRF-Token`; revision-protected mutations also require
+  `If-Match`. Responses return the new revision as `ETag`.
+- Lists use `limit` and an opaque `cursor`.
+- Repeatable commands use `Idempotency-Key`.
+- Longer flows return `202 Accepted` and an operation resource. Progress can be
+  followed through SSE or, as a fallback, through polling.
+- Errors use `application/problem+json` with stable `code`,
+  `requestId`, `correlationId` and `retryable`.
 
-## Context und Anmeldung
+## Context and sign-in
 
-| Methode und Pfad | Zweck |
+| Method and path | Purpose |
 | --- | --- |
-| `GET /context` | Liefert Deployment-Modus, API-/Studio-Version, verfügbare Plattformfunktionen und den Session-Kontext für den UI-Start. Kann anonym aufgerufen werden. |
-| `GET /session` | Liefert angemeldeten Benutzer, Gruppen/Rollen, CSRF-Wert, aktives Target und Session-Ablauf. |
-| `POST /auth/login` | Startet OIDC Authorization Code mit PKCE. Antwort enthält nur eine validierte Navigations-URL. |
-| `GET /auth/callback` | Nimmt den OIDC-Code entgegen; BFF prüft State/Nonce, tauscht serverseitig Tokens und setzt/resumiert die Session. Gilt auch für Target-Reauth. |
-| `POST /auth/logout` | Beendet die Studio-Session und serverseitige Target-Kontexte. |
-| `GET/PUT /me/preferences` | Einstellungen des angemeldeten Benutzers lesen bzw. ersetzen: zuletzt geöffnete Shells (`{ key, title }`) je Target, Theme, Sprache mehrsprachiger Werte, Auto-Refresh und `syncOverrides` je Infrastruktur (MVP-4). |
+| `GET /context` | Returns the deployment mode, API/Studio version, available platform functions and the session context for UI startup. Can be called anonymously. |
+| `GET /session` | Returns the signed-in user, groups/roles, CSRF value, active target and session expiry. |
+| `POST /auth/login` | Starts OIDC Authorization Code with PKCE. The response contains only a validated navigation URL. |
+| `GET /auth/callback` | Receives the OIDC code; the BFF checks state/nonce, exchanges tokens server-side and sets or resumes the session. Also applies to target reauthentication. |
+| `POST /auth/logout` | Ends the Studio session and the server-side target contexts. |
+| `GET/PUT /me/preferences` | Reads or replaces the signed-in user's preferences: recently opened shells (`{ key, title }`) per target, theme, language of multi-language values, auto-refresh and `syncOverrides` per infrastructure (MVP-4). |
 
-## Targets und Infrastrukturen
+## Targets and infrastructures
 
-| Methode und Pfad | Zweck |
+| Method and path | Purpose |
 | --- | --- |
-| `GET /targets` | Listet sichtbare Live-Infrastrukturen und lokale AASX-Workspaces samt Status, Capabilities und Berechtigungen. |
-| `GET /targets/{targetId}` | Liefert Detailstatus eines Targets; Credentials und unsichere interne Details bleiben verborgen. Capabilities (u. a. `search`, `queryTarget`, `elementSearch`, `listSource`) folgen aus den gespeicherten Service-Profilen ([ADR 0021](../adr/0021-feature-detection-from-service-profiles.md)); `registrySync` nennt Sync-Default und Benutzer-Override, sofern Studio Registries und Discovery nachzieht. |
-| `PUT /targets/{targetId}/activation` | Prüft Rechte/Health und setzt das aktive Target der Session. Die Entscheidung über ungespeicherte UI-Drafts kommt im Request aus dem Frontend. |
-| `POST /targets/{targetId}/authorization` | Startet oder resumiert die Authentifizierung genau dieses Targets. Andere Target-Sessions bleiben unverändert. |
-| `DELETE /targets/{targetId}/authorization` | Trennt nur den Credential-Kontext dieses Targets. |
-| `GET /infrastructures` | Listet administrativ verwaltete Live-Infrastrukturen. |
-| `POST /infrastructures` | Nimmt eine Admin-Konfiguration an (Template, Endpoints, `listSource`, `sync`, Security), validiert Template- und SSRF-/Netzwerkregeln sowie ein optionales Client-Zertifikat (`clientCertificate`, PKCS#12), führt einen Probe aus und registriert sie erst danach. Secrets und Zertifikate werden gehostet nur als Referenz verarbeitet; der Desktop speichert hochgeladene Werte verschlüsselt. |
-| `GET /infrastructures/{infrastructureId}` | Liefert sanitisierte Konfigurationsdetails, Endpoints, Service-Profile (`serviceProfiles`, `probedAt`, `announced`) und Revision. |
-| `PUT /infrastructures/{infrastructureId}` | Ersetzt die Konfiguration mit `If-Match`, erneuter Validierung und Probe. Ein weggelassenes `clientCertificate` bleibt erhalten, `null` entfernt es. |
-| `DELETE /infrastructures/{infrastructureId}` | Entfernt die Studio-Konfiguration, nicht die Daten der Infrastruktur. |
-| `POST /infrastructures/{infrastructureId}/probe` | Fragt `/description` jedes Endpoints erneut ab, liefert Erreichbarkeit und Profile je Endpoint und ersetzt die gespeicherten Profile. |
+| `GET /targets` | Lists visible live infrastructures and local AASX workspaces with status, capabilities and permissions. |
+| `GET /targets/{targetId}` | Returns the detailed status of a target; credentials and unsafe internal details stay hidden. Capabilities (among others `search`, `queryTarget`, `elementSearch`, `listSource`) follow from the stored service profiles ([ADR 0021](../adr/0021-feature-detection-from-service-profiles.md)); `registrySync` names the sync default and the user override where Studio keeps registries and discovery up to date. |
+| `PUT /targets/{targetId}/activation` | Checks rights/health and sets the active target of the session. The decision about unsaved UI drafts comes from the frontend in the request. |
+| `POST /targets/{targetId}/authorization` | Starts or resumes authentication for exactly this target. Other target sessions stay unchanged. |
+| `DELETE /targets/{targetId}/authorization` | Disconnects only the credential context of this target. |
+| `GET /infrastructures` | Lists administratively managed live infrastructures. |
+| `POST /infrastructures` | Accepts an admin configuration (template, endpoints, `listSource`, `sync`, security), validates the template and SSRF/network rules as well as an optional client certificate (`clientCertificate`, PKCS#12), runs a probe and only then registers it. When hosted, secrets and certificates are handled only as references; the desktop stores uploaded values encrypted. |
+| `GET /infrastructures/{infrastructureId}` | Returns sanitized configuration details, endpoints, service profiles (`serviceProfiles`, `probedAt`, `announced`) and revision. |
+| `PUT /infrastructures/{infrastructureId}` | Replaces the configuration with `If-Match`, renewed validation and a probe. An omitted `clientCertificate` is kept; `null` removes it. |
+| `DELETE /infrastructures/{infrastructureId}` | Removes the Studio configuration, not the data of the infrastructure. |
+| `POST /infrastructures/{infrastructureId}/probe` | Queries `/description` of each endpoint again, returns reachability and profiles per endpoint and replaces the stored profiles. |
 
-## AAS- und Target-Daten
+## AAS and target data
 
-Alle folgenden Pfade sind unter `/targets/{targetId}` scoped. Der BFF wählt
-serverseitig den BaSyx-TypeScript-SDK-Client oder den Workspace Worker.
+All of the following paths are scoped under `/targets/{targetId}`. The BFF
+selects the BaSyx TypeScript SDK client or the Workspace Worker server-side.
 
-| Methode und Pfad | Zweck |
+| Method and path | Purpose |
 | --- | --- |
-| `GET/POST /targets/{targetId}/shells` | Shells aus der Listenquelle (AAS-Registry oder -Repository) cursor-basiert auflisten bzw. validiert anlegen. |
-| `POST /targets/{targetId}/shell-availability` | Für bis zu 50 Shell-Keys melden, ob die Shell geöffnet werden kann: `available`, `forbidden`, `not_found`, `blocked` (Descriptor-Endpoint außerhalb der Infrastruktur) oder `unreachable`. |
-| `POST /targets/{targetId}/searches` | Shells per Suchausdruck (`expression`) oder AAS-Query (`query`) cursor-basiert suchen, oder Submodell-Elemente per Text (`scope: elements`). Ungültige Queries ergeben `query_invalid` mit `violations`, fehlende Query-Unterstützung `query_unsupported`. |
-| `GET /targets/{targetId}/lookup` | Shells eines Assets über die globale Asset-ID finden: per Discovery, sonst per Query auf dem AAS-Repository, wo es Queries ankündigt. |
-| `GET/PUT/DELETE /targets/{targetId}/shells/{shellKey}` | Shell lesen, mit `If-Match` ersetzen oder löschen. Das Löschen liefert die Registry- und Discovery-Schritte, die Studio danach ausgeführt hat (`sync`). |
-| `GET /targets/{targetId}/shells/{shellKey}/submodel-refs` | Referenzierte Submodelle mit Status (`available`, `forbidden`, `not_found`, `blocked`, `error`). |
-| `GET /targets/{targetId}/shells/{shellKey}/thumbnail` | Thumbnail der Shell streamen; `204`, wenn sie keines hat. |
-| `GET /targets/{targetId}/shells/{shellKey}/export` | Shell mit Submodellen und Concept Descriptions als AASX, JSON oder XML herunterladen. |
-| `GET /targets/{targetId}/shells/{shellKey}/rights` | Effektive Rechte des angemeldeten Benutzers auf der Shell, damit die UI unzulässige Aktionen ausblendet. |
-| `GET/PUT /targets/{targetId}/shells/{shellKey}/access` | ReBAC-Freigaben einer Shell lesen bzw. mit `If-Match` ersetzen. |
-| `POST /targets/{targetId}/shells/{shellKey}/access/invitations` | Einladung erzeugen, die eine Relation auf der Shell gewährt. |
-| `POST /targets/{targetId}/invitations` | Einladung für den angemeldeten Benutzer annehmen. |
-| `GET/POST /targets/{targetId}/submodels` | Submodelle auflisten bzw. anlegen. |
-| `GET/PUT/DELETE /targets/{targetId}/submodels/{submodelKey}` | Submodell lesen (`content=metadata\|full`, `format=json\|xml`, `at`), ersetzen oder löschen. |
-| `GET/POST /targets/{targetId}/submodels/{submodelKey}/elements` | Baumknoten unter dem Submodell oder `parentElementKey` mit so vielen vollständigen Ebenen, wie in `budget` Knoten passen (Standard 2.000, höchstens 5.000), auch historisch mit `at`; bzw. ein Element anlegen. |
-| `GET/PUT/DELETE /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}` | Einzelnes Element als JSON mit Revision und `ancestors` oder als AAS-XML lesen (`format`, `at`), ersetzen oder löschen. |
-| `POST /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/moves` | Element an eine Position unter seinen Geschwistern verschieben; `If-Match` mit der Strukturrevision des Elternknotens (`structure_conflict` bei gleichzeitiger Strukturänderung). |
-| `PUT /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/value` | Wert einer Property oder MultiLanguageProperty mit `If-Match` setzen. |
-| `GET/PUT /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/attachment` | Inhalt eines File-Elements streamen bzw. mit `If-Match` ersetzen. |
-| `POST /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/invocations` | Eine Operation synchron oder asynchron aufrufen; asynchrone Aufrufe liefern ein Handle. |
-| `GET /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/invocations/{handle}` | Zustand und Outputs eines asynchronen Aufrufs abfragen. |
-| `GET/POST /targets/{targetId}/concept-descriptions` | Concept Descriptions auflisten bzw. anlegen (ohne ID erzeugt Studio eine nach dem Schema der Infrastruktur; `identifier_conflict` bei vorhandener ID). |
-| `GET/PUT/DELETE /targets/{targetId}/concept-descriptions/{resourceKey}` | Concept Description als JSON mit Revision oder als AAS-XML lesen (`format`), mit `If-Match` ersetzen oder löschen. |
-| `GET /targets/{targetId}/concept-descriptions/{resourceKey}/usages` | Submodelle und Elemente zählen, deren Semantic ID die Concept Description nennt (für die Löschbestätigung). |
-| `GET /targets/{targetId}/changes` | Änderungsereignisse von Shells, Submodellen und Assets lesen, wo der Server seinen Event-Feed ankündigt. |
-| `POST /targets/{targetId}/uploads` | Inhalt einer AASX-, JSON- oder XML-Datei hinzufügen; liefert die neuen Shells und die Registry- und Discovery-Schritte (`sync`). |
-| `POST /targets/{targetId}/operation-invocations` | Eine explizit ausgewählte AAS-Operation mit validierten Inputs und ggf. Bestätigung ausführen. |
-| `GET/POST /targets/{targetId}/files` | Supplementary-File-Metadaten auflisten bzw. einen begrenzten Upload streamen. |
-| `GET/DELETE /targets/{targetId}/files/{fileKey}` | Datei begrenzt streamen bzw. löschen. Es werden keine lokalen Pfade zurückgegeben. |
-| `GET /targets/{targetId}/semantic-index` | Semantische Fakten für Shell-/Submodell-Auswahl, Bindings und App-Anwendbarkeit suchen. |
+| `GET/POST /targets/{targetId}/shells` | Lists shells from the list source (AAS registry or repository) with a cursor, or creates a validated shell. |
+| `POST /targets/{targetId}/shell-availability` | Reports for up to 50 shell keys whether the shell can be opened: `available`, `forbidden`, `not_found`, `blocked` (descriptor endpoint outside the infrastructure) or `unreachable`. |
+| `POST /targets/{targetId}/searches` | Searches shells by search expression (`expression`) or AAS query (`query`) with a cursor, or submodel elements by text (`scope: elements`). Invalid queries result in `query_invalid` with `violations`, missing query support in `query_unsupported`. |
+| `GET /targets/{targetId}/lookup` | Finds the shells of an asset by its global asset ID: through discovery, otherwise through a query on the AAS repository where it announces queries. |
+| `GET/PUT/DELETE /targets/{targetId}/shells/{shellKey}` | Reads a shell, replaces it with `If-Match` or deletes it. Deletion returns the registry and discovery steps that Studio ran afterwards (`sync`). |
+| `GET /targets/{targetId}/shells/{shellKey}/submodel-refs` | Referenced submodels with status (`available`, `forbidden`, `not_found`, `blocked`, `error`). |
+| `GET /targets/{targetId}/shells/{shellKey}/thumbnail` | Streams the shell's thumbnail; `204` if it has none. |
+| `GET /targets/{targetId}/shells/{shellKey}/export` | Downloads the shell with its submodels and concept descriptions as AASX, JSON or XML. |
+| `GET /targets/{targetId}/shells/{shellKey}/rights` | The signed-in user's effective rights on the shell, so that the UI hides disallowed actions. |
+| `GET/PUT /targets/{targetId}/shells/{shellKey}/access` | Reads a shell's ReBAC shares or replaces them with `If-Match`. |
+| `POST /targets/{targetId}/shells/{shellKey}/access/invitations` | Creates an invitation that grants a relation on the shell. |
+| `POST /targets/{targetId}/invitations` | Accepts an invitation for the signed-in user. |
+| `GET/POST /targets/{targetId}/submodels` | Lists or creates submodels. |
+| `GET/PUT/DELETE /targets/{targetId}/submodels/{submodelKey}` | Reads a submodel (`content=metadata\|full`, `format=json\|xml`, `at`), replaces or deletes it. |
+| `GET/POST /targets/{targetId}/submodels/{submodelKey}/elements` | Tree nodes below the submodel or `parentElementKey`, with as many complete levels as fit into `budget` nodes (default 2,000, at most 5,000), also historically with `at`; or creates an element. |
+| `GET/PUT/DELETE /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}` | Reads a single element as JSON with revision and `ancestors` or as AAS XML (`format`, `at`), replaces or deletes it. |
+| `POST /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/moves` | Moves an element to a position among its siblings; `If-Match` with the structure revision of the parent node (`structure_conflict` on a concurrent structural change). |
+| `PUT /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/value` | Sets the value of a Property or MultiLanguageProperty with `If-Match`. |
+| `GET/PUT /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/attachment` | Streams the content of a File element or replaces it with `If-Match`. |
+| `POST /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/invocations` | Invokes an Operation synchronously or asynchronously; asynchronous invocations return a handle. |
+| `GET /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/invocations/{handle}` | Queries the state and outputs of an asynchronous invocation. |
+| `GET/POST /targets/{targetId}/concept-descriptions` | Lists or creates concept descriptions (without an ID, Studio generates one following the infrastructure's scheme; `identifier_conflict` if the ID exists). |
+| `GET/PUT/DELETE /targets/{targetId}/concept-descriptions/{resourceKey}` | Reads a concept description as JSON with revision or as AAS XML (`format`), replaces it with `If-Match` or deletes it. |
+| `GET /targets/{targetId}/concept-descriptions/{resourceKey}/usages` | Counts submodels and elements whose semantic ID names the concept description (for the delete confirmation). |
+| `GET /targets/{targetId}/changes` | Reads change events of shells, submodels and assets where the server announces its event feed. |
+| `POST /targets/{targetId}/uploads` | Adds the content of an AASX, JSON or XML file; returns the new shells and the registry and discovery steps (`sync`). |
+| `POST /targets/{targetId}/operation-invocations` | Runs an explicitly selected AAS operation with validated inputs and, if required, confirmation. |
+| `GET/POST /targets/{targetId}/files` | Lists supplementary file metadata or streams a bounded upload. |
+| `GET/DELETE /targets/{targetId}/files/{fileKey}` | Streams a file within limits or deletes it. No local paths are returned. |
+| `GET /targets/{targetId}/semantic-index` | Searches semantic facts for shell/submodel selection, bindings and app applicability. |
 
-AAS-Modelle bleiben im Vertrag absichtlich generisch: Validierung erfolgt mit
-den autoritativen AAS-Core-3.1-Typen und Package-Validatoren, nicht mit einer
-zweiten Studio-Metamodell-Spezifikation.
+AAS models stay deliberately generic in the contract: validation uses the
+authoritative AAS Core 3.1 types and package validators, not a second Studio
+metamodel specification.
 
-Stand MVP-4: Implementiert sind die Shell-Liste, das Lesen einzelner Shells,
-Submodelle und Elemente sowie `shell-availability`, `searches`, `lookup`,
-`submodel-refs`, `thumbnail`, `export`, `rights`, `access`, Einladungen,
-`changes`, `concept-descriptions` (lesend), `uploads`, das Löschen von Shells,
-Werte, Attachments und Invocations je Operation-Element. Anlegen und Ersetzen
-ganzer Shells, Submodelle, Elemente und Concept Descriptions, die
-Submodell-Liste, `operation-invocations`, `files` und `semantic-index` bleiben
-Entwurf. Optionale Funktionen (History über `at`, `changes`, Freigaben, Queries)
-bietet Studio nur an, wo der Server sie in seinen Service-Profilen ankündigt
-([ADR 0021](../adr/0021-feature-detection-from-service-profiles.md)); Suche und
-Queries laufen über den BFF
-([ADR 0024](../adr/0024-aas-query-language-through-the-bff.md)). Die Routen
-`GET /targets/{targetId}/search` und
-`GET /targets/{targetId}/submodels/{submodelKey}/tree` des Viewer-Ports sind
-durch `POST …/searches` und die Ebenenroute `…/elements` mit Knotenbudget
-ersetzt. Nach Uploads und Löschungen schreibt bzw. entfernt Studio
-Registry-Descriptoren und Discovery-Asset-Links, wo der Server sie nicht selbst
-pflegt und der wirksame Sync-Modus `autoCreate` ist
+Status MVP-4: Implemented are the shell list, reading single shells, submodels
+and elements, as well as `shell-availability`, `searches`, `lookup`,
+`submodel-refs`, `thumbnail`, `export`, `rights`, `access`, invitations,
+`changes`, `concept-descriptions` (read-only), `uploads`, shell deletion,
+values, attachments and invocations per Operation element. Creating and
+replacing whole shells, submodels, elements and concept descriptions, the
+submodel list, `operation-invocations`, `files` and `semantic-index` remain
+draft. Studio offers optional functions (history through `at`, `changes`,
+shares, queries) only where the server announces them in its service profiles
+([ADR 0021](../adr/0021-feature-detection-from-service-profiles.md)); search and
+queries run through the BFF
+([ADR 0024](../adr/0024-aas-query-language-through-the-bff.md)). The routes
+`GET /targets/{targetId}/search` and
+`GET /targets/{targetId}/submodels/{submodelKey}/tree` of the viewer port are
+replaced by `POST …/searches` and the level route `…/elements` with a node
+budget. After uploads and deletions, Studio writes or removes registry
+descriptors and discovery asset links where the server does not maintain them
+itself and the effective sync mode is `autoCreate`
 ([ADR 0020](../adr/0020-infrastructure-templates-registries-and-sync.md)).
-Neue Problem-Codes: `descriptor_endpoint_blocked`, `query_invalid` und
-`query_unsupported`. Details stehen im
-[MVP-4-Plan](../development/mvp-4-plan.md#studio-api).
+New problem codes: `descriptor_endpoint_blocked`, `query_invalid` and
+`query_unsupported`. Details are in the
+[MVP-4 plan](../development/mvp-4-plan.md#studio-api).
 
-Stand MVP-6: Concept Descriptions werden angelegt, ersetzt und gelöscht, auf
-Live-Targets wie in Workspaces, geprüft mit AAS Core und mit denselben
-Revisionen wie Submodelle; `validations` nimmt auch `conceptDescription`.
-Shells, Submodelle und Elemente schreiben ihre `embeddedDataSpecifications`
-(IEC 61360) mit den bestehenden Routen. Details stehen im
-[MVP-6-Plan](../development/mvp-6-plan.md#implementation-status).
+Status MVP-6: Concept descriptions are created, replaced and deleted, on live
+targets as in workspaces, checked with AAS Core and with the same revisions as
+submodels; `validations` also accepts `conceptDescription`. Shells, submodels
+and elements write their `embeddedDataSpecifications` (IEC 61360) through the
+existing routes. Details are in the
+[MVP-6 plan](../development/mvp-6-plan.md#implementation-status).
 
-Infrastrukturen können ein TLS-Client-Zertifikat (mTLS) haben, unabhängig vom
-Zugriffsmodus ([ADR 0025](../adr/0025-client-certificates-for-infrastructures.md)).
-Der Studio Service präsentiert es bei jedem HTTPS-Request an die Endpoints und
-an den IdP. Die API liefert nur Subject, Issuer, Ablaufdatum und gegebenenfalls
-die Referenz, nie Bundle, Schlüssel oder Passphrase. Neue Problem-Codes:
-`target_client_certificate_required`, `target_client_certificate_rejected` und
-`client_certificate_invalid`.
+Infrastructures can have a TLS client certificate (mTLS), independent of the
+access mode ([ADR 0025](../adr/0025-client-certificates-for-infrastructures.md)).
+The Studio Service presents it on every HTTPS request to the endpoints and to
+the IdP. The API returns only the subject, issuer, expiry date and, where
+applicable, the reference, never the bundle, key or passphrase. New problem
+codes: `target_client_certificate_required`,
+`target_client_certificate_rejected` and `client_certificate_invalid`.
 
-## Desktop-Workspaces und AASX
+## Desktop workspaces and AASX
 
-Native Datei-/Ordnerdialoge gehören zum Electron-IPC-Vertrag. Der BFF sieht nur
-kurzlebige opake Handles.
+Native file and folder dialogs belong to the Electron IPC contract. The BFF sees
+only short-lived opaque handles.
 
-| Methode und Pfad | Zweck |
+| Method and path | Purpose |
 | --- | --- |
-| `GET /workspaces` | Listet lokale Projekte, niemals native Pfade. Nur bei Desktop-Capability verfügbar. |
-| `POST /workspaces` | Erstellt ein Projekt an einem freigegebenen Ziel-Handle. |
-| `POST /workspaces/imports` | Importiert ein AASX über den Workspace Worker; Archivgröße, Pfade, Entry-Anzahl, MIME und Ressourcenlimits werden geprüft. |
-| `GET/PATCH/DELETE /workspaces/{workspaceId}` | Metadaten, Recovery-/Validierungsstatus lesen, Metadaten ändern oder Projekt löschen. Datei-Löschung ist eine explizite Option. |
-| `PUT /workspaces/{workspaceId}/activation` | Öffnet das Projekt und stellt es als lokales `AasTarget` bereit. |
-| `POST /workspaces/{workspaceId}/duplications` | Dupliziert das Projekt an ein freigegebenes Ziel-Handle. |
-| `POST /workspaces/{workspaceId}/saves` | Speichert die aktuelle Revision atomar in das Paket. |
-| `POST /workspaces/{workspaceId}/exports` | Exportiert die validierte Revision atomar an ein freigegebenes Ziel-Handle. |
+| `GET /workspaces` | Lists local projects, never native paths. Only available with the desktop capability. |
+| `POST /workspaces` | Creates a project at an approved destination handle. |
+| `POST /workspaces/imports` | Imports an AASX through the Workspace Worker; archive size, paths, entry count, MIME type and resource limits are checked. |
+| `GET/PATCH/DELETE /workspaces/{workspaceId}` | Reads metadata and recovery/validation status, changes metadata or deletes the project. Deleting the file is an explicit option. |
+| `PUT /workspaces/{workspaceId}/activation` | Opens the project and provides it as a local `AasTarget`. |
+| `POST /workspaces/{workspaceId}/duplications` | Duplicates the project to an approved destination handle. |
+| `POST /workspaces/{workspaceId}/saves` | Saves the current revision atomically into the package. |
+| `POST /workspaces/{workspaceId}/exports` | Exports the validated revision atomically to an approved destination handle. |
 
-Nach dem Öffnen laufen AAS-Reads und -Mutationen über die normalen
-`/targets/{targetId}/...`-Endpunkte.
+After opening, AAS reads and mutations run through the normal
+`/targets/{targetId}/...` endpoints.
 
-Stand MVP-2: Implementiert sind `POST /workspaces` (öffnet ein AASX aus einem
-Datei-Handle), `POST /workspaces/{workspaceId}/saves`,
-`POST /workspaces/{workspaceId}/exports` (Speichern unter) und
-`DELETE /workspaces/{workspaceId}?force=`. Datei-Handles stellt nur der
-Electron-Main-Prozess über `POST /desktop/file-grants` aus
-([ADR 0015](../adr/0015-desktop-native-bridge-and-file-grants.md)); Details und
-Abweichungen stehen im [MVP-2-Plan](../development/mvp-2-plan.md#results).
+Status MVP-2: Implemented are `POST /workspaces` (opens an AASX from a file
+handle), `POST /workspaces/{workspaceId}/saves`,
+`POST /workspaces/{workspaceId}/exports` (save as) and
+`DELETE /workspaces/{workspaceId}?force=`. Only the Electron main process issues
+file handles, through `POST /desktop/file-grants`
+([ADR 0015](../adr/0015-desktop-native-bridge-and-file-grants.md)); details and
+deviations are in the [MVP-2 plan](../development/mvp-2-plan.md#results).
 
-## Cross-Target-Copy
+## Cross-target copy
 
-| Methode und Pfad | Zweck |
+| Method and path | Purpose |
 | --- | --- |
-| `POST /copy-plans` | Erstellt einen read-only Preflight-Plan mit Quell-/Zielrechten, Capabilities, Dependency Closure, Kollisionen, Findings, Größenabschätzung und Aktionen. |
-| `GET /copy-plans/{copyPlanId}` | Liest den versionierten, ablaufenden Plan erneut. |
-| `POST /copy-plans/{copyPlanId}/executions` | Bestätigt Policy und sichtbare Konsequenzen; startet die Ausführung idempotent als Operation. Quelle bleibt unverändert, Atomarität wird nicht behauptet. |
-| `GET /copy-operations/{operationId}/report` | Liefert pro Ressource `created`, `skipped`, `replaced` oder `failed`, einschließlich Validierung und Partial-Success. |
-| `POST /copy-operations/{operationId}/retries` | Wiederholt nur sichere, fehlgeschlagene/incomplete Ressourcen. |
+| `POST /copy-plans` | Creates a read-only preflight plan with source and destination rights, capabilities, dependency closure, collisions, findings, size estimate and actions. |
+| `GET /copy-plans/{copyPlanId}` | Reads the versioned, expiring plan again. |
+| `POST /copy-plans/{copyPlanId}/executions` | Confirms the policy and visible consequences; starts the execution idempotently as an operation. The source stays unchanged; atomicity is not claimed. |
+| `GET /copy-operations/{operationId}/report` | Returns `created`, `skipped`, `replaced` or `failed` per resource, including validation and partial success. |
+| `POST /copy-operations/{operationId}/retries` | Retries only safe, failed or incomplete resources. |
 
-Die Standard-Collision-Policy ist `fail_without_changes`; `skip_existing` und
-`replace` sind nur bei Capability und Berechtigung zulässig.
+The default collision policy is `fail_without_changes`; `skip_existing` and
+`replace` are allowed only with the capability and permission.
 
-## Views, Widgets und Bindings
+## Views, widgets and bindings
 
-| Methode und Pfad | Zweck |
+| Method and path | Purpose |
 | --- | --- |
-| `GET/POST /views` | Sichtbare Views auflisten bzw. eine deklarative View validiert speichern. |
-| `GET/PUT/DELETE /views/{viewId}` | View laden, revisionsgeschützt ersetzen oder löschen. |
-| `POST /views/validations` | Ungespeicherten Entwurf inklusive Bindings und Widget-Kompatibilität prüfen. |
-| `POST /views/imports` / `GET /views/{viewId}/export` | Portable Definition importieren bzw. ohne Apps, Secrets oder AAS-Werte exportieren. |
-| `GET/PUT /views/{viewId}/access-rules` | View-Öffnen und View-Autorisierung getrennt verwalten. |
-| `POST /views/{viewId}/runtime-contexts` | Definition migrieren, Widgets autorisieren und alle Bindings im aktiven Kontext auflösen. Einzelne defekte Widgets werden als Diagnostics geliefert. |
-| `POST /binding-resolutions` | Eine vorgeschlagene Instance- oder Semantic-Bindung auflösen. Status: `resolved`, `ambiguous`, `missing`, `incompatible`, `unauthorized`. |
-| `POST /binding-executions` | Einen konkreten, autorisierten Binding-Read, -Write oder Operationsaufruf ausführen. View-Öffnen allein verleiht keine Datenrechte. |
-| `GET /widget-types` | Für Target/Kontext erlaubte Built-in- und App-Widgets samt Schema, Slots, Compatibility, Applicability und Permissions liefern. |
+| `GET/POST /views` | Lists visible views or saves a validated declarative view. |
+| `GET/PUT/DELETE /views/{viewId}` | Loads a view, replaces it with revision protection or deletes it. |
+| `POST /views/validations` | Checks an unsaved draft including bindings and widget compatibility. |
+| `POST /views/imports` / `GET /views/{viewId}/export` | Imports a portable definition or exports it without apps, secrets or AAS values. |
+| `GET/PUT /views/{viewId}/access-rules` | Manages view opening and view authorization separately. |
+| `POST /views/{viewId}/runtime-contexts` | Migrates the definition, authorizes widgets and resolves all bindings in the active context. Individual broken widgets are returned as diagnostics. |
+| `POST /binding-resolutions` | Resolves a proposed instance or semantic binding. Status: `resolved`, `ambiguous`, `missing`, `incompatible`, `unauthorized`. |
+| `POST /binding-executions` | Runs a concrete, authorized binding read, write or operation call. Opening a view alone grants no data rights. |
+| `GET /widget-types` | Returns the built-in and app widgets allowed for the target/context, with schema, slots, compatibility, applicability and permissions. |
 
-View-Definitionen sind deklarative Daten; JavaScript, Vue, HTML, Credentials,
-Service-URLs und Dateisystempfade sind ausgeschlossen.
+View definitions are declarative data; JavaScript, Vue, HTML, credentials,
+service URLs and file system paths are excluded.
 
 ## Apps
 
-| Methode und Pfad | Zweck |
+| Method and path | Purpose |
 | --- | --- |
-| `GET /apps/catalog` | Sanitisierte Marketplace-Projektion für die UI, inklusive Compatibility und Applicability. |
-| `GET /apps/catalog/{appId}/versions/{version}` | Immutable Version mit Digest, Signatur-/Revocation-Status, SBOM-/Review-Informationen und angeforderten Capabilities. |
-| `GET/POST /app-installations` | Installationen anzeigen bzw. digest-gepinnt und mit expliziten Permissions installieren. Installation läuft asynchron; ein Developer-Mode-Paket (`application/zip`) wird synchron geprüft und installiert (MVP-3). |
-| `GET/DELETE /app-installations/{installationId}` | Lifecycle und Berechtigungen anzeigen bzw. Installation entfernen. Mit Studio ausgelieferte Apps (`bundled`, ADR 0023) lassen sich nicht entfernen (MVP-4). |
-| `GET /app-installations/{installationId}/compatibility` | Technische Compatibility und semantische Applicability getrennt bewerten. |
-| `GET /app-contributions` | Module der installierten Apps und, für eine oder mehrere Semantic IDs (wiederholter Parameter, MVP-4), passende Submodell-Views mit Begründung (MVP-3). |
-| `POST /app-calls` | Capability-Aufruf für eine App: von der Host-Bridge per Session oder vom Backend per kurzlebigem Capability-Token; geprüft gegen Manifest und Benutzerrechte (MVP-3, ADR 0018). MVP-4 ergänzt `shellId`, `studio.ui.setHeight` und `studio.ui.openFile`; der App-Kontext nennt den Modus (`view` oder `edit`). `studio.ui.openFullscreen` öffnet die Ansicht erneut in einem Vollbild-Dialog (ohne Berechtigung, nur in der Host-Bridge); dort ist `fullscreen` im Kontext gesetzt. |
-| `POST/DELETE /app-installations/{installationId}/activations` | Für Target/Kontext aktivieren bzw. deaktivieren. |
-| `POST /app-installations/{installationId}/updates` | Signierte immutable Version prüfen und als Update bereitstellen. |
-| `POST /app-installations/{installationId}/rollbacks` | Auf eine verifizierte vorherige Version zurückrollen. |
-| `GET/PUT /app-installations/{installationId}/visibility` | Sichtbarkeit für Benutzer/Gruppen unabhängig von Installationsscope verwalten. |
+| `GET /apps/catalog` | Sanitized marketplace projection for the UI, including compatibility and applicability. |
+| `GET /apps/catalog/{appId}/versions/{version}` | Immutable version with digest, signature/revocation status, SBOM/review information and requested capabilities. |
+| `GET/POST /app-installations` | Shows installations or installs digest-pinned with explicit permissions. Installation runs asynchronously; a developer mode package (`application/zip`) is checked and installed synchronously (MVP-3). |
+| `GET/DELETE /app-installations/{installationId}` | Shows lifecycle and permissions or removes the installation. Apps shipped with Studio (`bundled`, ADR 0023) cannot be removed (MVP-4). |
+| `GET /app-installations/{installationId}/compatibility` | Assesses technical compatibility and semantic applicability separately. |
+| `GET /app-contributions` | Modules of the installed apps and, for one or more semantic IDs (repeated parameter, MVP-4), matching submodel views with a reason (MVP-3). |
+| `POST /app-calls` | Capability call for an app: from the host bridge by session or from the backend by a short-lived capability token; checked against the manifest and user rights (MVP-3, ADR 0018). MVP-4 adds `shellId`, `studio.ui.setHeight` and `studio.ui.openFile`; the app context names the mode (`view` or `edit`). `studio.ui.openFullscreen` opens the view again in a fullscreen dialog (without permission, only in the host bridge); there, `fullscreen` is set in the context. |
+| `POST/DELETE /app-installations/{installationId}/activations` | Activates or deactivates for a target/context. |
+| `POST /app-installations/{installationId}/updates` | Checks a signed immutable version and provides it as an update. |
+| `POST /app-installations/{installationId}/rollbacks` | Rolls back to a verified previous version. |
+| `GET/PUT /app-installations/{installationId}/visibility` | Manages visibility for users/groups independently of the installation scope. |
 
-App-`postMessage`-/Capability-RPC und App-Runner-Kommunikation sind ein eigener
-Vertrag; diese Endpunkte verwalten nur den BFF-seitigen App-Lifecycle.
+App `postMessage`/capability RPC and App Runner communication are a separate
+contract; these endpoints manage only the BFF-side app lifecycle.
 
-## Operations, Events und Audit
+## Operations, events and audit
 
-| Methode und Pfad | Zweck |
+| Method and path | Purpose |
 | --- | --- |
-| `GET /operations` | Begrenzte Liste laufender oder abgeschlossener Copy-/App-Operationen für Polling. |
-| `GET /operations/{operationId}` | Einzelnen Status, Fortschritt, Fehler und Links abfragen. |
-| `GET /operations/{operationId}/events` | Einseitiger SSE-Stream für Progress und Outcomes; Resume über `Last-Event-ID`. |
-| `GET /events` | Topic-gefilterte SSE-Notifications und Cache-Invalidierungen; kein Command-Kanal. |
-| `GET /audit-events` | Autorisierte, sanitisierte Audit-Zusammenfassungen. Keine Tokens, Bodies, Paket-Inhalte oder Secrets. |
+| `GET /operations` | Bounded list of running or completed copy/app operations for polling. |
+| `GET /operations/{operationId}` | Queries a single status, progress, errors and links. |
+| `GET /operations/{operationId}/events` | One-way SSE stream for progress and outcomes; resume through `Last-Event-ID`. |
+| `GET /events` | Topic-filtered SSE notifications and cache invalidations; not a command channel. |
+| `GET /audit-events` | Authorized, sanitized audit summaries. No tokens, bodies, package contents or secrets. |
 
-## Nicht Teil dieser API
+## Not part of this API
 
-Electron-IPC, Workspace-Worker-API, App-SDK-RPC, Marketplace-Publisher-/OCI-
-API, OIDC-Provider-API, BaSyx-Downstream-API und der Desktop-Updater bleiben
-separate Verträge. Dadurch bleiben die im Architektur- und Security-Teil der
-Dokumentation beschriebenen Trust Boundaries erhalten.
+Electron IPC, the Workspace Worker API, the App SDK RPC, the marketplace
+publisher/OCI API, the OIDC provider API, the BaSyx downstream API and the
+desktop updater remain separate contracts. This keeps the trust boundaries
+described in the architecture and security parts of the documentation intact.
 
-## Stand MVP-5: Editor
+## Status MVP-5: Editor
 
-Strukturelle Schreibzugriffe nutzen Strukturrevisionen (`s.<hash>`, ADR 0027)
-und ganze Ressourcen. Zusätzlich zu den oben genannten Routen sind
-implementiert:
+Structural writes use structure revisions (`s.<hash>`, ADR 0027) and whole
+resources. In addition to the routes above, the following are implemented:
 
-| Route | Zweck |
+| Route | Purpose |
 | --- | --- |
-| `POST /targets/{targetId}/submodels/{submodelKey}/elements` | Element einfügen (`parentElementKey`, `index`); `If-Match` mit der Strukturrevision des Elternknotens. |
-| `PUT/DELETE /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}` | Element ersetzen (auch Umbenennen) bzw. löschen; `If-Match` mit der Elementrevision. |
-| `POST …/elements/{elementKey}/moves` | Element verschieben (Listenelemente; BaSyx Go sortiert benannte Kinder nach Namen). |
-| `PUT /targets/{targetId}/submodels/{submodelKey}` | Submodell-Metadaten ersetzen, Elemente bleiben. |
-| `POST /targets/{targetId}/shells` | Shell mit neuen Submodellen anlegen (Assistent); Submodelle zuerst, Schritte im Ergebnis. |
-| `PUT /targets/{targetId}/shells/{shellKey}` | Shell-Metadaten und Asset-Informationen ersetzen, Submodell-Referenzen bleiben. |
-| `PUT /targets/{targetId}/shells/{shellKey}/thumbnail` | Vorschaubild setzen. |
-| `POST /targets/{targetId}/shells/{shellKey}/instances` | Instanz aus einem Typ-Shell. |
-| `POST/DELETE /targets/{targetId}/shells/{shellKey}/submodel-refs[/{submodelKey}]` | Submodell hinzufügen bzw. entfernen (`deleteSubmodel`). |
-| `POST /targets/{targetId}/submodels/{submodelKey}/instance-conversions` | Template in Instanz umwandeln. |
-| `GET /targets/{targetId}/templates[/{templateId}]`, `GET /submodel-templates/{templateId}` | Templates und ihre Felder. |
-| `POST /targets/{targetId}/validations` | AAS-Core-Befunde für JSON, ohne zu schreiben. |
-| `POST /workspaces` mit `{ "empty": true }` | Neues, leeres Paket. |
-| `POST /workspaces/{workspaceId}/undos`, `/redos` | Rückgängig / Wiederholen bis Speichern oder Schließen. |
+| `POST /targets/{targetId}/submodels/{submodelKey}/elements` | Inserts an element (`parentElementKey`, `index`); `If-Match` with the structure revision of the parent node. |
+| `PUT/DELETE /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}` | Replaces (also renames) or deletes an element; `If-Match` with the element revision. |
+| `POST …/elements/{elementKey}/moves` | Moves an element (list elements; BaSyx Go sorts named children by name). |
+| `PUT /targets/{targetId}/submodels/{submodelKey}` | Replaces submodel metadata; elements stay. |
+| `POST /targets/{targetId}/shells` | Creates a shell with new submodels (wizard); submodels first, steps in the result. |
+| `PUT /targets/{targetId}/shells/{shellKey}` | Replaces shell metadata and asset information; submodel references stay. |
+| `PUT /targets/{targetId}/shells/{shellKey}/thumbnail` | Sets the thumbnail. |
+| `POST /targets/{targetId}/shells/{shellKey}/instances` | Instance from a type shell. |
+| `POST/DELETE /targets/{targetId}/shells/{shellKey}/submodel-refs[/{submodelKey}]` | Adds or removes a submodel (`deleteSubmodel`). |
+| `POST /targets/{targetId}/submodels/{submodelKey}/instance-conversions` | Converts a template into an instance. |
+| `GET /targets/{targetId}/templates[/{templateId}]`, `GET /submodel-templates/{templateId}` | Templates and their fields. |
+| `POST /targets/{targetId}/validations` | AAS Core findings for JSON, without writing. |
+| `POST /workspaces` with `{ "empty": true }` | New, empty package. |
+| `POST /workspaces/{workspaceId}/undos`, `/redos` | Undo / redo until save or close. |
 
-Neue Problem-Codes: `idshort_conflict`, `structure_conflict`,
-`identifier_conflict`, `partial_write` (mit `steps`), `template_invalid`.
+New problem codes: `idshort_conflict`, `structure_conflict`,
+`identifier_conflict`, `partial_write` (with `steps`), `template_invalid`.
 
-## Lokale BaSyx-Instanzen (Desktop, ADR 0033)
+## Local BaSyx instances (desktop, ADR 0033)
 
-Die gebündelte App verwendet `POST /app-calls` mit der Berechtigung
-`studio.containers`. Es gibt keine separaten `/containers`-HTTP-Routen.
-Hochgeladene Apps mit dieser Berechtigung werden abgewiesen; Backend-Apps
-dürfen sie nicht aufrufen. Im Hosted-Modus ist der Manager nicht verfügbar.
+The bundled app uses `POST /app-calls` with the `studio.containers`
+permission. There are no separate `/containers` HTTP routes. Uploaded apps with
+this permission are rejected; backend apps must not call it. In hosted mode,
+the manager is not available.
 
-| Capability-Methode (`studio.containers.*`) | Zweck |
+| Capability method (`studio.containers.*`) | Purpose |
 | --- | --- |
-| `listEngines`, `selectEngine` | Lokale Engine erkennen bzw. Socket/Pipe wählen |
-| `listStacks`, `getStack`, `planStack` | Bestand, Status und Startplan |
-| `createStack`, `changeStack`, `startStack`, `stopStack`, `updateStack`, `removeStack` | Lebenszyklus als Jobs; nur markierte Objekte |
-| `getJob` | Fortschritt und Fehler per Polling |
-| `getLogs`, `saveLogs` | Letzte Logzeilen lesen bzw. in eine mit `pickFiles` gewählte Datei speichern |
-| `getSignIn` | Generierte Zugangsdaten nach expliziter Benutzeraktion anzeigen |
-| `pickFiles` | Native Dateidialoge nach Prüfung durch Studio; liefert einmalige Handles |
-| `exportStack`, `importStack` | Export bzw. Import mit einem Handle aus `pickFiles`; der Export enthält Passwörter und Datenbanksnapshot |
+| `listEngines`, `selectEngine` | Detects the local engine or selects the socket/pipe |
+| `listStacks`, `getStack`, `planStack` | Inventory, status and start plan |
+| `createStack`, `changeStack`, `startStack`, `stopStack`, `updateStack`, `removeStack` | Lifecycle as jobs; only labeled objects |
+| `getJob` | Progress and errors by polling |
+| `getLogs`, `saveLogs` | Reads the latest log lines or saves them to a file chosen with `pickFiles` |
+| `getSignIn` | Shows generated credentials after an explicit user action |
+| `pickFiles` | Native file dialogs after a check by Studio; returns single-use handles |
+| `exportStack`, `importStack` | Export or import with a handle from `pickFiles`; the export contains passwords and a database snapshot |
 
-Die Parameter und Resultate stehen in `shared/contract/apps.ts`,
-`shared/contract/containers.ts` und im Studio SDK. Getestete Images sind
-per Digest fixiert; ein fehlender Digest wird nicht durch SNAPSHOT ersetzt.
-Beim Entfernen ohne Datenlöschung bleiben Spec und verschlüsselte Secrets
-für die Wiederherstellung erhalten.
+The parameters and results are in `shared/contract/apps.ts`,
+`shared/contract/containers.ts` and in the Studio SDK. Tested images are pinned
+by digest; a missing digest is not replaced by SNAPSHOT. When a stack is
+removed without deleting data, the spec and the encrypted secrets are kept for
+restoring it.
 
-`studio.ui.openTarget` und `studio.ui.openExternal` erfordern
-`studio.ui.navigation`; `openExternal` öffnet nur https-Adressen oder
-http-Adressen dieses Computers. `studio.ui.copyText` erfordert die neue
-Berechtigung `studio.ui.clipboard`. Die Host-Bridge führt `copyText` und
-`openExternal` nur direkt nach einem Klick oder Tastendruck in der App aus.
-Lebenszyklus-Aufrufe werden beim Ende ihres Jobs mit dem Ergebnis auditiert.
+`studio.ui.openTarget` and `studio.ui.openExternal` require
+`studio.ui.navigation`; `openExternal` opens only https addresses or http
+addresses of this computer. `studio.ui.copyText` requires the new
+`studio.ui.clipboard` permission. The host bridge runs `copyText` and
+`openExternal` only directly after a click or key press in the app. Lifecycle
+calls are audited with their result when their job ends.

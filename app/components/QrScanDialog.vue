@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="open" :fullscreen="xs" max-width="440">
+  <v-dialog v-model="open" max-width="440">
     <DialogCard :title="t('scan.title')">
       <p class="text-body-medium text-medium-emphasis mt-0 mb-3">{{ t('scan.subtitle') }}</p>
 
@@ -64,7 +64,6 @@
 
 <script lang="ts" setup>
   import type { ShellSummary } from '#shared/contract'
-  import { useDisplay } from 'vuetify'
   import { langText } from '~/utils/aas'
 
   // Scans a QR code with the camera or from an image, as the BaSyx AAS Web UI
@@ -74,7 +73,6 @@
   const open = defineModel<boolean>({ required: true })
 
   const { t } = useI18n()
-  const { xs } = useDisplay()
   const api = useStudioApi()
   const video = useTemplateRef<HTMLVideoElement>('video')
   const file = useTemplateRef<HTMLInputElement>('file')

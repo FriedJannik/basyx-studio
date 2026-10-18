@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="open" :fullscreen="xs" max-width="720" scrollable>
+  <v-dialog v-model="open" max-width="720" scrollable>
     <DialogCard :title="t('shells.query.title')">
       <p class="text-body-medium text-medium-emphasis mt-0 mb-4">
         {{ t(`shells.query.${queryTarget}`) }}. {{ t('shells.query.text', { roots: queryRoots[queryTarget].join(', ') }) }}
@@ -50,7 +50,6 @@
 
 <script lang="ts" setup>
   import type { QueryTarget } from '#shared/search/expression'
-  import { useDisplay } from 'vuetify'
   import { buildShellQuery, conceptDescriptionSearchFields, parseSearch, queryRoots, searchFields } from '#shared/search/expression'
   import querySchema from '#shared/search/query-schema.json'
   import { StudioApiError } from '~/composables/useStudioApi'
@@ -70,7 +69,6 @@
   const open = defineModel<boolean>({ required: true })
 
   const { t } = useI18n()
-  const { xs } = useDisplay()
   const api = useStudioApi()
 
   const text = ref('')

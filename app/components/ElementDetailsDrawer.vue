@@ -195,6 +195,7 @@
 
         <div v-if="form && item.elementKey && detail">
           <ElementForm
+            :can-create-concept="canCreateConcept"
             :detail="detail"
             :explicit-save="capabilities.persistence === 'explicit_save'"
             :link-concepts="capabilities.conceptDescriptions"
@@ -206,15 +207,17 @@
 
         <div v-else-if="form && detail">
           <SubmodelForm
+            :can-create-concept="canCreateConcept"
             :detail="detail"
             :explicit-save="capabilities.persistence === 'explicit_save'"
+            :link-concepts="capabilities.conceptDescriptions"
             :submodel-key="item.submodelKey"
             :target-id="targetId"
             @changed="onChanged"
           />
         </div>
 
-        <!-- In edit mode the form holds the fields; only what it cannot edit stays. -->
+        <!-- The element's attributes to read and copy, and its path; in edit mode the form has them. -->
         <v-list v-if="metadata.length > 0" class="px-2" lines="two">
           <v-list-subheader :title="t('details.metadata')" />
 
@@ -232,32 +235,37 @@
           </v-list-item>
         </v-list>
 
-        <v-divider />
+        <!-- In edit mode the form has these (and the concept description in its
+             Semantics section): nothing below the metadata, so no divider
+             above the footer's own line. -->
+        <template v-if="!form">
+          <v-divider />
 
-        <v-expansion-panels :model-value="['description', 'concept']" multiple>
-          <v-expansion-panel v-if="!form" :title="t('details.description')" value="description">
-            <v-expansion-panel-text class="text-body-medium text-medium-emphasis">
-              {{ description ?? t('details.noDescription') }}
-            </v-expansion-panel-text>
-          </v-expansion-panel>
+          <v-expansion-panels :model-value="['description', 'concept']" multiple>
+            <v-expansion-panel :title="t('details.description')" value="description">
+              <v-expansion-panel-text class="text-body-medium text-medium-emphasis">
+                {{ description ?? t('details.noDescription') }}
+              </v-expansion-panel-text>
+            </v-expansion-panel>
 
-          <!-- What the semantic ID means (MVP-6 plan, E1). -->
-          <v-expansion-panel v-if="showConcept" :title="t('cd.semanticsCard')" value="concept">
-            <v-expansion-panel-text>
-              <ConceptDescriptionCard :can-create="canCreateConcept" :node="value" :target-id="targetId" />
-            </v-expansion-panel-text>
-          </v-expansion-panel>
+            <!-- What the semantic ID means (MVP-6 plan, E1). -->
+            <v-expansion-panel v-if="showConcept" :title="t('cd.semanticsCard')" value="concept">
+              <v-expansion-panel-text>
+                <ConceptDescriptionCard :can-create="canCreateConcept" :node="value" :target-id="targetId" />
+              </v-expansion-panel-text>
+            </v-expansion-panel>
 
-          <v-expansion-panel v-if="!form" :title="t('details.qualifiers')" value="qualifiers">
-            <v-expansion-panel-text>
-              <div v-if="qualifiers.length > 0" class="d-flex flex-wrap ga-2">
-                <v-chip v-for="qualifier in qualifiers" :key="qualifier" prepend-icon="mdi-tag-outline" :text="qualifier" />
-              </div>
+            <v-expansion-panel :title="t('details.qualifiers')" value="qualifiers">
+              <v-expansion-panel-text>
+                <div v-if="qualifiers.length > 0" class="d-flex flex-wrap ga-2">
+                  <v-chip v-for="qualifier in qualifiers" :key="qualifier" prepend-icon="mdi-tag-outline" :text="qualifier" />
+                </div>
 
-              <span v-else class="text-body-medium text-medium-emphasis">{{ t('details.noQualifiers') }}</span>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
+                <span v-else class="text-body-medium text-medium-emphasis">{{ t('details.noQualifiers') }}</span>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </template>
       </div>
 
       <div v-else-if="mode === 'visualization' && submodelRef" class="flex-grow-1 overflow-y-auto">
@@ -483,47 +491,45 @@
   const qualifiers = computed(() => ((value.value.qualifiers ?? []) as Array<{ type?: string, value?: string }>)
     .map(qualifier => `${qualifier.type ?? '?'}: ${qualifier.value ?? ''}`))
 
-  // The Web UI's header fields (D6), where the element has them; `edited`
-  // marks those the form edits, which edit mode shows only in the form.
+  // The Web UI's header fields (D6), where the element has them, and its
+  // path: attributes to read and copy in view mode.
   const metadata = computed(() => {
     const element = value.value
     const semanticId = (element.semanticId?.keys?.[0]?.value as string | undefined) ?? props.item?.semanticId ?? null
     const displayName = langText(Array.isArray(element.displayName) ? element.displayName : [], preferences.value.valueLanguage)
-    const rows: Array<{ label: string, value: string, icon: string, copy?: boolean, edited?: boolean }> = []
+    const rows: Array<{ label: string, value: string, icon: string, copy?: boolean }> = []
     if (props.item?.modelType === 'Submodel') {
-      rows.push({ label: t('details.identifier'), value: String(element.id ?? decodeResourceKey(props.item.submodelKey)), icon: 'mdi-identifier', copy: true, edited: true })
+      rows.push({ label: t('details.identifier'), value: String(element.id ?? decodeResourceKey(props.item.submodelKey)), icon: 'mdi-identifier', copy: true })
     }
     if (typeof element.idShort === 'string') {
-      rows.push({ label: t('details.idShort'), value: element.idShort, icon: 'mdi-label-outline', copy: true, edited: true })
+      rows.push({ label: t('details.idShort'), value: element.idShort, icon: 'mdi-label-outline', copy: true })
     }
     if (displayName && displayName !== element.idShort) {
-      rows.push({ label: t('details.displayName'), value: displayName, icon: 'mdi-format-title', edited: true })
+      rows.push({ label: t('details.displayName'), value: displayName, icon: 'mdi-format-title' })
     }
     if (semanticId) {
-      rows.push({ label: t('details.semanticId'), value: semanticId, icon: 'mdi-identifier', copy: true, edited: true })
+      rows.push({ label: t('details.semanticId'), value: semanticId, icon: 'mdi-identifier', copy: true })
     }
     if (element.kind) {
-      rows.push({ label: t('details.kind'), value: String(element.kind), icon: 'mdi-shape-outline', edited: true })
+      rows.push({ label: t('details.kind'), value: String(element.kind), icon: 'mdi-shape-outline' })
     }
     if (element.category) {
-      rows.push({ label: t('details.category'), value: String(element.category), icon: 'mdi-tag-outline', edited: true })
+      rows.push({ label: t('details.category'), value: String(element.category), icon: 'mdi-tag-outline' })
     }
     if (element.valueType) {
-      rows.push({ label: t('details.valueType'), value: String(element.valueType), icon: 'mdi-code-tags', edited: true })
+      rows.push({ label: t('details.valueType'), value: String(element.valueType), icon: 'mdi-code-tags' })
     }
     if (element.contentType) {
-      rows.push({ label: t('details.contentType'), value: String(element.contentType), icon: 'mdi-file-cog-outline', edited: true })
+      rows.push({ label: t('details.contentType'), value: String(element.contentType), icon: 'mdi-file-cog-outline' })
     }
     if (element.administration?.version) {
-      rows.push({ label: t('details.version'), value: [element.administration.version, element.administration.revision].filter(Boolean).join('.'), icon: 'mdi-file-certificate-outline', edited: true })
-    }
-    if (props.item?.children) {
-      rows.push({ label: t('details.children'), value: t('details.elements', props.item.children.filter(child => !child.more).length), icon: 'mdi-file-tree-outline' })
+      rows.push({ label: t('details.version'), value: [element.administration.version, element.administration.revision].filter(Boolean).join('.'), icon: 'mdi-file-certificate-outline' })
     }
     if (path.value) {
       rows.push({ label: t('details.idShortPath'), value: path.value, icon: 'mdi-map-marker-path', copy: true })
     }
-    return form.value ? rows.filter(row => !row.edited) : rows
+    // In edit mode the form has the attributes; the path alone is no section.
+    return form.value ? [] : rows
   })
 
   function onChanged (changed: ElementDetail) {

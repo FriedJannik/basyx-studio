@@ -6,6 +6,17 @@ import { firstKeyValue } from './outline'
 
 const concurrency = 6
 
+/** Version, revision and template ID of a submodel's `administration`, or `null` without any. */
+function administrationOf (value: unknown): SubmodelRef['administration'] {
+  if (typeof value !== 'object' || value === null) {
+    return null
+  }
+  const record = value as Record<string, unknown>
+  const text = (field: string) => typeof record[field] === 'string' && record[field] !== '' ? record[field] as string : null
+  const administration = { version: text('version'), revision: text('revision'), templateId: text('templateId') }
+  return administration.version || administration.revision || administration.templateId ? administration : null
+}
+
 /**
  * Resolves names and semantic IDs of submodel references. A forbidden or
  * missing submodel is reported on its entry instead of failing the whole
@@ -26,6 +37,7 @@ export async function resolveSubmodelRefs (target: AasTarget, ids: string[]): Pr
           idShort: typeof metadata.idShort === 'string' ? metadata.idShort : null,
           semanticId: firstKeyValue(metadata.semanticId),
           kind: typeof metadata.kind === 'string' ? metadata.kind : null,
+          administration: administrationOf(metadata.administration),
           status: 'available',
         }
       } catch (error) {

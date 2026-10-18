@@ -91,7 +91,9 @@ test('installs and uninstalls an app while another user has Studio open (DoD 1, 
   await expect(page.getByText('The app package is not valid.')).toBeVisible()
   await expect(page.getByText('studio-app.json#permissions.0', { exact: true })).toBeVisible()
 
-  // Alice's open page picks the app up without a reload.
+  // Alice's open page picks the app up without a reload. Views span the row
+  // at this width, so the new one is below the fold; frames load in sight.
+  await alice.getByRole('button', { name: 'Actions for Test view' }).scrollIntoViewIfNeeded({ timeout: 45_000 })
   await expect(alice.locator('iframe[title="App: Test view"]')).toBeVisible({ timeout: 45_000 })
   await expect(appFrame(alice, 'Test view').locator('#submodel')).toHaveText(motorNameplate)
 
@@ -112,10 +114,12 @@ test('offers app views only for matching submodels and says which (DoD 2)', asyn
   const frame = appFrame(page, 'Digital Nameplate')
   await expect(frame.getByText('Industrial Servo Motor DM-3000')).toBeVisible()
   await expect(frame.locator('[data-field="SerialNumber"]')).toContainText(originalSerial)
-  // One card per matching view, labeled with its app and submodel.
-  await expect(page.getByText('Digital Nameplate · Nameplate')).toBeVisible()
+  // One card per matching view, labeled with its submodel, and with its app
+  // where the view's own title does not name the app.
+  const cards = page.locator('[data-test="overview-widget-view"]')
+  await expect(cards.filter({ hasText: 'Digital Nameplate' }).getByText('Nameplate', { exact: true })).toBeVisible()
   await expect(page.getByText('Nameplate test view · Nameplate')).toBeVisible()
-  await expect(page.getByText('Technical Data · TechnicalData')).toBeVisible()
+  await expect(cards.filter({ hasText: 'Technical Data' }).getByText('TechnicalData', { exact: true })).toBeVisible()
 
   // EdgeCasesShell's submodels match no app.
   await page.goto(overviewUrl(openTargetId, 'urn:studio:test:aas:edge-cases'))
@@ -137,6 +141,10 @@ test('writes through the app with the core UI\'s conflict handling (DoD 4)', asy
   await expect(appFrame(page, 'Digital Nameplate').getByText('Serial number saved.')).toBeVisible()
   await expect(page.getByText('Digital Nameplate: Serial number saved.')).toBeVisible()
   await expect(appFrame(page, 'Digital Nameplate').locator('[data-field="SerialNumber"]')).toContainText('SN-E2E-APP-0001')
+  // The view spans the row here, so its Save button sits under the notice in
+  // the corner until it closes; the notice stays while the pointer is over it.
+  await page.mouse.move(0, 0)
+  await expect(page.getByText('Digital Nameplate: Serial number saved.')).toBeHidden({ timeout: 15_000 })
 
   // A change by someone else between reading and saving is a conflict; the draft stays.
   const frame = appFrame(page, 'Digital Nameplate')

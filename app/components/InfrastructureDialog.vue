@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="open" :fullscreen="xs" max-width="720" scrollable>
+  <v-dialog v-model="open" max-width="720" scrollable>
     <DialogCard :title="existing ? t('admin.edit') : t('admin.add')">
       <!-- Sections as in the BaSyx AAS Web UI, fields 12 px apart. -->
       <v-form ref="form" class="d-flex flex-column ga-3" @submit.prevent="save">
@@ -212,7 +212,6 @@
 
 <script lang="ts" setup>
   import type { EndpointType, Infrastructure, InfrastructureInput, InfrastructureTemplate, ListSource, SecurityMode, SyncSettings } from '#shared/contract'
-  import { useDisplay } from 'vuetify'
   import { defaultSyncSettings, endpointTypes, infrastructureTemplates, maxClientCertificateLength, securityModes, serviceUrl, syncModes, templateRules } from '#shared/contract'
   import { StudioApiError } from '~/composables/useStudioApi'
 
@@ -223,7 +222,6 @@
   const { t, locale } = useI18n()
   const api = useStudioApi()
   const session = useSessionStore()
-  const { xs } = useDisplay()
 
   const form = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
   const saving = ref(false)

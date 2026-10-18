@@ -1,9 +1,9 @@
 <template>
   <v-app>
-    <!-- In Studio's full-screen dialog, the card fills the frame and the graph or tree the rest of it. -->
-    <v-card :class="fullscreen ? 'd-flex flex-column' : undefined" :height="fullscreen ? '100vh' : undefined">
-      <v-card-item prepend-icon="mdi-file-tree-outline">
-        <v-card-title>{{ t('bom.title') }}</v-card-title>
+    <!-- Studio's card shows the view's title; this line adds the version and the archetype.
+         In Studio's full-screen dialog, the card fills the frame and the graph or tree the rest of it. -->
+    <v-view-card :class="fullscreen ? 'd-flex flex-column' : undefined" :height="fullscreen ? '100vh' : undefined">
+      <v-card-item>
         <v-card-subtitle>{{ version }}</v-card-subtitle>
 
         <template #append>
@@ -124,7 +124,7 @@
 
         <v-card-text v-else class="text-medium-emphasis">{{ t('bom.noEntry') }}</v-card-text>
       </template>
-    </v-card>
+    </v-view-card>
   </v-app>
 </template>
 

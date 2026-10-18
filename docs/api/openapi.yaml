@@ -3764,6 +3764,17 @@ components:
         submodelId: { type: string }
         idShort: { type: [string, 'null'] }
         semanticId: { type: [string, 'null'] }
+        administration:
+          description: The submodel's version, revision and template ID (AAS 3.0 `templateId`), where it could be read and has any.
+          oneOf:
+            - type: 'null'
+            - type: object
+              additionalProperties: false
+              required: [version, revision, templateId]
+              properties:
+                version: { type: [string, 'null'] }
+                revision: { type: [string, 'null'] }
+                templateId: { type: [string, 'null'] }
         status:
           type: string
           enum: [available, forbidden, not_found, blocked, error]
@@ -5259,7 +5270,7 @@ components:
             allOf:
               - { $ref: '#/components/schemas/AppContributionBase' }
               - type: object
-                required: [kind, reason]
+                required: [kind, reason, columns]
                 properties:
                   kind: { const: submodelView }
                   reason:
@@ -5267,6 +5278,17 @@ components:
                     required: [semanticId]
                     properties:
                       semanticId: { type: string }
+                  columns:
+                    type: object
+                    description: Default widths on a shell's Overview, in columns of 12, per Vuetify breakpoint of the Overview's width (manifest `columns`; ADR 0032).
+                    additionalProperties: false
+                    properties:
+                      xs: { type: integer, minimum: 3, maximum: 12 }
+                      sm: { type: integer, minimum: 3, maximum: 12 }
+                      md: { type: integer, minimum: 3, maximum: 12 }
+                      lg: { type: integer, minimum: 3, maximum: 12 }
+                      xl: { type: integer, minimum: 3, maximum: 12 }
+                      xxl: { type: integer, minimum: 3, maximum: 12 }
         modules:
           type: array
           items:

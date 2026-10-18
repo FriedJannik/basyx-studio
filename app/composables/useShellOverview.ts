@@ -1,4 +1,4 @@
-import type { OverviewItem, OverviewPin, OverviewSnapshot, ShellOverviewLayout } from '#shared/overview'
+import type { OverviewBreakpoint, OverviewItem, OverviewPin, OverviewSnapshot, ShellOverviewLayout } from '#shared/overview'
 import { overviewPinLimit, overviewShellLimit, shellOverviewSchema } from '#shared/overview'
 import { itemId } from '~/composables/useShellTrees'
 
@@ -6,7 +6,8 @@ const empty: ShellOverviewLayout = shellOverviewSchema.parse({})
 
 /**
  * The Overview of one shell as the user arranged it (ADR 0032): positions
- * and sizes of its widgets, the widgets they hid and the values they pinned.
+ * and sizes of its widgets per breakpoint, the widgets they hid and the
+ * values they pinned.
  * Stored with the user's preferences, per target and shell.
  */
 export function useShellOverview (targetId: MaybeRefOrGetter<string>, shellKey: MaybeRefOrGetter<string>) {
@@ -27,8 +28,9 @@ export function useShellOverview (targetId: MaybeRefOrGetter<string>, shellKey: 
     })
   }
 
-  function saveItems (items: OverviewItem[]) {
-    return change(current => ({ ...current, items: items.map(item => ({ ...item })) }))
+  /** Stores the layout of one breakpoint; the others keep theirs. */
+  function saveItems (breakpoint: OverviewBreakpoint, items: OverviewItem[]) {
+    return change(current => ({ ...current, layouts: { ...current.layouts, [breakpoint]: items.map(item => ({ ...item })) } }))
   }
 
   function setHidden (ids: string[]) {
@@ -37,18 +39,18 @@ export function useShellOverview (targetId: MaybeRefOrGetter<string>, shellKey: 
 
   /** The current positions, hidden widgets and pins, to undo a change. */
   function snapshot (): OverviewSnapshot {
-    const { items, hidden, pins } = layout.value
-    return structuredClone(toRaw({ items, hidden, pins }))
+    const { layouts, items, hidden, pins } = layout.value
+    return structuredClone(toRaw({ layouts, items, hidden, pins }))
   }
 
   /** Puts back positions, hidden widgets and pins as they were. */
   function restore (saved: OverviewSnapshot) {
-    return change(current => ({ ...current, items: saved.items, hidden: saved.hidden, pins: saved.pins }))
+    return change(current => ({ ...current, layouts: saved.layouts, items: saved.items, hidden: saved.hidden, pins: saved.pins }))
   }
 
-  /** Forgets positions, sizes and hidden widgets; pinned values stay. */
+  /** Forgets positions and sizes at every breakpoint, and hidden widgets; pinned values stay. */
   function reset () {
-    return change(current => ({ ...current, items: [], hidden: [] }))
+    return change(current => ({ ...current, layouts: {}, items: [], hidden: [] }))
   }
 
   function isPinned (submodelKey: string, elementKey: string | null) {

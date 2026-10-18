@@ -2,10 +2,11 @@
   <!-- One widget of the Overview (ADR 0032): a header to drag it by, its
        actions, and a body that scrolls when the widget is smaller than its content. -->
   <v-hover v-slot="{ isHovering, props: hover }">
-    <v-card v-bind="hover" class="d-flex flex-column h-100" :data-test="`overview-widget-${kind}`">
+    <!-- As tall as its row; collapsed, only its header (the row keeps the height of its open widgets). -->
+    <v-card v-bind="hover" :class="['d-flex flex-column', collapsed ? undefined : 'h-100']" :data-test="`overview-widget-${kind}`">
       <v-sheet
         :class="['overview-handle d-flex align-center ga-1 py-1 ps-1 pe-1 flex-shrink-0', draggable ? 'cursor-grab' : undefined]"
-        color="transparent"
+        color="card-header"
         :height="overviewHeaderHeight - 1"
       >
         <v-icon
@@ -83,7 +84,9 @@
 
         <!-- Frames take no pointer events while widgets move, so a drag over them is not lost. -->
         <div :class="['flex-grow-1 overflow-y-auto', moving ? 'pointer-events-none' : undefined]">
-          <slot />
+          <div ref="content">
+            <slot />
+          </div>
         </div>
       </template>
     </v-card>
@@ -93,7 +96,7 @@
 <script lang="ts" setup>
   import { overviewHeaderHeight } from '#shared/overview'
 
-  defineProps<{
+  const props = defineProps<{
     kind: 'view' | 'live' | 'pin'
     title: string
     subtitle?: string | null
@@ -110,18 +113,37 @@
     canFullscreen?: boolean
     canReveal?: boolean
     canFit?: boolean
+    /** Reports its content's height, so its row can fit it (views report their own). */
+    measure?: boolean
   }>()
   const emit = defineEmits<{
-    fullscreen: []
-    collapse: []
-    hide: []
-    reveal: []
-    fit: []
-    move: [step: -1 | 1]
-    width: [columns: number]
+    'fullscreen': []
+    'collapse': []
+    'hide': []
+    'reveal': []
+    'fit': []
+    'move': [step: -1 | 1]
+    'width': [columns: number]
+    'content-height': [height: number]
   }>()
 
   const { t } = useI18n()
+
+  // The content's natural height: the widget's row grows to it, so the body
+  // does not scroll unless the user made the row lower.
+  const content = useTemplateRef<HTMLElement>('content')
+  const resizes = import.meta.client && props.measure
+    ? new ResizeObserver(([entry]) => entry && emit('content-height', Math.ceil(entry.contentRect.height)))
+    : null
+  watch(content, (element, previous) => {
+    if (previous) {
+      resizes?.unobserve(previous)
+    }
+    if (element) {
+      resizes?.observe(element)
+    }
+  })
+  onBeforeUnmount(() => resizes?.disconnect())
 
   const widths = computed(() => [
     { w: 3, title: t('overview.widths.small') },

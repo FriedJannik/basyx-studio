@@ -1,7 +1,6 @@
 <template>
   <div>
-    <!-- The drawers register with the app layout from inside the page. -->
-    <ShellListDrawer :active-key="shellKey" :target-id="targetId" />
+    <!-- The shell list is the layout's (default.vue); the details drawer registers from here. -->
 
     <v-container>
       <ProblemAlert v-if="target.error.value" :error="target.error.value" retry @retry="target.refetch()" />
@@ -202,13 +201,20 @@
 
         <ProblemAlert v-if="actionError" class="mb-4" :error="actionError" />
 
-        <!-- Tabs -->
-        <v-tabs v-model="tab" class="mb-3">
-          <v-tab prepend-icon="mdi-file-tree-outline" :text="t('shell.tabs.submodels')" value="submodels" />
-          <v-tab prepend-icon="mdi-view-dashboard-variant-outline" :text="t('shell.tabs.overview')" value="overview" />
-          <v-tab v-if="capabilities.changeFeed" prepend-icon="mdi-timeline-clock-outline" :text="t('shell.tabs.changes')" value="changes" />
-          <v-tab prepend-icon="mdi-code-json" :text="t('shell.tabs.json')" value="json" />
-        </v-tabs>
+        <!-- The tabs head the content below: their line spans the content's
+             width and the active tab sits on it, so they read as one block.
+             The active tab's own actions sit at the end of the row
+             (#shell-tab-actions, e.g. the Overview's widgets). -->
+        <div class="d-flex align-center border-b mb-4">
+          <v-tabs v-model="tab" class="flex-grow-1 flex-shrink-1 overflow-hidden">
+            <v-tab prepend-icon="mdi-file-tree-outline" :text="t('shell.tabs.submodels')" value="submodels" />
+            <v-tab prepend-icon="mdi-view-dashboard-variant-outline" :text="t('shell.tabs.overview')" value="overview" />
+            <v-tab v-if="capabilities.changeFeed" prepend-icon="mdi-timeline-clock-outline" :text="t('shell.tabs.changes')" value="changes" />
+            <v-tab prepend-icon="mdi-code-json" :text="t('shell.tabs.json')" value="json" />
+          </v-tabs>
+
+          <div id="shell-tab-actions" class="d-flex align-center flex-shrink-0 ga-1" />
+        </div>
 
         <v-tabs-window v-model="tab">
           <v-tabs-window-item value="submodels">
@@ -314,7 +320,8 @@
                 @retry="refs.refetch()"
               />
 
-              <v-progress-linear v-else-if="refs.isLoading.value || trees.loading.value" />
+              <!-- Only once mounted: the tree loads its levels while the page hydrates, which the server did not render. -->
+              <v-progress-linear v-else-if="mounted && (refs.isLoading.value || trees.loading.value)" />
 
               <div v-if="refs.data.value && submodelRefs.length === 0" class="pa-4 text-medium-emphasis">{{ t('shell.noSubmodels') }}</div>
 
@@ -361,7 +368,13 @@
                       :text="t('shell.autoRefresh')"
                     />
 
-                    <v-chip v-if="mdAndUp && item.semanticId" size="x-small" :text="semanticLabel(item.semanticId)" />
+                    <!-- The template and version the semantic ID names; the full ID on hover. -->
+                    <v-chip
+                      v-if="mdAndUp && templateLabel(item)"
+                      v-tooltip="item.semanticId"
+                      size="x-small"
+                      :text="templateLabel(item)!"
+                    />
                   </template>
 
                   <span v-else-if="item.preview" class="text-body-small text-medium-emphasis text-truncate ms-2">
@@ -651,6 +664,7 @@
   import { useQuery, useQueryCache } from '@pinia/colada'
   import { useDisplay } from 'vuetify'
   import { childTypesFor, isContainerType, newElement, uniqueIdShort } from '#shared/aas/defaults'
+  import { semanticLabel } from '#shared/aas/semantic-label'
   import { apiBasePath, noCapabilities } from '#shared/contract'
   import { expandAllCap, itemId, levelPageSize } from '~/composables/useShellTrees'
   import { StudioApiError } from '~/composables/useStudioApi'
@@ -768,6 +782,7 @@
 
   const autoRefresh = computed(() => preferences.preferences.value.autoRefresh)
   const refreshSeconds = computed(() => preferences.preferences.value.autoRefresh && !asOf.value ? preferences.preferences.value.refreshIntervalSeconds : null)
+  // The submodels and elements open in the tree: none until the user opens one.
   const opened = ref<string[]>([])
   const treeSearch = ref<string | null>('')
   const trees = useShellTrees({
@@ -845,10 +860,10 @@
     }
   }
 
-  /** Short label of a semantic ID for the submodel chip, e.g. `Nameplate 3.0`. */
-  function semanticLabel (semanticId: string): string {
-    const idta = /\/([A-Z]+)\/(\d+)\/(\d+)(?:\/[A-Z]+)?$/i.exec(semanticId)
-    return idta ? `${idta[1]} ${idta[2]}.${idta[3]}` : (semanticId.split(/[/#]/).findLast(Boolean) ?? semanticId)
+  /** The template and version of a submodel for its chip, from its semantic ID and administration. */
+  function templateLabel (item: ShellTreeItem): string | null {
+    const ref = submodelRefs.value.find(entry => entry.key === item.submodelKey)
+    return item.semanticId ? semanticLabel(item.semanticId, item.title, ref?.administration) : null
   }
 
   // Selection lives in the URL (`submodel`, `element`), so it can be shared and survives reloads.
@@ -906,14 +921,6 @@
     get: () => (selectedId.value ? [selectedId.value] : []),
     set: (ids: unknown[]) => select((ids[0] as string | undefined) ?? null),
   })
-
-  // Open the first submodel when the tree appears, including a tree already
-  // populated by SSR or the query cache before this watcher is installed.
-  watch(() => trees.items.value.length, (count, before) => {
-    if (count > 0 && !before && opened.value.length === 0) {
-      opened.value = trees.items.value.filter(item => !item.unavailable).slice(0, 1).map(item => item.id)
-    }
-  }, { immediate: true })
 
   // A selection made elsewhere (deep link, search): load and open its path,
   // which the element's ancestors name.
@@ -1154,7 +1161,11 @@
       await afterShellChange()
     })
   }
-  onMounted(() => globalThis.addEventListener('keydown', onKeydown))
+  const mounted = ref(false)
+  onMounted(() => {
+    mounted.value = true
+    globalThis.addEventListener('keydown', onKeydown)
+  })
   onBeforeUnmount(() => globalThis.removeEventListener('keydown', onKeydown))
 
   // The selected node's actions are in the command palette too (U3).

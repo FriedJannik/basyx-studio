@@ -162,6 +162,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  vuetify@4.2.6: b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687
+
 importers:
 
   .:
@@ -243,10 +246,10 @@ importers:
         version: 3.5.44(typescript@6.0.3)
       vuetify:
         specifier: ^4.2.6
-        version: 4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
+        version: 4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
       vuetify-nuxt-module:
         specifier: 1.0.0-rc.6
-        version: 1.0.0-rc.6(@nuxt/schema@4.6.1)(esbuild@0.28.2)(magic-string@1.4.3)(magicast@0.5.5)(oxc-parser@0.141.0)(rolldown@1.2.12)(rollup@4.64.0)(sass@1.105.1)(unplugin@3.4.0(esbuild@0.28.2)(rolldown@1.2.12)(rollup@4.64.0)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)))(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.44(typescript@6.0.3))(vuetify@4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3)))
+        version: 1.0.0-rc.6(@nuxt/schema@4.6.1)(esbuild@0.28.2)(magic-string@1.4.3)(magicast@0.5.5)(oxc-parser@0.141.0)(rolldown@1.2.12)(rollup@4.64.0)(sass@1.105.1)(unplugin@3.4.0(esbuild@0.28.2)(rolldown@1.2.12)(rollup@4.64.0)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)))(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.44(typescript@6.0.3))(vuetify@4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3)))
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -343,7 +346,7 @@ importers:
         version: 3.5.44(typescript@6.0.3)
       vuetify:
         specifier: ^4.2.6
-        version: 4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
+        version: 4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^6.0.10
@@ -371,7 +374,7 @@ importers:
         version: 3.5.44(typescript@6.0.3)
       vuetify:
         specifier: ^4.2.6
-        version: 4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
+        version: 4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^6.0.10
@@ -393,7 +396,7 @@ importers:
         version: 3.5.44(typescript@6.0.3)
       vuetify:
         specifier: ^4.2.6
-        version: 4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
+        version: 4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^6.0.10
@@ -415,7 +418,7 @@ importers:
         version: 3.5.44(typescript@6.0.3)
       vuetify:
         specifier: ^4.2.6
-        version: 4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
+        version: 4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^6.0.10
@@ -437,7 +440,7 @@ importers:
         version: 3.5.44(typescript@6.0.3)
       vuetify:
         specifier: ^4.2.6
-        version: 4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
+        version: 4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^6.0.10
@@ -459,7 +462,7 @@ importers:
         version: 3.5.44(typescript@6.0.3)
       vuetify:
         specifier: ^4.2.6
-        version: 4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
+        version: 4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^6.0.10
@@ -481,7 +484,7 @@ importers:
         version: 3.5.44(typescript@6.0.3)
       vuetify:
         specifier: ^4.2.6
-        version: 4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
+        version: 4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^6.0.10
@@ -506,7 +509,7 @@ importers:
         version: 3.5.44(typescript@6.0.3)
       vuetify:
         specifier: ^4.2.5
-        version: 4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
+        version: 4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
     devDependencies:
       '@types/d3-hierarchy':
         specifier: 3.1.7
@@ -531,7 +534,7 @@ importers:
         version: 3.5.44(typescript@6.0.3)
       vuetify:
         specifier: ^4.2.6
-        version: 4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
+        version: 4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^6.0.10
@@ -10512,11 +10515,11 @@ snapshots:
 
   '@vue/shared@3.5.44': {}
 
-  '@vuetify/loader-shared@2.1.2(vue@3.5.44(typescript@6.0.3))(vuetify@4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3)))':
+  '@vuetify/loader-shared@2.1.2(vue@3.5.44(typescript@6.0.3))(vuetify@4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3)))':
     dependencies:
       upath: 2.0.1
       vue: 3.5.44(typescript@6.0.3)
-      vuetify: 4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
+      vuetify: 4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
 
   '@vuetify/mcp@0.12.2(supports-color@10.2.2)':
     dependencies:
@@ -15069,10 +15072,10 @@ snapshots:
     optionalDependencies:
       typescript: 6.0.3
 
-  vuetify-nuxt-module@1.0.0-rc.6(@nuxt/schema@4.6.1)(esbuild@0.28.2)(magic-string@1.4.3)(magicast@0.5.5)(oxc-parser@0.141.0)(rolldown@1.2.12)(rollup@4.64.0)(sass@1.105.1)(unplugin@3.4.0(esbuild@0.28.2)(rolldown@1.2.12)(rollup@4.64.0)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)))(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.44(typescript@6.0.3))(vuetify@4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))):
+  vuetify-nuxt-module@1.0.0-rc.6(@nuxt/schema@4.6.1)(esbuild@0.28.2)(magic-string@1.4.3)(magicast@0.5.5)(oxc-parser@0.141.0)(rolldown@1.2.12)(rollup@4.64.0)(sass@1.105.1)(unplugin@3.4.0(esbuild@0.28.2)(rolldown@1.2.12)(rollup@4.64.0)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)))(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.44(typescript@6.0.3))(vuetify@4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))):
     dependencies:
       '@nuxt/kit': 4.5.2(magic-string@1.4.3)(magicast@0.5.5)(oxc-parser@0.141.0)(rolldown@1.2.12)(unplugin@3.4.0(esbuild@0.28.2)(rolldown@1.2.12)(rollup@4.64.0)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)))
-      '@vuetify/loader-shared': 2.1.2(vue@3.5.44(typescript@6.0.3))(vuetify@4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3)))
+      '@vuetify/loader-shared': 2.1.2(vue@3.5.44(typescript@6.0.3))(vuetify@4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3)))
       '@vuetify/unplugin-styles': 1.0.0-rc.1(@nuxt/kit@4.5.2(magic-string@1.4.3)(magicast@0.5.5)(oxc-parser@0.141.0)(rolldown@1.2.12)(unplugin@3.4.0(esbuild@0.28.2)(rolldown@1.2.12)(rollup@4.64.0)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))))(@nuxt/schema@4.6.1)(esbuild@0.28.2)(rolldown@1.2.12)(rollup@4.64.0)(sass@1.105.1)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       defu: 6.1.7
       local-pkg: 1.2.1
@@ -15081,7 +15084,7 @@ snapshots:
       semver: 7.8.5
       ufo: 1.6.4
       unconfig: 7.5.0
-      vuetify: 4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
+      vuetify: 4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
     transitivePeerDependencies:
       - '@farmfe/core'
       - '@nuxt/schema'
@@ -15103,7 +15106,7 @@ snapshots:
       - vue
       - webpack
 
-  vuetify@4.2.6(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3)):
+  vuetify@4.2.6(patch_hash=b38d9461aa6dd0e33f8dde3a31e3cc6edbb1acfc432894b391b1750f568c4687)(@floating-ui/dom@1.8.0)(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3)):
     dependencies:
       '@vuetify/v0': 1.2.3(@floating-ui/dom@1.8.0)(vue-i18n@11.4.13(vue@3.5.44(typescript@6.0.3)))(vue@3.5.44(typescript@6.0.3))
       vue: 3.5.44(typescript@6.0.3)

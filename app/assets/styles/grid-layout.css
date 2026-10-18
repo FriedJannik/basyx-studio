@@ -11,18 +11,56 @@
   --vgl-placeholder-bg: rgb(var(--v-theme-primary));
   --vgl-placeholder-opacity: 16%;
   --vgl-item-resizing-opacity: 100%;
-  --vgl-resizer-size: 14px;
+  --vgl-resizer-size: 16px;
   --vgl-resizer-border-color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+  /* The widgets' radius: the cards' `rounded-lg`, or `rounded-xl` with the
+     rounded shape (shared/appearance.ts), which is a defaults provider with
+     no CSS variable of its own; ShellOverview sets the class. */
+  --overview-radius: 8px;
+
+  /* The grid's outer gap (16 px, `overviewGap`) is cancelled so widgets line
+     up with the page. The library rounds a widget's left edge and width
+     apart, so a widget in the last column can end a pixel past the grid;
+     one pixel less at the end keeps its border inside the tab window,
+     which clips. */
+  margin: -16px -15px -16px -16px;
 }
 
-/* The resize corner shows with the pointer over its widget, as the drag handle does. */
+.vgl-layout.vgl-layout.overview-rounded {
+  --overview-radius: 24px;
+}
+
+/* Where a dragged widget lands has the widgets' shape. */
+.vgl-layout.vgl-layout .vgl-item--placeholder {
+  border-radius: var(--overview-radius);
+}
+
+/* The resize corner shows with the pointer over its widget, as the drag
+   handle does, and follows the card's rounded corner at a 4 px inset. */
 .vgl-layout.vgl-layout .vgl-item__resizer {
-  inset: auto 6px 6px auto;
+  inset: auto 4px 4px auto;
   opacity: 0;
   transition: opacity 0.15s ease;
+}
+
+.vgl-layout.vgl-layout .vgl-item__resizer::before {
+  inset: 0;
+  border-end-end-radius: max(2px, calc(var(--overview-radius) - 4px));
 }
 
 .vgl-layout.vgl-layout .vgl-item:hover .vgl-item__resizer,
 .vgl-layout.vgl-layout .vgl-item--resizing .vgl-item__resizer {
   opacity: 1;
+}
+
+/* While a widget moves, the Overview's own preview shows where it lands and
+   at which size, so the library's placeholder (at the pointer) is hidden. */
+.vgl-layout.vgl-layout.overview-dropping {
+  --vgl-placeholder-opacity: 0%;
+}
+
+/* A widget is dragged by its header: pressing there starts a drag, never a
+   text selection that would then grow over the widgets passed on the way. */
+.vgl-layout.vgl-layout .overview-handle {
+  user-select: none;
 }

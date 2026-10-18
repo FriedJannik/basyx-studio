@@ -33,19 +33,20 @@
 
     <FormSection
       v-model:open="openNames"
-      :badge="hasNames ? '✓' : undefined"
       collapsible
       :hint="t('cd.namesHint')"
       :title="t('editor.sections.names')"
     >
       <LangStringsInput
         :label="t('details.displayName')"
+        :max-length="langStringMaxLength.name"
         :model-value="langStrings('displayName')"
         @update:model-value="strings => set('displayName', strings)"
       />
 
       <LangStringsInput
         :label="t('details.description')"
+        :max-length="langStringMaxLength.text"
         :model-value="langStrings('description')"
         @update:model-value="strings => set('description', strings)"
       />
@@ -78,7 +79,7 @@
       />
     </FormSection>
 
-    <FormSection v-model:open="openAdmin" collapsible :title="t('shell.administration')">
+    <FormSection v-model:open="openAdmin" collapsible last :title="t('shell.administration')">
       <div class="d-flex align-start ga-3">
         <v-text-field :label="t('details.version')" :model-value="String(administration.version ?? '')" @update:model-value="text => set('administration', withField(administration, 'version', text))" />
         <v-text-field :label="t('shell.revisionLabel')" :model-value="String(administration.revision ?? '')" @update:model-value="text => set('administration', withField(administration, 'revision', text))" />
@@ -91,7 +92,7 @@
   import type { LangString } from '#shared/contract'
   import type { Json } from '~/utils/editor'
   import { withField } from '~/utils/editor'
-  import { errorsFor, idShortPattern } from '~/utils/languages'
+  import { errorsFor, idShortPattern, langStringMaxLength } from '~/utils/languages'
 
   // The fields of a concept description (MVP-6 plan, F1), for editing in the
   // drawer and for creating in a dialog: the same inputs in both, as

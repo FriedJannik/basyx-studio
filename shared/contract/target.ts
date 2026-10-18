@@ -188,6 +188,16 @@ export const submodelRefSchema = z.object({
   submodelId: z.string(),
   idShort: z.string().nullable(),
   semanticId: z.string().nullable(),
+  /**
+   * The submodel's administrative information, where it could be read and
+   * has any: its version and revision, and the template it was created from
+   * (AAS 3.0 `templateId`). Labels the template version in the tree.
+   */
+  administration: z.object({
+    version: z.string().nullable(),
+    revision: z.string().nullable(),
+    templateId: z.string().nullable(),
+  }).nullable().optional(),
   status: z.enum(submodelRefStatuses),
 })
 export type SubmodelRef = z.infer<typeof submodelRefSchema>

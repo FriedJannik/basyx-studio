@@ -1,10 +1,10 @@
 <template>
   <div class="d-flex flex-column flex-grow-1">
-    <!-- A frame that never connects (D14) says so instead of staying blank. -->
+    <!-- A frame that never connects (D14) says so, and why, instead of staying blank. -->
     <v-alert
-      v-if="timedOut && !connected"
+      v-if="startProblem && !connected"
       class="ma-2"
-      :text="t('apps.notStartedText')"
+      :text="startProblemText"
       :title="t('apps.notStarted')"
       type="warning"
     >
@@ -34,7 +34,7 @@
     <!-- The same view again, filling the window (studio.ui.openFullscreen):
          a second frame, so the embedded one keeps its size and state. -->
     <v-dialog v-if="!fullscreen" v-model="fullscreenOpen" fullscreen>
-      <v-card class="d-flex flex-column" height="100%">
+      <v-card-fullscreen class="d-flex flex-column" height="100%">
         <v-toolbar class="flex-shrink-0" color="transparent" density="compact" :title="label(contribution.title)">
           <template #append>
             <v-btn :aria-label="t('common.close')" data-test="app-fullscreen-close" icon="mdi-close" @click="fullscreenOpen = false" />
@@ -51,13 +51,14 @@
           :submodel="submodel"
           :target="target"
         />
-      </v-card>
+      </v-card-fullscreen>
     </v-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
   import type { AppContext, AppContributionInfo, Target } from '#shared/contract'
+  import type { AppStartProblem } from '~/utils/app-start'
   import { useTheme } from 'vuetify'
   import { appProtocol } from '#shared/contract'
 
@@ -116,14 +117,37 @@
   const fullscreenOpen = ref(false)
   /** Seconds an app may take to connect before the frame offers a retry. */
   const startTimeoutMs = 15_000
-  const timedOut = ref(false)
+  /** Set once the start timed out and the entry file was checked. */
+  const startProblem = ref<AppStartProblem | null>(null)
   const attempt = ref(0)
   let startTimer: ReturnType<typeof setTimeout> | undefined
   function watchStart () {
-    timedOut.value = false
+    startProblem.value = null
     clearTimeout(startTimer)
-    startTimer = setTimeout(() => (timedOut.value = true), startTimeoutMs)
+    const started = attempt.value
+    startTimer = setTimeout(async () => {
+      const problem = await diagnoseAppStart(props.contribution.entryUrl)
+      // A retry or a late connection while the check ran wins.
+      if (started === attempt.value && !connected.value) {
+        startProblem.value = problem
+      }
+    }, startTimeoutMs)
   }
+  const startProblemText = computed(() => {
+    const problem = startProblem.value
+    const host = URL.parse(props.contribution.entryUrl)?.host ?? props.contribution.entryUrl
+    switch (problem?.kind) {
+      case 'unreachable': {
+        return t('apps.notStartedUnreachable', { host })
+      }
+      case 'error': {
+        return t('apps.notStartedError', { host, status: problem.status })
+      }
+      default: {
+        return t('apps.notStartedBlocked', { host })
+      }
+    }
+  })
   function retry () {
     attempt.value++
     watchStart()
@@ -150,7 +174,7 @@
   watch(connected, value => {
     if (value) {
       clearTimeout(startTimer)
-      timedOut.value = false
+      startProblem.value = null
     }
   })
 </script>

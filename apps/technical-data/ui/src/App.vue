@@ -1,9 +1,9 @@
 <template>
   <v-app>
-    <v-card>
-      <v-card-item prepend-icon="mdi-tune-variant">
-        <v-card-title>Technical Data</v-card-title>
-        <v-card-subtitle>{{ designation || 'Manufacturer specification' }}</v-card-subtitle>
+    <!-- Studio's card shows the view's title; this line names the product. -->
+    <v-view-card>
+      <v-card-item v-if="designation">
+        <v-card-subtitle>{{ designation }}</v-card-subtitle>
       </v-card-item>
 
       <v-progress-linear v-if="loading" />
@@ -20,7 +20,7 @@
       </v-table>
 
       <v-card-text v-else class="text-medium-emphasis">No technical properties.</v-card-text>
-    </v-card>
+    </v-view-card>
   </v-app>
 </template>
 

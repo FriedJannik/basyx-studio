@@ -2,7 +2,7 @@
   "$schema": "../../packages/studio-sdk/app-manifest.schema.json",
   "manifestVersion": 0,
   "id": "org.eclipse.basyx.studio.carbon-footprint",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": { "name": "Eclipse BaSyx" },
   "title": { "en": "Carbon Footprint" },
   "description": { "en": "Shows the product carbon footprint (IDTA 02023) of an asset on its overview." },
@@ -15,7 +15,8 @@
         "id": "carbon-footprint",
         "title": { "en": "Carbon Footprint" },
         "entry": "ui/index.html",
-        "semanticIds": ["https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0", "https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/0/9"]
+        "semanticIds": ["https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0", "https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/0/9"],
+        "columns": { "md": 6, "lg": 4, "xxl": 3 }
       }
     ]
   }

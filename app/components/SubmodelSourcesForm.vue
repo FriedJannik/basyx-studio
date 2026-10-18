@@ -1,36 +1,54 @@
 <template>
-  <div>
-    <v-expansion-panels v-if="entries.length > 0" v-model="open" class="mb-3">
-      <v-expansion-panel v-for="entry in entries" :key="entry.key" :value="entry.key">
-        <v-expansion-panel-title>
-          <v-icon class="me-2" icon="mdi-file-outline" />
-          <span class="text-truncate">{{ entry.metadata.idShort || t('wizard.newSubmodel') }}</span>
-        </v-expansion-panel-title>
+  <!-- The submodels to create, and the fields of the one selected in the
+       list beside them: every field belongs to the highlighted submodel.
+       Phones show the list above the fields. -->
+  <!-- Nothing to create yet: one way on, adding the first submodel. -->
+  <v-empty-state
+    v-if="entries.length === 0"
+    icon="mdi-file-plus-outline"
+    size="56"
+    :text="t('wizard.noSubmodelsText')"
+    :title="t('wizard.noSubmodelsTitle')"
+  >
+    <template #actions>
+      <v-btn-primary prepend-icon="mdi-plus" :text="t('wizard.addSubmodel')" @click="add" />
+    </template>
+  </v-empty-state>
 
-        <v-expansion-panel-text>
-          <!-- The same fields as the form of an existing submodel. -->
-          <SubmodelFields v-model="entry.metadata" identifier />
+  <v-row v-else no-gutters>
+    <v-col :class="smAndUp ? 'border-e' : 'border-b'" cols="12" sm="4">
+      <v-list v-model:selected="selected" class="pa-2" mandatory nav>
+        <v-list-item
+          v-for="entry in entries"
+          :key="entry.key"
+          prepend-icon="mdi-file-outline"
+          :subtitle="t(`editor.kinds.${entry.metadata.kind === 'Template' ? 'Template' : 'Instance'}`)"
+          :title="String(entry.metadata.idShort || t('wizard.newSubmodel'))"
+          :value="entry.key"
+        >
+          <template #append>
+            <v-btn
+              :aria-label="t('wizard.removeNamed', { name: entry.metadata.idShort || t('wizard.newSubmodel') })"
+              icon="mdi-delete-outline"
+              @click.stop="remove(entry.key)"
+            />
+          </template>
+        </v-list-item>
+      </v-list>
 
-          <v-btn
-            class="mt-2"
-            color="error"
-            prepend-icon="mdi-delete-outline"
-            size="small"
-            :text="t('wizard.remove')"
-            @click="remove(entry.key)"
-          />
-        </v-expansion-panel-text>
-      </v-expansion-panel>
-    </v-expansion-panels>
+      <v-btn class="mx-2 mb-2" prepend-icon="mdi-plus" :text="t('wizard.addSubmodel')" @click="add" />
+    </v-col>
 
-    <div v-else class="text-body-medium text-medium-emphasis mb-3">{{ t('wizard.noSubmodels') }}</div>
-
-    <v-btn prepend-icon="mdi-plus" :text="t('wizard.addSubmodel')" @click="add" />
-  </div>
+    <v-col class="px-4" cols="12" sm="8">
+      <!-- The same fields as the form of an existing submodel. -->
+      <SubmodelFields v-if="current" :key="current.key" v-model="current.metadata" identifier />
+    </v-col>
+  </v-row>
 </template>
 
 <script lang="ts" setup>
   import type { SubmodelSource } from '#shared/contract'
+  import { useDisplay } from 'vuetify'
   import { uniqueIdShort } from '#shared/aas/defaults'
 
   // The empty submodels of a new shell or an existing one: each with the same
@@ -44,19 +62,27 @@
   }
 
   const { t } = useI18n()
+  const { smAndUp } = useDisplay()
   const entries = ref<Entry[]>([])
-  const open = ref<number | undefined>()
+  // The list's selection: the submodel whose fields are shown.
+  const selected = ref<number[]>([])
+  const current = computed(() => entries.value.find(entry => entry.key === selected.value[0]) ?? null)
   let counter = 0
 
   function add () {
     const taken = entries.value.map(entry => String(entry.metadata.idShort ?? ''))
     const entry: Entry = { key: ++counter, metadata: { idShort: uniqueIdShort('Submodel', taken), kind: 'Instance' } }
     entries.value.push(entry)
-    open.value = entry.key
+    selected.value = [entry.key]
   }
 
   function remove (key: number) {
+    const index = entries.value.findIndex(entry => entry.key === key)
     entries.value = entries.value.filter(entry => entry.key !== key)
+    if (selected.value[0] === key) {
+      const next = entries.value[Math.min(index, entries.value.length - 1)]
+      selected.value = next ? [next.key] : []
+    }
   }
 
   // The sources the entries describe, for the request.
@@ -76,6 +102,7 @@
   watch(sources, list => {
     if (list.length === 0 && entries.value.length > 0) {
       entries.value = []
+      selected.value = []
     }
   })
 </script>

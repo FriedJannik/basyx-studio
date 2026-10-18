@@ -1,20 +1,25 @@
 <template>
   <v-dialog
     v-model="ui.commandOpen"
-    :fullscreen="xs"
     location="top"
     location-strategy="static"
     max-width="640"
     scrollable
   >
-    <v-card :class="xs ? undefined : 'mt-16'" max-height="600">
+    <!-- Full screen on phones (app.vue), so edge to edge there. -->
+    <v-card :border="xs ? false : undefined" :class="xs ? undefined : 'mt-16'" max-height="600" :rounded="xs ? 0 : undefined">
+      <!-- A filled header that sets the search apart from the results, as its
+           own band, at the full field height (dialogs default to compact fields). -->
       <v-text-field
         v-model="query"
         autofocus
+        bg-color="surface-light"
+        class="flex-grow-0"
+        density="default"
         :placeholder="targetId ? t('palette.placeholderTarget') : t('palette.placeholder')"
         prepend-inner-icon="mdi-magnify"
         rounded="0"
-        variant="solo"
+        variant="filled"
         @keydown.down.prevent="move(1)"
         @keydown.enter.prevent="run(results[cursor])"
         @keydown.up.prevent="move(-1)"
@@ -27,12 +32,8 @@
             size="18"
             width="2"
           />
-
-          <v-hotkey keys="escape" />
         </template>
       </v-text-field>
-
-      <v-divider />
 
       <v-card-text class="pa-2">
         <ProblemAlert v-if="error" class="mb-2" :error="error" />
@@ -72,6 +73,7 @@
         <v-hotkey class="ms-3" keys="enter" /> {{ t('palette.open') }}
         <v-spacer />
         {{ t('palette.results', results.length) }}
+        <v-hotkey class="ms-3" keys="escape" /> {{ t('palette.close') }}
       </v-card-actions>
     </v-card>
   </v-dialog>

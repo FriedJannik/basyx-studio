@@ -42,3 +42,16 @@ export function errorsFor (violations: ReadonlyArray<{ path: string, message: st
 export function unclaimed (violations: ReadonlyArray<{ path: string, message: string }>, fields: readonly string[]): Array<{ path: string, message: string }> {
   return violations.filter(violation => fields.every(field => errorsFor([violation], field).length === 0))
 }
+
+/**
+ * Longest text of a language string, by its metamodel type (aas-core3.1
+ * verification): names, texts (descriptions, multi-language values) and the
+ * IEC 61360 preferred name, short name and definition.
+ */
+export const langStringMaxLength = {
+  name: 128,
+  text: 1023,
+  preferredName: 255,
+  shortName: 18,
+  definition: 1023,
+} as const

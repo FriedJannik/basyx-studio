@@ -1,9 +1,9 @@
 <template>
   <v-app>
-    <v-card>
-      <v-card-item prepend-icon="mdi-leaf">
-        <v-card-title>Carbon Footprint</v-card-title>
-        <v-card-subtitle>{{ methods || 'Product carbon footprint' }}</v-card-subtitle>
+    <!-- Studio's card shows the view's title; this line names the calculation methods. -->
+    <v-view-card>
+      <v-card-item v-if="methods">
+        <v-card-subtitle>{{ methods }}</v-card-subtitle>
       </v-card-item>
 
       <v-progress-linear v-if="loading" />
@@ -31,7 +31,7 @@
       </template>
 
       <v-card-text v-else class="text-medium-emphasis">No carbon footprint values.</v-card-text>
-    </v-card>
+    </v-view-card>
   </v-app>
 </template>
 

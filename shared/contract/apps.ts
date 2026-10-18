@@ -1,6 +1,7 @@
 import type { MethodName, Methods } from '@basyx/studio-sdk/protocol'
 import { permissions, protocolVersion, stackFileKinds } from '@basyx/studio-sdk/protocol'
 import { z } from 'zod'
+import { displayBreakpoints } from '../overview'
 import { engineHostSchema, stackComponentIdSchema, stackSpecSchema } from './containers'
 import { langStringSchema, listQuerySchema } from './target'
 import { fileHandleSchema } from './workspace'
@@ -56,6 +57,8 @@ export const submodelViewContributionSchema = z.object({
   ...contributionBase,
   /** Why the view is offered, e.g. the semantic ID that matched. */
   reason: z.object({ semanticId: z.string() }),
+  /** Default widths on the Overview per breakpoint, in columns of 12 (manifest `columns`). */
+  columns: z.partialRecord(z.enum(displayBreakpoints), z.number().int().min(3).max(12)).default({}),
 })
 export type SubmodelViewContributionInfo = z.infer<typeof submodelViewContributionSchema>
 

@@ -1,9 +1,9 @@
 <template>
-  <v-dialog v-model="open" max-width="720" persistent scrollable>
-    <DialogCard :title="t('wizard.addSubmodels')">
+  <v-dialog v-model="open" persistent scrollable width="960">
+    <DialogCard flush :title="t('wizard.addSubmodels')">
       <SubmodelSourcesForm v-model="sources" :target-id="targetId" />
 
-      <v-alert v-if="steps.length > 0" class="mt-3" :title="t('wizard.partial')" type="warning">
+      <v-alert v-if="steps.length > 0" class="ma-4" :title="t('wizard.partial')" type="warning">
         <ul class="ps-4">
           <li v-for="step in steps" :key="`${step.resource}:${step.id}`">
             {{ t(`wizard.resource.${step.resource}`) }} {{ step.id }}: {{ step.outcome }}<span v-if="step.detail"> ({{ step.detail }})</span>
@@ -11,7 +11,7 @@
         </ul>
       </v-alert>
 
-      <ProblemAlert v-if="error" class="mt-3" :error="error" />
+      <ProblemAlert v-if="error" class="ma-4" :error="error" />
 
       <template #actions>
         <v-btn :disabled="busy" :text="t('common.cancel')" @click="close" />

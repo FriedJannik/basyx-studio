@@ -1,20 +1,19 @@
 # Studio Frontend API
 
-Dieser Ordner enthält den ersten designorientierten Vertragsentwurf für die
-Kommunikation zwischen der Nuxt/Vue-Oberfläche und dem Studio Service/BFF:
+This folder contains the first design-oriented contract draft for the
+communication between the Nuxt/Vue interface and the Studio Service/BFF:
 
 - [OpenAPI 3.1 specification](openapi.yaml)
 
-## Status und Autorität
+## Status and authority
 
-`openapi.yaml` ist `1.0.0-draft.1` und dient als Bootstrap- und
-Diskussionsgrundlage, solange noch keine fachlichen Nitro-Routen oder
-TypeScript-Vertragsschemas existieren. Sie setzt bewusst die Vorgaben aus den
-Requirements, akzeptierten ADRs und Architekturunterlagen vor dem aktuellen
-Prototyp um.
+`openapi.yaml` is `1.0.0-draft.1` and serves as a basis for bootstrap and
+discussion while no domain Nitro routes or TypeScript contract schemas exist
+yet. It deliberately implements the requirements, accepted ADRs and
+architecture documents ahead of the current prototype.
 
-Sobald die Implementierung beginnt, muss der Vertrag eine einzige autoritative
-Quelle erhalten. Die bevorzugte Zielrichtung ist:
+Once implementation starts, the contract must get a single authoritative
+source. The preferred target direction is:
 
 ```text
 authoritative route/contract schemas
@@ -23,115 +22,116 @@ authoritative route/contract schemas
   -> generated OpenAPI 3.1
 ```
 
-Die YAML darf dann nicht parallel zu denselben Zod-, Route- oder
-TypeScript-DTOs von Hand weitergepflegt werden. Öffentliche View- und
-App-Verträge verwenden JSON Schema 2020-12/Ajv; AAS-Daten verwenden generierte
-AAS-Core-Typen und AAS-Core-/Package-Validierung.
+The YAML must then not be maintained by hand in parallel to the same Zod,
+route or TypeScript DTOs. Public view and app contracts use JSON Schema
+2020-12/Ajv; AAS data uses generated AAS Core types and AAS Core/package
+validation.
 
-## Implementierungsstand (MVP-4)
+## Implementation status (MVP-4)
 
-Für die implementierten Routen ist der Vertrag in `shared/contract` (Zod)
-autoritativ. `openapi.yaml` wurde mit MVP-4 für alle implementierten Routen
-nachgezogen (u. a. `PUT` mit `If-Match` für Infrastrukturen, `searches`,
-`shell-availability`, Baum-Ebenen mit Knotenbudget, XML-Ausgabe,
-Registry-Synchronisation); Routen, die nur im Draft existieren, sind als solche
-beschrieben. Die Abweichungen der MVPs stehen in den Plänen unter
+For the implemented routes, the contract in `shared/contract` (Zod) is
+authoritative. With MVP-4, `openapi.yaml` was brought up to date for all
+implemented routes (among others `PUT` with `If-Match` for infrastructures,
+`searches`, `shell-availability`, tree levels with a node budget, XML output,
+registry synchronization); routes that exist only in the draft are described as
+such. The deviations of the MVPs are recorded in the plans under
 [`docs/development`](../development/).
 
-## Abgedeckter HTTP-Vertrag
+## Covered HTTP contract
 
-Die Spezifikation umfasst alle in `docs/` beschriebenen
-Frontend-zu-Studio-BFF-Flächen:
+The specification covers all frontend-to-Studio-BFF surfaces described in
+`docs/`:
 
-| Bereich | Enthaltene Workflows |
+| Area | Included workflows |
 | --- | --- |
-| Context und Auth | Deployment-Modus, Session, CSRF, OIDC/PKCE Login, Callback, Logout und getrennte Target-Authentifizierung |
-| Targets | sichtbare Live-/AASX-Targets, aktives Target, Health, Metamodell, Capabilities und effektive Rechte |
-| Infrastrukturen | administrative Konfiguration, Probe, sanitisierte Details, Security Mode und serverseitige Secret-Referenzen |
-| AAS | Shells, Submodels, Elemente, Concept Descriptions, Operations, Supplementary Files und semantischer Index |
-| AASX Workspaces | opaque native Handles, Import, Open, Metadaten, Duplikat, Save und Export; Editing läuft über dieselben Target-Routen |
-| Cross-Target Copy | Preflight-Plan, Collision Policy, explizite Bestätigung, idempotente Ausführung, Progress, Report und sicherer Retry |
-| Views | deklarative Definitionen, Revisionen, ACLs, Import/Export, Widget-Palette, Binding Resolution, Runtime Context und scoped Binding Calls |
-| Apps | Catalogue-Projektion, Compatibility/Applicability, Installation, Permission Approval, Visibility, Activation, Update, Rollback und Removal |
-| Operations und Events | Polling-Ressourcen, SSE-Fortschritt, Notifications und Cache Invalidation |
-| Audit | autorisierte, sanitisierte Audit-Zusammenfassungen für Administration und Operationsdiagnose |
+| Context and auth | Deployment mode, session, CSRF, OIDC/PKCE login, callback, logout and separate target authentication |
+| Targets | Visible live/AASX targets, active target, health, metamodel, capabilities and effective rights |
+| Infrastructures | Administrative configuration, probe, sanitized details, security mode and server-side secret references |
+| AAS | Shells, submodels, elements, concept descriptions, operations, supplementary files and semantic index |
+| AASX workspaces | Opaque native handles, import, open, metadata, duplicate, save and export; editing runs through the same target routes |
+| Cross-target copy | Preflight plan, collision policy, explicit confirmation, idempotent execution, progress, report and safe retry |
+| Views | Declarative definitions, revisions, ACLs, import/export, widget palette, binding resolution, runtime context and scoped binding calls |
+| Apps | Catalogue projection, compatibility/applicability, installation, permission approval, visibility, activation, update, rollback and removal |
+| Operations and events | Polling resources, SSE progress, notifications and cache invalidation |
+| Audit | Authorized, sanitized audit summaries for administration and operation diagnostics |
 
-## Bewusste Vertragsgrenzen
+## Deliberate contract boundaries
 
-Diese OpenAPI beschreibt ausschließlich die versionierte HTTP-/SSE-Kante
-zwischen Core UI und Studio Service. Folgende Grenzen bleiben eigene,
-versionierte Verträge:
+This OpenAPI describes only the versioned HTTP/SSE edge between the core UI and
+the Studio Service. The following boundaries remain separate, versioned
+contracts:
 
-- Electron Preload/IPC für native Dialoge, approved Handles, Updates und die
-  lokale Launch-Secret-Injektion;
-- App-/Widget-`postMessage` und Capability RPC aus `@basyx/studio-sdk`;
-- interne Studio-Service-zu-Workspace-Worker-Kommunikation;
-- Marketplace Publisher-, Build-, Signatur-, Catalogue-Storage- und OCI-APIs;
-- Studio-BFF-zu-BaSyx-APIs, die ausschließlich über
-  `basyx-typescript-sdk` angesprochen werden;
-- OIDC-Provider- und Desktop-Update-Service-APIs.
+- Electron preload/IPC for native dialogs, approved handles, updates and the
+  local launch secret injection;
+- app/widget `postMessage` and capability RPC from `@basyx/studio-sdk`;
+- internal Studio Service to Workspace Worker communication;
+- marketplace publisher, build, signing, catalogue storage and OCI APIs;
+- Studio BFF to BaSyx APIs, which are addressed only through
+  `basyx-typescript-sdk`;
+- OIDC provider and desktop update service APIs.
 
-Diese Abgrenzung verhindert, dass Trust Boundaries als vermeintlich einheitliche
-Browser-API verschwimmen. Der BFF liefert keine Downstream-Tokens, Secrets,
-nativen Pfade oder beliebigen Upstream-URLs.
+This separation keeps trust boundaries from blurring into a seemingly uniform
+browser API. The BFF returns no downstream tokens, secrets, native paths or
+arbitrary upstream URLs.
 
-## Festgelegte Konventionen im Draft
+## Conventions fixed in the draft
 
-- relative Base URL `/api/studio/v1` für Same-Origin Web und authentifiziertes
-  Electron Loopback;
-- camelCase Studio-DTOs und opaque, URL-sichere Target-/Resource-Keys;
-- Cookie-basierte opaque Studio-Session, kein Browser-Bearer-Scheme;
-- verpflichtendes `X-CSRF-Token` plus Same-Origin-Prüfung für Mutationen;
-- Cursor-Pagination mit `{ items, page: { nextCursor, hasMore } }`;
-- starke `ETag`/`If-Match`-Revisionen; stale Writes ergeben ein strukturiertes
-  `412 Precondition Failed` und lassen den UI-Draft unangetastet;
-- `Idempotency-Key` für Create-/Copy-/App-Lifecycle-Kommandos;
-- `application/problem+json` mit stabilem `code`, `requestId`,
-  `correlationId`, `retryable`, optionalen Violations und Revision;
-- Target-Authentifizierung erforderlich ist ein typisierter fachlicher
-  `409`-Zustand, nicht eine Verwechslung mit fehlender Studio-Session;
-- `202 Accepted` plus Operation-Ressource für lange Copy-/App-Abläufe;
-- SSE ausschließlich einseitig; `GET /operations/{id}` bleibt Polling-Fallback;
-- Cross-Target Copy ist Snapshot-orientiert, lässt die Quelle unverändert und
-  gibt weder Atomarität noch Distributed Rollback vor;
-- View Definition `1-draft` ist bewusst experimentell und enthält keine
-  ausführbaren Inhalte, Credentials, Service-URLs, nativen Pfade oder AAS-Werte.
+- relative base URL `/api/studio/v1` for same-origin web and authenticated
+  Electron loopback;
+- camelCase Studio DTOs and opaque, URL-safe target/resource keys;
+- cookie-based opaque Studio session, no browser bearer scheme;
+- mandatory `X-CSRF-Token` plus same-origin check for mutations;
+- cursor pagination with `{ items, page: { nextCursor, hasMore } }`;
+- strong `ETag`/`If-Match` revisions; stale writes result in a structured
+  `412 Precondition Failed` and leave the UI draft untouched;
+- `Idempotency-Key` for create, copy and app lifecycle commands;
+- `application/problem+json` with stable `code`, `requestId`,
+  `correlationId`, `retryable`, optional violations and revision;
+- "target authentication required" is a typed domain `409` state, not to be
+  confused with a missing Studio session;
+- `202 Accepted` plus an operation resource for long copy/app flows;
+- SSE only one-way; `GET /operations/{id}` remains the polling fallback;
+- cross-target copy is snapshot-oriented, leaves the source unchanged and
+  claims neither atomicity nor distributed rollback;
+- view definition `1-draft` is deliberately experimental and contains no
+  executable content, credentials, service URLs, native paths or AAS values.
 
 ## Traceability
 
-Operationen tragen `x-requirements` mit den jeweils direkt umgesetzten
-Requirement-IDs. Übergreifende Architektur-, Persistenz-, Supply-Chain- und
-Observability-Vorgaben stehen als `info.x-design-constraints`, weil sie die
-gesamte API prägen und keinen einzelnen Endpoint erzeugen.
+Operations carry `x-requirements` with the requirement IDs they implement
+directly. Cross-cutting architecture, persistence, supply-chain and
+observability constraints are listed as `info.x-design-constraints`, because
+they shape the whole API and do not produce a single endpoint.
 
-| Requirements | Vertragsteil |
+| Requirements | Contract part |
 | --- | --- |
-| `SEC-001` bis `SEC-008`, `DATA-011` | Session, OIDC, Target Auth, Secret-/Netzwerkgrenzen |
-| `DATA-001` bis `DATA-009`, `DATA-016`, `PROD-001` bis `PROD-005` | Target-Vertrag, AAS CRUD/Invoke/Files, Revisionen und AASX |
-| `PROD-007`, `DATA-012` bis `DATA-015`, `OPS-007` | Copy Plan, Execution, Operation, Report, SSE und Retry |
-| `VIEW-001` bis `VIEW-011`, `APP-016`, `PROD-006` | View-, Widget-, Binding- und Runtime-Vertrag |
-| `APP-001` bis `APP-014`, `APP-016`, `SEC-006`, `SEC-008` | Catalogue-Projektion und App-Lifecycle; App RPC bleibt separater Vertrag |
-| `OPS-004` bis `OPS-007` | IDs, normalisierte Fehler, Audit, Operationen und Events |
-| `ARCH-001` bis `ARCH-009` | eine ressourcenorientierte API ohne GraphQL, generischen Proxy, CRUD-WebSockets oder spekulative Services |
+| `SEC-001` to `SEC-008`, `DATA-011` | Session, OIDC, target auth, secret/network boundaries |
+| `DATA-001` to `DATA-009`, `DATA-016`, `PROD-001` to `PROD-005` | Target contract, AAS CRUD/invoke/files, revisions and AASX |
+| `PROD-007`, `DATA-012` to `DATA-015`, `OPS-007` | Copy plan, execution, operation, report, SSE and retry |
+| `VIEW-001` to `VIEW-011`, `APP-016`, `PROD-006` | View, widget, binding and runtime contract |
+| `APP-001` to `APP-014`, `APP-016`, `SEC-006`, `SEC-008` | Catalogue projection and app lifecycle; app RPC remains a separate contract |
+| `OPS-004` to `OPS-007` | IDs, normalized errors, audit, operations and events |
+| `ARCH-001` to `ARCH-009` | One resource-oriented API without GraphQL, a generic proxy, CRUD WebSockets or speculative services |
 
-Optionale spätere Produktideen werden nicht als bereits verfügbare API
-ausgegeben: Developer Mode (`APP-015`), View Templates/Parameter
-(`VIEW-012`), Collaborative Editing/Presence (`DATA-010`) und zusätzliche
-Broker-/Realtime-Infrastruktur (`OPS-008`).
+Optional later product ideas are not presented as an already available API:
+developer mode (`APP-015`), view templates/parameters (`VIEW-012`),
+collaborative editing/presence (`DATA-010`) and additional broker/realtime
+infrastructure (`OPS-008`).
 
-## Noch zu entscheiden oder durch einen Vertical Slice zu beweisen
+## Still to be decided or proven by a vertical slice
 
-- konkrete autoritative AAS-Core-3.1-Schemaeinbindung in die generierte OpenAPI;
-- finale Target-/AAS-Identifier-Kodierung hinter den opaque Resource Keys;
-- stabilisierte View-Definition nach dem ersten Builder-/Renderer-Vertical-Slice;
-- OIDC Return-/Callback-Details für Systembrowser und gehosteten Browser;
-- SSE Resume Window, Event Retention und konkrete Deployment-Limits;
-- ob die Audit-Read-API bereits im ersten Produktinkrement ausgeliefert wird;
-- Auswahl und Pinning eines OpenAPI-3.1-Linters/Generators im PNPM-Tooling.
+- concrete authoritative inclusion of the AAS Core 3.1 schema in the generated
+  OpenAPI;
+- final target/AAS identifier encoding behind the opaque resource keys;
+- a stabilized view definition after the first builder/renderer vertical slice;
+- OIDC return/callback details for the system browser and the hosted browser;
+- SSE resume window, event retention and concrete deployment limits;
+- whether the audit read API ships in the first product increment;
+- selection and pinning of an OpenAPI 3.1 linter/generator in the PNPM tooling.
 
-## Validierung des Erstaufschlags
+## Validation of the first draft
 
-Der Draft wurde als YAML geparst und mit dem lokal verfügbaren
-`openapi-generator validate` strukturell geprüft. Die verbleibenden Hinweise
-betreffen nur die über `x-event-schema` dokumentierten SSE-Eventmodelle, die
-OpenAPI Generator nicht als normale Response-Model-Referenzen zählt.
+The draft was parsed as YAML and checked structurally with the locally available
+`openapi-generator validate`. The remaining warnings concern only the SSE event
+models documented through `x-event-schema`, which OpenAPI Generator does not
+count as normal response model references.

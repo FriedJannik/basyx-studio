@@ -1,5 +1,5 @@
 <template>
-  <!-- The widget palette: which widgets show, grouped as their submodels. -->
+  <!-- The widget palette: which widgets show, and the reset of the layout. -->
   <v-menu :close-on-content-click="false">
     <template #activator="{ props: menu }">
       <v-btn v-bind="menu" data-test="overview-palette" prepend-icon="mdi-view-dashboard-edit-outline" :text="t('overview.widgets')">
@@ -9,29 +9,32 @@
       </v-btn>
     </template>
 
-    <v-card class="overflow-y-auto" max-height="520" max-width="420" min-width="320">
+    <!-- Compact like the account menu: a title, the widgets and the reset.
+         The checkbox shows what is shown, so items are not highlighted. -->
+    <v-card class="overflow-y-auto" max-height="520" max-width="420" min-width="280">
       <v-list select-strategy="classic" :selected="shown" @update:selected="onSelected">
-        <template v-for="group in groups" :key="group.title">
-          <v-list-subheader :title="group.title" />
+        <v-list-subheader :title="t('overview.paletteTitle')" />
 
-          <v-list-item
-            v-for="widget in group.widgets"
-            :key="widget.id"
-            :subtitle="widget.paletteSubtitle ?? undefined"
-            :title="widget.paletteTitle"
-            :value="widget.id"
-          >
-            <template #prepend="{ isSelected }">
-              <v-list-item-action start>
-                <v-checkbox-btn :model-value="isSelected" />
-              </v-list-item-action>
-            </template>
-          </v-list-item>
-        </template>
+        <v-list-item
+          v-for="widget in widgets"
+          :key="widget.id"
+          :active="false"
+          :subtitle="widget.subtitle ?? undefined"
+          :title="widget.title"
+          :value="widget.id"
+        >
+          <template #prepend="{ isSelected }">
+            <v-list-item-action start>
+              <v-checkbox-btn density="compact" :model-value="isSelected" tabindex="-1" />
+            </v-list-item-action>
+          </template>
+        </v-list-item>
+
       </v-list>
 
       <v-divider />
 
+      <!-- Apart from the selection above, so resetting changes no widget's visibility. -->
       <v-list>
         <v-list-item prepend-icon="mdi-restore" :title="t('overview.reset')" @click="emit('reset')" />
       </v-list>
@@ -40,12 +43,11 @@
 </template>
 
 <script lang="ts" setup>
-  /** A widget as the palette lists it, under its group. */
+  /** A widget as the palette lists it: with the title and subtitle of its header. */
   export interface PaletteWidget {
     id: string
-    group: string
-    paletteTitle: string
-    paletteSubtitle: string | null
+    title: string
+    subtitle: string | null
   }
 
   const props = defineProps<{
@@ -63,14 +65,6 @@
   const hiddenIds = computed(() => new Set(props.hidden))
   const shown = computed(() => props.widgets.filter(widget => !hiddenIds.value.has(widget.id)).map(widget => widget.id))
   const hiddenCount = computed(() => props.widgets.length - shown.value.length)
-
-  const groups = computed(() => {
-    const byGroup = new Map<string, PaletteWidget[]>()
-    for (const widget of props.widgets) {
-      byGroup.set(widget.group, [...(byGroup.get(widget.group) ?? []), widget])
-    }
-    return [...byGroup].map(([title, widgets]) => ({ title, widgets }))
-  })
 
   function onSelected (ids: unknown) {
     const selected = new Set(Array.isArray(ids) ? ids : [])

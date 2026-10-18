@@ -83,15 +83,17 @@
       />
     </FormSection>
 
-    <FormSection v-model:open="openNames" :badge="hasNames ? '✓' : undefined" collapsible :title="t('editor.sections.names')">
+    <FormSection v-model:open="openNames" collapsible :title="t('editor.sections.names')">
       <LangStringsInput
         :label="t('details.displayName')"
+        :max-length="langStringMaxLength.name"
         :model-value="langStrings('displayName')"
         @update:model-value="strings => set('displayName', strings)"
       />
 
       <LangStringsInput
         :label="t('details.description')"
+        :max-length="langStringMaxLength.text"
         :model-value="langStrings('description')"
         @update:model-value="strings => set('description', strings)"
       />
@@ -100,7 +102,7 @@
         clearable
         :items="categories"
         :label="t('details.category')"
-        :model-value="String(shell.category ?? '')"
+        :model-value="typeof shell.category === 'string' && shell.category ? shell.category : null"
         @update:model-value="value => set('category', value)"
       />
     </FormSection>
@@ -120,7 +122,7 @@
       @update:model-value="specifications => set('embeddedDataSpecifications', specifications)"
     />
 
-    <FormSection v-model:open="openAdmin" collapsible :title="t('shell.administration')">
+    <FormSection v-model:open="openAdmin" collapsible last :title="t('shell.administration')">
       <div class="d-flex align-start ga-3">
         <v-text-field :label="t('details.version')" :model-value="String(administration.version ?? '')" @update:model-value="text => setAdministration('version', text)" />
         <v-text-field :label="t('shell.revisionLabel')" :model-value="String(administration.revision ?? '')" @update:model-value="text => setAdministration('revision', text)" />
@@ -133,7 +135,7 @@
   import type { LangString } from '#shared/contract'
   import type { Json } from '~/utils/editor'
   import { withField } from '~/utils/editor'
-  import { categories, errorsFor, idShortPattern } from '~/utils/languages'
+  import { categories, errorsFor, idShortPattern, langStringMaxLength } from '~/utils/languages'
 
   // The fields of a shell, for editing an existing one and for creating a new
   // one (the wizard): the same inputs, sections and guidance in both.

@@ -1,6 +1,7 @@
 <template>
-  <!-- The shape of Settings: the rounded defaults over vuetify.config.ts. -->
-  <v-defaults-provider :defaults="shapeDefaults">
+  <!-- The shape of Settings (the rounded defaults over vuetify.config.ts),
+       and full-screen dialogs on phones. -->
+  <v-defaults-provider :defaults="defaults">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
@@ -12,7 +13,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { useTheme } from 'vuetify'
+  import { useDisplay, useTheme } from 'vuetify'
   import { roundedDefaults, themeColors } from '#shared/appearance'
   import { locales } from '#shared/i18n/locales'
 
@@ -33,6 +34,9 @@
   const theme = useTheme()
   const preferences = usePreferences()
   const shapeDefaults = ref<typeof roundedDefaults | undefined>(undefined)
+  // On phones every dialog fills the screen; DialogCard then drops its radius and border.
+  const { xs } = useDisplay()
+  const defaults = computed(() => ({ ...shapeDefaults.value, ...(xs.value ? { VDialog: { fullscreen: true } } : {}) }))
   onMounted(() => {
     // The stored UI language (Settings), applied after hydration like the
     // theme; setLocale() also rewrites the i18n_redirected cookie, so the

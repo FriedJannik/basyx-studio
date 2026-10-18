@@ -9,6 +9,7 @@ import { createServer } from 'node:net'
 import { join } from 'node:path'
 
 import { app, BrowserWindow, dialog, ipcMain, protocol, safeStorage, session, shell } from 'electron'
+import packageJson from '../package.json'
 import { isSaveKind, isStackFileKind, stackFileExtensions } from '../shared/file-grant-kinds'
 
 const launchSecretHeader = 'X-Studio-Launch-Secret'
@@ -444,6 +445,15 @@ function developmentIcon (): string {
 
 async function start (): Promise<void> {
   registerDesktopBridge()
+  // The About panel names Studio, not Electron: in development the app runs
+  // inside Electron's own bundle, whose name, version and copyright it shows.
+  app.setAboutPanelOptions({
+    applicationName: packageJson.productName,
+    applicationVersion: app.getVersion(),
+    version: '',
+    copyright: packageJson.build.copyright,
+    ...(app.isPackaged ? {} : { iconPath: developmentIcon() }),
+  })
   if (!app.isPackaged && process.platform === 'darwin') {
     app.dock?.setIcon(developmentIcon())
   }

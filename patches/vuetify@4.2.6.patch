@@ -1,0 +1,57 @@
+diff --git a/lib/components/VAppBar/VAppBar.js b/lib/components/VAppBar/VAppBar.js
+index 058c24b9d0d3883cbcd28a0a53914b9e41d05676..99bf99e6ee521e236afde9e16383e03bbe12d3aa 100644
+--- a/lib/components/VAppBar/VAppBar.js
++++ b/lib/components/VAppBar/VAppBar.js
+@@ -59,9 +59,15 @@ export const VAppBar = genericComponent()({
+       // behavior.shrink ||
+       !isActive.value;
+     });
++    // Patched for BaSyx Studio (patches/vuetify@4.2.6.patch): the toolbar's
++    // heights as VToolbar computes them from the same props, used until its
++    // ref exists. Server rendering and the first client render then reserve
++    // the app bar's height, so the page does not shift down on hydration.
++    const propsContentHeight = computed(() => parseInt(Number(props.height) + (props.density === 'prominent' ? Number(props.height) : 0) - (props.density === 'comfortable' ? 8 : 0) - (props.density === 'compact' ? 16 : 0), 10));
++    const propsExtensionHeight = computed(() => props.extended ? parseInt(Number(props.extensionHeight) + (props.density === 'prominent' ? Number(props.extensionHeight) : 0) - (props.density === 'comfortable' ? 4 : 0) - (props.density === 'compact' ? 8 : 0), 10) : 0);
+     const appBarHeight = computed(() => {
+-      const height = vToolbarRef.value?.contentHeight ?? 0;
+-      const extensionHeight = vToolbarRef.value?.extensionHeight ?? 0;
++      const height = vToolbarRef.value?.contentHeight ?? propsContentHeight.value;
++      const extensionHeight = vToolbarRef.value?.extensionHeight ?? propsExtensionHeight.value;
+       return height + extensionHeight;
+     });
+     const {
+@@ -82,8 +88,8 @@ export const VAppBar = genericComponent()({
+     const opacity = computed(() => scrollBehavior.value.fadeImage ? scrollBehavior.value.inverted ? 1 - scrollRatio.value : scrollRatio.value : undefined);
+     const height = computed(() => {
+       if (scrollBehavior.value.hide && scrollBehavior.value.inverted) return 0;
+-      const height = vToolbarRef.value?.contentHeight ?? 0;
+-      const extensionHeight = vToolbarRef.value?.extensionHeight ?? 0;
++      const height = vToolbarRef.value?.contentHeight ?? propsContentHeight.value;
++      const extensionHeight = vToolbarRef.value?.extensionHeight ?? propsExtensionHeight.value;
+       if (!canHide.value) return height + extensionHeight;
+       return currentScroll.value < scrollThreshold.value || scrollBehavior.value.fullyHide ? height + extensionHeight : height;
+     });
+diff --git a/lib/composables/layout.js b/lib/composables/layout.js
+index e0b2242aafaf33c1ece4eb1424fbf4a1f0b0a728..db652a562f1e0791af47872bd7a296f7fc8ea09e 100644
+--- a/lib/composables/layout.js
++++ b/lib/composables/layout.js
+@@ -225,11 +225,17 @@ export function createLayout(props) {
+             transition: 'none'
+           })
+         };
+-        if (!isMounted.value) return styles;
++        // Patched for BaSyx Studio (patches/vuetify@4.2.6.patch): positions
++        // and sizes come from the registered layout sizes, not from
++        // measurements, so they are rendered on the server and on the first
++        // client render too; only an item not registered yet waits for mount.
++        // Without them, drawers start at the top of the page and move below
++        // the app bar on hydration.
++        const item = items.value[index.value];
++        if (!item && !isMounted.value) return styles;
+ 
+         // percentages stay in CSS until the layout is measured, SSR and the first paint have no rect
+         const measuredSize = isPercentage(elementSize.value) && layoutRect.value ? sizeOf(elementSize.value, position.value) : elementSize.value;
+-        const item = items.value[index.value];
+         if (!item) consoleWarn(`[Vuetify] Could not find layout item "${id}"`);
+         const overlap = computedOverlaps.value.get(id);
+         if (overlap) {

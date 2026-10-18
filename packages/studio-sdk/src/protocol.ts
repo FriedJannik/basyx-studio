@@ -40,11 +40,22 @@ export interface AppManifest {
   }
 }
 
+/** Vuetify's breakpoint names, smallest first. */
+export type Breakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl'
+
 export interface SubmodelViewContribution {
   id: string
   title: LocalizedText
   entry: string
   semanticIds: string[]
+  /**
+   * Default width of the view as a widget on a shell's Overview, in columns
+   * of 12, per breakpoint of the Overview's width (Vuetify's names, as in
+   * `v-col`). A breakpoint without a value uses the nearest smaller one;
+   * without any, the view starts half wide from `lg` and full width below.
+   * Widgets share their row, so the widths are a starting point.
+   */
+  columns?: Partial<Record<Breakpoint, number>>
 }
 
 export type ModuleContext = 'global' | 'target' | 'shell'

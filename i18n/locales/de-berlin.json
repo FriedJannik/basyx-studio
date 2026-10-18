@@ -375,7 +375,6 @@
     "needsShell": "Mach 'ne Verwaltungsschale uff, denn jeht det Modul.",
     "connecting": "Die App kommt jleich…",
     "notStarted": "Die App will nich",
-    "notStartedText": "Se hat sich in 15 Sekunden nich beim Studio jemeldet. Vielleicht kommt man nich an ihre Dateien ran, oder se is umjefallen.",
     "frameTitle": "App: {name}",
     "permission": {
       "studio_aas_read": "AAS-Daten lesen, wo du rankommst",
@@ -569,7 +568,6 @@
     "valueType": "Sorte vom Wert",
     "contentType": "Sorte vom Inhalt",
     "version": "Version",
-    "children": "Kinder",
     "idShortPath": "idShortPath",
     "idShort": "idShort",
     "displayName": "Name, den man sieht",

@@ -1,5 +1,6 @@
 <template>
-  <section class="py-4 border-b">
+  <!-- Sections are divided from the next one; the form's last has nothing below to divide from. -->
+  <section :class="['py-4', last ? undefined : 'border-b']">
     <div class="d-flex align-center" :class="collapsible ? 'cursor-pointer' : undefined" @click="toggle">
       <v-icon v-if="collapsible" class="me-1" :icon="open ? 'mdi-chevron-down' : 'mdi-chevron-right'" size="18" />
       <span class="text-label-large font-weight-semibold">{{ title }}</span>
@@ -26,6 +27,8 @@
     hint?: string
     badge?: string | number
     collapsible?: boolean
+    /** The form's last section, without the divider below. */
+    last?: boolean
   }>()
   const open = defineModel<boolean>('open', { default: true })
 

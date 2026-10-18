@@ -1,7 +1,14 @@
 <template>
   <v-form class="d-flex flex-column" @submit.prevent="apply()">
     <div class="px-4">
-      <SubmodelFields :findings="findings" :model-value="working" @update:model-value="store" />
+      <SubmodelFields
+        :can-create-concept="canCreateConcept"
+        :findings="findings"
+        :link-concepts="linkConcepts"
+        :model-value="working"
+        :target-id="targetId"
+        @update:model-value="store"
+      />
 
       <v-alert
         v-if="leftover.length > 0"
@@ -54,6 +61,9 @@
     submodelKey: string
     detail: ElementDetail
     explicitSave: boolean
+    /** The target has concept descriptions to resolve and link (Semantics section). */
+    linkConcepts?: boolean
+    canCreateConcept?: boolean
   }>()
   const emit = defineEmits<{ changed: [detail: ElementDetail] }>()
 

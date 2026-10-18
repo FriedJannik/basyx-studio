@@ -15,7 +15,8 @@
         to="/"
       >
         <template #prepend>
-          <v-img :alt="t('app.name')" :src="basyxLogo" width="28" />
+          <!-- Decorative where the name stands next to it; the name otherwise. -->
+          <v-img :alt="lgAndUp ? '' : t('app.name')" :src="basyxLogo" width="28" />
         </template>
 
         <span v-if="lgAndUp" class="text-title-medium font-weight-bold">{{ t('app.name') }}</span>
@@ -123,7 +124,7 @@
         <template #activator="{ props }">
           <v-btn
             v-bind="props"
-            :aria-label="t('app.account')"
+            :aria-label="`${initials} ${t('app.account')}`"
             class="me-2"
             icon
             rounded="circle"
@@ -220,6 +221,18 @@
       </template>
     </v-navigation-drawer>
 
+    <!-- The shell list of the shell pages. The drawer is the layout's and
+         renders before v-main, so the server-rendered page already leaves its
+         room; registered from a page, or from a component that loads data on
+         the server, it came too late and the page moved on hydration. -->
+    <v-navigation-drawer
+      v-if="inShellBrowser && targetId && !panel.current.value && !session.needsLogin"
+      v-model="listDrawerOpen"
+      width="340"
+    >
+      <ShellListDrawer :active-key="shellKey" :target-id="targetId" />
+    </v-navigation-drawer>
+
     <!-- Settings and administration open in place of the page, without
          leaving its route (usePanel), so the rail stays as it is. -->
     <v-main>
@@ -284,6 +297,13 @@
   const rememberedTargetId = computed(() => targetId.value ?? navigation.currentTarget)
   const routeTarget = useTarget(() => targetId.value ?? '')
   const inShellBrowser = computed(() => targetId.value !== null && route.path.startsWith(`/targets/${targetId.value}/shells`))
+  /** The shell list is open unless the user closed it; on phones it starts closed. */
+  const listDrawerOpen = computed({
+    get: () => ui.listDrawer ?? mdAndUp.value,
+    set: (value: boolean) => (ui.listDrawer = value),
+  })
+  /** The open shell of the shell browser, for the list's highlight. */
+  const shellKey = computed(() => typeof route.params.shellKey === 'string' ? route.params.shellKey : null)
 
   const targets = useQuery({
     key: ['targets'],

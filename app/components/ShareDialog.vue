@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="open" :fullscreen="xs" max-width="560" scrollable>
+  <v-dialog v-model="open" max-width="560" scrollable>
     <DialogCard :title="t('share.title', { name: shellLabel })">
       <p class="text-body-medium text-medium-emphasis mt-0 mb-3">{{ t('share.subtitle') }}</p>
 
@@ -99,7 +99,6 @@
 
 <script lang="ts" setup>
   import type { AccessDocument, AccessGrant, InvitationResult } from '#shared/contract'
-  import { useDisplay } from 'vuetify'
   import { accessRelations } from '#shared/contract'
   import { StudioApiError } from '~/composables/useStudioApi'
 
@@ -107,7 +106,6 @@
   const open = defineModel<boolean>({ required: true })
 
   const { t } = useI18n()
-  const { xs } = useDisplay()
   const api = useStudioApi()
   const copy = useClipboard()
   const notifications = useNotificationsStore()

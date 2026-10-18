@@ -79,6 +79,7 @@ test('shows a read-only past state', async ({ page }) => {
   // Today: the newest state, shown read-only.
   await page.locator('button[aria-current="date"]').click()
   await expect(page.getByText(/Read-only view of the state on/)).toBeVisible()
+  await page.getByRole('button', { name: 'Expand all' }).click()
   await treeItem(page, 'SimpleString').click()
   await expect(page.getByRole('button', { name: 'Apply' })).toHaveCount(0)
   await page.getByRole('button', { name: 'Back to now' }).click()

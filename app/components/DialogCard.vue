@@ -1,13 +1,14 @@
 <template>
-  <!-- The card of every dialog, as in the BaSyx AAS Web UI: a tinted header
+  <!-- The card of every dialog, as in the BaSyx AAS Web UI: a tinted header (v-card-header)
        with the title only, and dividers that set the header, the body and the
        actions apart. Every dialog closes the same way, from its actions:
        further actions on the left (`actions-start`, v-btn-secondary), cancel
        or close and the main action on the right (`actions`). -->
-  <v-card>
-    <v-card-item class="bg-dialog-header flex-shrink-0">
+  <!-- On phones every dialog is full screen (app.vue): edge to edge then, as v-card-fullscreen. -->
+  <v-card :border="xs ? false : undefined" :rounded="xs ? 0 : undefined">
+    <v-card-header class="flex-shrink-0">
       <v-card-title>{{ title }}</v-card-title>
-    </v-card-item>
+    </v-card-header>
 
     <v-divider />
 
@@ -30,6 +31,8 @@
 </template>
 
 <script lang="ts" setup>
+  import { useDisplay } from 'vuetify'
+
   defineProps<{
     title: string
     /** The body without padding, e.g. for a list or an editor. */
@@ -40,4 +43,6 @@
     'actions'?: () => unknown
     'actions-start'?: () => unknown
   }>()
+
+  const { xs } = useDisplay()
 </script>

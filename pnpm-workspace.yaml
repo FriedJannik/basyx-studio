@@ -39,3 +39,5 @@ allowBuilds:
   # install script only switches its shim between Vue 2 and 3; the published
   # files already target Vue 3.
   vue-demi: false
+patchedDependencies:
+  vuetify@4.2.6: patches/vuetify@4.2.6.patch

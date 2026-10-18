@@ -1,8 +1,8 @@
 <template>
   <v-app>
-    <v-card>
-      <v-card-item prepend-icon="mdi-card-account-details-outline">
-        <v-card-title>Digital Nameplate</v-card-title>
+    <!-- Studio's card shows the view's title; this line adds the template version and markings. -->
+    <v-view-card>
+      <v-card-item>
         <v-card-subtitle>{{ version }}</v-card-subtitle>
 
         <template #append>
@@ -89,7 +89,7 @@
           </v-col>
         </v-row>
       </template>
-    </v-card>
+    </v-view-card>
   </v-app>
 </template>
 

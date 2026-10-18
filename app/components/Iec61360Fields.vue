@@ -5,6 +5,7 @@
       :error-messages="errorsFor(findings, `${prefix}.preferredName`)"
       :hint="t('dataSpec.preferredNameHint')"
       :label="t('dataSpec.preferredName')"
+      :max-length="langStringMaxLength.preferredName"
       :model-value="langStrings('preferredName')"
       @update:model-value="strings => set('preferredName', strings)"
     />
@@ -13,6 +14,7 @@
       :error-messages="errorsFor(findings, `${prefix}.definition`)"
       :hint="requireDefinition ? t('dataSpec.definitionRequired') : undefined"
       :label="t('dataSpec.definition')"
+      :max-length="langStringMaxLength.definition"
       :model-value="langStrings('definition')"
       @update:model-value="strings => set('definition', strings)"
     />
@@ -66,6 +68,7 @@
             <LangStringsInput
               :error-messages="errorsFor(findings, `${prefix}.shortName`)"
               :label="t('dataSpec.shortName')"
+              :max-length="langStringMaxLength.shortName"
               :model-value="langStrings('shortName')"
               @update:model-value="strings => set('shortName', strings)"
             />
@@ -147,7 +150,7 @@
   import type { Json } from '~/utils/editor'
   import { iec61360DataTypes, measuredDataTypes } from '#shared/aas/iec61360'
   import { referenceIsEmpty, withField } from '~/utils/editor'
-  import { errorsFor } from '~/utils/languages'
+  import { errorsFor, langStringMaxLength } from '~/utils/languages'
 
   // The content of one IEC 61360 data specification (MVP-6 plan, F3): the
   // same fields on concept descriptions, shells, submodels and elements.

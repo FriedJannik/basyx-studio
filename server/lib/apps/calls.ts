@@ -68,7 +68,8 @@ export async function executeAasMethod (target: AasTarget, method: AasMethodName
     }
     case 'studio.aas.listSubmodels': {
       const refs = await resolveSubmodelRefs(target, await target.submodelIds(params.shellId))
-      return { items: refs.map(({ key: _key, kind: _kind, submodelId, ...ref }) => ({ id: submodelId, ...ref })) }
+      // The SDK's shape (studio-sdk/0): the fields are named, so new ones on Studio's own references stay internal.
+      return { items: refs.map(ref => ({ id: ref.submodelId, idShort: ref.idShort, semanticId: ref.semanticId, status: ref.status })) }
     }
     case 'studio.aas.getSubmodel': {
       return target.submodel(params.submodelId)
