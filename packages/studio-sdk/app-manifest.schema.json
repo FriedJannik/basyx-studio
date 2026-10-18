@@ -60,6 +60,15 @@
         "entry": { "$ref": "#/$defs/scriptPath" }
       }
     },
+    "sandbox": {
+      "description": "What the app's pages may run beyond scripts. An administrator sees both at install.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "webAssembly": { "description": "Compile and run WebAssembly modules, e.g. file parsers.", "type": "boolean" },
+        "workers": { "description": "Start dedicated workers from blob: URLs, e.g. to parse large files off the page.", "type": "boolean" }
+      }
+    },
     "contributes": {
       "type": "object",
       "additionalProperties": false,

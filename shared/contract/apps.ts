@@ -31,6 +31,8 @@ export const appInstallationSchema = z.object({
   /** Shipped with Studio and installed at startup (ADR 0023). */
   bundled: z.boolean(),
   permissions: z.array(appPermissionSchema),
+  /** What its pages may run beyond scripts (manifest `sandbox`, ADR 0038). */
+  sandbox: z.object({ webAssembly: z.boolean(), workers: z.boolean() }),
   submodelViews: z.number().int(),
   modules: z.number().int(),
   backend: z.boolean(),
@@ -128,7 +130,8 @@ export const appMethodParamsSchemas = {
   }).strict(),
   'studio.ui.setHeight': z.object({ height: z.number().int().min(0).max(20_000) }).strict(),
   'studio.ui.openFile': z.object({ submodelId: identifier, idShortPath, download: z.boolean().default(false) }).strict(),
-  'studio.ui.openFullscreen': z.object({}).strict(),
+  'studio.ui.readFile': z.object({ submodelId: identifier, idShortPath }).strict(),
+  'studio.ui.openFullscreen': z.object({ state: z.string().max(4000).optional() }).strict(),
   'studio.aas.listShells': listQuerySchema.strict(),
   'studio.aas.getShell': z.object({ shellId: identifier }).strict(),
   'studio.aas.listSubmodels': z.object({ shellId: identifier }).strict(),
@@ -197,4 +200,4 @@ export const appCallResultSchema = z.object({
 })
 export type AppCallResult = z.infer<typeof appCallResultSchema>
 
-export { type AppContext, type MethodName as AppMethodName, protocolVersion as appProtocol, methodPermissions } from '@basyx/studio-sdk/protocol'
+export { type AppContext, type MethodName as AppMethodName, protocolVersion as appProtocol, methodPermissions, readFileMaxBytes } from '@basyx/studio-sdk/protocol'

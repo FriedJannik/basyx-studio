@@ -70,6 +70,7 @@
     :submodel-key="submodelKey"
     :target-id="targetId"
     @changed="value => emit('changed', value)"
+    @visualize="emit('visualize')"
   />
 
   <OperationPanel
@@ -130,6 +131,8 @@
   const emit = defineEmits<{
     changed: [detail: ElementDetail]
     select: [id: string]
+    /** Show a File element's content in the Visualization tab (3D models). */
+    visualize: []
   }>()
 
   const { t } = useI18n()

@@ -74,12 +74,14 @@ configuration and the environment variables these secret references point to.
 | --- | --- |
 | Open | `IESEDriveMotorDM3000.aasx` (realistic nameplate, technical data, documentation) |
 | Open | `EdgeCasesShell`: every submodel element kind, collections nested 5 levels deep, list of collections, list of lists (`NestedLists[1][0]`), an operation with in/out/inout variables, a hyphenated idShort, an empty value, a 300-element submodel, and a dangling submodel reference that returns 404 |
-| Open | 60 `PagingShell…` shells for cursor paging (62 shells in total) |
+| Open | 60 `PagingShell…` shells for cursor paging |
+| Open | `studio-3d-models.aasx`: `Models3DDemo` with `Files3D` (an L bracket as STL, OBJ, glTF, GLB and STEP, a glTF with its geometry and one with its texture in a missing file, and a small IFC building) and an IDTA 02026 `Models3D` submodel (two versions, an external-only model, a JT model the viewer does not read). 63 shells in total |
 | Secured | `SecuredPublicShell` (with `Nameplate`, which has the Digital Nameplate 3.0 semantic ID, and the restricted `Costs` submodel) and `SecuredInternalShell` |
 | Large | 2,000 shells `LargeShell0001`… (every fifth a type, all with the shared `Nameplate`), and `LargeTree` on `LargeShell0001`: a list of 1,000 collections (about 5,000 elements), `Deep.Level1.Level2.Level3.Leaf` and 50 numeric readings |
 
 The JSON fixtures are generated and checked with AAS Core 3.1 by
-`fixtures/generate-fixtures.mjs` (`pnpm testenv:fixtures`). The `large`
+`fixtures/generate-fixtures.mjs`, the 3D models and their AASX by
+`fixtures/generate-models3d.mjs` (both `pnpm testenv:fixtures`). The `large`
 profile is generated on demand by `pnpm testenv:large` into `fixtures/large/`,
 which is not checked in; register it in Studio like *Open*, with the URL
 `http://localhost:18083`. BaSyx loads them at

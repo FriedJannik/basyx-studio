@@ -92,6 +92,12 @@ export default defineNuxtConfig({
     },
   },
 
+  vite: {
+    // The 3D viewer's parser worker (packages/model-viewer) is a module, so
+    // it can load the IFC and STEP parsers on demand.
+    worker: { format: 'es' },
+  },
+
   routeRules: {
     // Only Studio may frame Studio pages; app frames run on other origins
     // (ADR 0017). App files set their own policy.

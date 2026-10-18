@@ -521,7 +521,10 @@
     "backendHint": "Runs code on the Studio server, isolated from Studio and other apps.",
     "permissions": "Permissions: {list}",
     "filters": "Kind",
-    "installsFixed": "This deployment fixes its apps, so they cannot be installed or removed here."
+    "installsFixed": "This deployment fixes its apps, so they cannot be installed or removed here.",
+    "sandbox": "Also runs: {list}",
+    "sandboxWebAssembly": "WebAssembly (e.g. file parsers)",
+    "sandboxWorkers": "background workers"
   },
   "nav": {
     "targets": "AAS targets",
@@ -1148,6 +1151,29 @@
       "nom": "Nominal",
       "typ": "Typical",
       "max": "Maximum"
+    }
+  },
+  "model3d": {
+    "title": "3D model",
+    "view": "View in 3D",
+    "triangles": "{count} triangle | {count} triangles",
+    "resetView": "Reset view",
+    "fullscreen": "Full screen",
+    "exitFullscreen": "Exit full screen",
+    "missingImages": "Textures in other files are not shown: {files}",
+    "downloading": "Loading the file…",
+    "processing": "Preparing the 3D model…",
+    "failed": "The 3D model cannot be shown",
+    "openExternal": "Open file",
+    "clearSelection": "Clear selection",
+    "pickHint": "Click an element to see its properties.",
+    "noProperties": "This element has no properties.",
+    "errors": {
+      "webgl": "This browser cannot draw 3D graphics (WebGL is turned off or not supported).",
+      "missingBuffers": "The glTF file keeps its geometry in other files, which a File element cannot hold: {files}. Use a .glb file or a .gltf with embedded data.",
+      "external": "The file is stored at another address whose server does not allow Studio to load it. Open it there instead.",
+      "download": "The file could not be loaded: {message}",
+      "parse": "The file could not be read as a 3D model: {message}"
     }
   }
 }

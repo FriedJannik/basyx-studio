@@ -1,0 +1,32 @@
+{
+  "$schema": "../../packages/studio-sdk/app-manifest.schema.json",
+  "manifestVersion": 0,
+  "id": "org.eclipse.basyx.studio.models-3d",
+  "version": "1.0.0",
+  "publisher": { "name": "Eclipse BaSyx" },
+  "title": { "en": "3D Models", "de": "3D-Modelle", "es": "Modelos 3D", "fr": "Modèles 3D", "ja": "3Dモデル", "nl": "3D-modellen", "zh-Hans": "3D 模型" },
+  "description": {
+    "en": "Shows the 3D models of an asset (IDTA 02026, Provision of 3D Models): STL, OBJ, glTF, IFC and STEP in 3D, with their versions, intended use and technical details.",
+    "de": "Zeigt die 3D-Modelle eines Assets (IDTA 02026, Bereitstellung von 3D-Modellen): STL, OBJ, glTF, IFC und STEP in 3D, mit ihren Versionen, ihrem Verwendungszweck und technischen Details.",
+    "es": "Muestra los modelos 3D de un activo (IDTA 02026, provisión de modelos 3D): STL, OBJ, glTF, IFC y STEP en 3D, con sus versiones, su uso previsto y detalles técnicos.",
+    "fr": "Affiche les modèles 3D d'un actif (IDTA 02026, mise à disposition de modèles 3D) : STL, OBJ, glTF, IFC et STEP en 3D, avec leurs versions, leur usage prévu et leurs détails techniques.",
+    "ja": "資産の3Dモデル（IDTA 02026、3Dモデルの提供）を表示します。STL、OBJ、glTF、IFC、STEPを3Dで、バージョン、用途、技術的な詳細とともに表示します。",
+    "nl": "Toont de 3D-modellen van een asset (IDTA 02026, beschikbaarstelling van 3D-modellen): STL, OBJ, glTF, IFC en STEP in 3D, met hun versies, beoogd gebruik en technische details.",
+    "zh-Hans": "显示资产的 3D 模型（IDTA 02026，3D 模型的提供）：以 3D 方式显示 STL、OBJ、glTF、IFC 和 STEP，以及其版本、预期用途和技术细节。"
+  },
+  "studioApi": "^0.1.1",
+  "runtimes": ["hosted", "desktop"],
+  "permissions": ["studio.aas.read", "studio.ui.navigation"],
+  "sandbox": { "webAssembly": true, "workers": true },
+  "contributes": {
+    "submodelViews": [
+      {
+        "id": "models-3d",
+        "title": { "en": "3D Models", "de": "3D-Modelle", "es": "Modelos 3D", "fr": "Modèles 3D", "ja": "3Dモデル", "nl": "3D-modellen", "zh-Hans": "3D 模型" },
+        "entry": "ui/index.html",
+        "semanticIds": ["https://admin-shell.io/idta/Models3D/1/0"],
+        "columns": { "md": 12, "xl": 8 }
+      }
+    ]
+  }
+}

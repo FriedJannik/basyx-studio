@@ -46,6 +46,8 @@ changes one, add a new ADR with `Supersedes` and mark the old record
 | [0035](0035-container-image-and-base-path.md) | Accepted | One multi-arch container image, configured by environment, served under a runtime base path |
 | [0036](0036-anonymous-mode.md) | Accepted | Hosted Studio without login: per-browser sessions as the shared `anonymous` user |
 | [0037](0037-declared-infrastructures-export-and-import.md) | Accepted | Infrastructures declared in a YAML file, applied at startup and read-only; export and import in the same format |
+| [0038](0038-webassembly-workers-and-file-reads-for-apps.md) | Proposed | `studio.ui.readFile`, and WebAssembly and `blob:` workers for app frames that declare them |
+| [0039](0039-3d-viewer-libraries.md) | Proposed | three.js, web-ifc and OpenCascade (occt-import-js) for the 3D view of File elements |
 
 ## Template
 

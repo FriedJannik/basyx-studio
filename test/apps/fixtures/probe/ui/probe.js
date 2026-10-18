@@ -65,6 +65,14 @@ await attempt('ownFile', async () => (await fetch(new URL('index.html', import.m
 // The same file in another installation: hosted /app/<other>/…, desktop studio-app://<other>/….
 await attempt('foreignAppScript', () => import(`${ownBase.replace(/app-[\da-f]{16}/, 'app-0000000000000000')}ui/probe.js`))
 await attempt('externalScript', () => import('https://example.com/evil.js'))
+// Not declared in the manifest's sandbox (ADR 0038).
+await attempt('webAssembly', () => WebAssembly.compile(new Uint8Array([0x00, 0x61, 0x73, 0x6D, 0x01, 0x00, 0x00, 0x00])).then(() => 'allowed'))
+await attempt('blobWorker', () => new Promise((resolve, reject) => {
+  const worker = new Worker(URL.createObjectURL(new Blob(['postMessage("ready")'], { type: 'text/javascript' })))
+  worker.addEventListener('message', () => resolve('allowed'))
+  worker.addEventListener('error', () => reject(new Error('worker-src')))
+  setTimeout(() => reject(new Error('timeout')), 2000)
+}))
 await attempt('embedStudio', async () => {
   const frame = document.createElement('iframe')
   frame.src = studioOrigin

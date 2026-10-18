@@ -521,7 +521,10 @@
     "backendHint": "Führt Code auf dem Studio-Server aus, isoliert von Studio und anderen Apps.",
     "permissions": "Berechtigungen: {list}",
     "filters": "Art",
-    "installsFixed": "Dieses Deployment legt seine Apps fest, daher können sie hier nicht installiert oder entfernt werden."
+    "installsFixed": "Dieses Deployment legt seine Apps fest, daher können sie hier nicht installiert oder entfernt werden.",
+    "sandbox": "Führt außerdem aus: {list}",
+    "sandboxWebAssembly": "WebAssembly (z. B. Datei-Parser)",
+    "sandboxWorkers": "Hintergrund-Worker"
   },
   "nav": {
     "targets": "AAS-Ziele",
@@ -1148,6 +1151,29 @@
       "nom": "Nominal",
       "typ": "Typisch",
       "max": "Maximum"
+    }
+  },
+  "model3d": {
+    "title": "3D-Modell",
+    "view": "In 3D anzeigen",
+    "triangles": "{count} Dreieck | {count} Dreiecke",
+    "resetView": "Ansicht zurücksetzen",
+    "fullscreen": "Vollbild",
+    "exitFullscreen": "Vollbild beenden",
+    "missingImages": "Texturen in anderen Dateien werden nicht angezeigt: {files}",
+    "downloading": "Datei wird geladen…",
+    "processing": "3D-Modell wird vorbereitet…",
+    "failed": "Das 3D-Modell kann nicht angezeigt werden",
+    "openExternal": "Datei öffnen",
+    "clearSelection": "Auswahl aufheben",
+    "pickHint": "Klicken Sie auf ein Element, um seine Eigenschaften zu sehen.",
+    "noProperties": "Dieses Element hat keine Eigenschaften.",
+    "errors": {
+      "webgl": "Dieser Browser kann keine 3D-Grafik darstellen (WebGL ist ausgeschaltet oder wird nicht unterstützt).",
+      "missingBuffers": "Die glTF-Datei speichert ihre Geometrie in anderen Dateien, die ein File-Element nicht enthalten kann: {files}. Verwenden Sie eine .glb-Datei oder eine .gltf mit eingebetteten Daten.",
+      "external": "Die Datei liegt unter einer anderen Adresse, deren Server Studio das Laden nicht erlaubt. Öffnen Sie sie dort.",
+      "download": "Die Datei konnte nicht geladen werden: {message}",
+      "parse": "Die Datei konnte nicht als 3D-Modell gelesen werden: {message}"
     }
   }
 }

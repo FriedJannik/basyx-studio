@@ -46,7 +46,7 @@ The schema is [`app-manifest.schema.json`](app-manifest.schema.json).
 
 | Permission | Allows |
 | --- | --- |
-| `studio.aas.read` | `aas.listShells`, `getShell`, `listSubmodels`, `getSubmodel`, `getElement` on the active target |
+| `studio.aas.read` | `aas.listShells`, `getShell`, `listSubmodels`, `getSubmodel`, `getElement` on the active target; `ui.openFile` and `ui.readFile` for its File elements |
 | `studio.aas.write` | `aas.setElementValue` (Property and MultiLanguageProperty values, with the revision read before) |
 | `studio.ui.notifications` | `ui.notify` |
 | `studio.ui.navigation` | `ui.navigate`: change the module's own sub-path (nested routes) |
@@ -86,6 +86,31 @@ least as tall as the frame (Vuetify's `v-app`, `min-height: 100vh`) lets the
 frame grow but never shrink. Studio draws the view's card, border and title,
 so render the view flat, without a title of its own and with a transparent
 background.
+
+To show a File element's content in the app, e.g. an image or a 3D model,
+read it with `ui.readFile(submodelId, idShortPath)` (Studio app API 0.1.1,
+so declare `"studioApi": "^0.1.1"`): Studio's page loads it with the user's
+rights and hands the bytes (`Uint8Array`, up to 200 MiB) and media type to
+the frame. `ui.openFile` opens it in a new tab instead.
+
+`ui.openFullscreen(state?)` opens the view again in a full-screen dialog,
+as a new frame. Pass what the user has selected as `state` (a string, up to
+4,000 characters, e.g. JSON); the view there reads it from
+`context.viewState` and `context.fullscreen` is `true` (Studio app API
+0.1.1).
+
+An app that parses files with WebAssembly, or off the page in a worker,
+declares it in the manifest ([ADR 0038](../../docs/adr/0038-webassembly-workers-and-file-reads-for-apps.md)):
+
+```json
+"sandbox": { "webAssembly": true, "workers": true }
+```
+
+`webAssembly` allows compiling WebAssembly (`'wasm-unsafe-eval'`, not
+JavaScript `eval`); `workers` allows dedicated workers started from `blob:`
+URLs, since the frame's origin is opaque: create a `blob:` module that
+imports the bundled worker script by its absolute URL. Both still load and
+fetch only the app's own files, and the Apps page shows them.
 
 `columns` gives the view's default width as a widget on a shell's Overview,
 in columns of 12, per breakpoint of the Overview's width (Vuetify's names, as

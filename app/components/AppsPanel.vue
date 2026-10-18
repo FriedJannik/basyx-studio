@@ -137,6 +137,10 @@
                 {{ t('apps.permissions', { list: item.permissions.map(permission => t(`apps.permission.${permission.replaceAll('.', '_')}`)).join(', ') }) }}
               </v-list-item-subtitle>
 
+              <v-list-item-subtitle v-if="item.sandbox.webAssembly || item.sandbox.workers">
+                {{ t('apps.sandbox', { list: [item.sandbox.webAssembly && t('apps.sandboxWebAssembly'), item.sandbox.workers && t('apps.sandboxWorkers')].filter(Boolean).join(', ') }) }}
+              </v-list-item-subtitle>
+
               <template #meta>
                 <span class="text-body-small text-medium-emphasis text-no-wrap">{{ item.version }}</span>
               </template>

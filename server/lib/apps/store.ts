@@ -1,5 +1,6 @@
 import type { AppInstallation } from '#shared/contract'
 import type { Actor, StudioDeps } from '../deps'
+import type { AppSandbox } from '@basyx/studio-sdk/protocol'
 import { randomBytes } from 'node:crypto'
 import { and, eq, inArray, notExists, sql } from 'drizzle-orm'
 import { appBlobs, appFiles, appInstallations } from '../../database/schema'
@@ -182,6 +183,8 @@ export interface AppFile {
   content: Uint8Array
   contentType: string
   digest: string
+  /** What the installation's pages may run beyond scripts (ADR 0038). */
+  sandbox: AppSandbox
 }
 
 // Digests already verified in this process. Blobs are immutable.
@@ -193,9 +196,10 @@ export async function readAppFile (deps: Pick<StudioDeps, 'db'>, installationId:
     return null
   }
   const [row] = await deps.db
-    .select({ content: appBlobs.content, contentType: appFiles.contentType, digest: appFiles.digest })
+    .select({ content: appBlobs.content, contentType: appFiles.contentType, digest: appFiles.digest, manifest: appInstallations.manifest })
     .from(appFiles)
     .innerJoin(appBlobs, eq(appBlobs.digest, appFiles.digest))
+    .innerJoin(appInstallations, eq(appInstallations.id, appFiles.installationId))
     .where(and(eq(appFiles.installationId, installationId), eq(appFiles.path, path)))
   if (!row) {
     return null
@@ -206,7 +210,8 @@ export async function readAppFile (deps: Pick<StudioDeps, 'db'>, installationId:
     }
     verified.add(row.digest)
   }
-  return row
+  const { manifest, ...file } = row
+  return { ...file, sandbox: manifest.sandbox ?? {} }
 }
 
 /** Files below a directory of an installation, for extracting a backend. */
@@ -247,6 +252,7 @@ export function toAppInstallation (record: AppInstallationRecord): AppInstallati
     unsigned: record.unsigned,
     bundled: record.bundled,
     permissions: manifest.permissions,
+    sandbox: { webAssembly: manifest.sandbox?.webAssembly ?? false, workers: manifest.sandbox?.workers ?? false },
     submodelViews: manifest.contributes.submodelViews?.length ?? 0,
     modules: manifest.contributes.modules?.length ?? 0,
     backend: Boolean(manifest.backend),

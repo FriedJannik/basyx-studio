@@ -190,6 +190,7 @@
             :target-id="targetId"
             @changed="onChanged"
             @select="id => emit('select', id)"
+            @visualize="showModel3d"
           />
         </div>
 
@@ -271,6 +272,8 @@
       <div v-else-if="mode === 'visualization' && submodelRef" class="flex-grow-1 overflow-y-auto">
         <ElementVisualizationPanel
           v-model:view="view"
+          :built-ins="builtInViews"
+          :model3d="model3d"
           :shell-id="shellId"
           :submodel="{ id: submodelRef.submodelId, semanticId: submodelRef.semanticId }"
           :submodel-label="submodelLabel ?? submodelRef.submodelId"
@@ -318,11 +321,13 @@
   import type { ShellTreeItem } from '~/composables/useShellTrees'
   import type { DetailsMode } from '~/utils/aas'
   import type { CreatingElement } from '~/utils/editor'
+  import type { BuiltInView } from '~/utils/visualizations'
   import { useQuery, useQueryCache } from '@pinia/colada'
   import { useDisplay } from 'vuetify'
   import { isElementModelType } from '#shared/aas/defaults'
   import { decodeResourceKey, langText, modelTypeIcon } from '~/utils/aas'
   import { formActionsFooterKey } from '~/utils/editor'
+  import { fileModelFormat, model3dViewId } from '~/utils/visualizations'
 
   // The details drawer (MVP-4 plan, T2): the selected submodel or element in
   // the modes of the Web UI's right pane. The mode and the app view are in the
@@ -463,18 +468,32 @@
     .filter(item => item.reason.semanticId === props.submodelRef?.semanticId)
     .toSorted((a, b) => Number(b.bundled) - Number(a.bundled)))
 
+  // Studio's own views of the selection: the 3D view of a File element.
+  const model3d = computed(() => {
+    const format = props.item?.elementKey && detail.value ? fileModelFormat(value.value) : null
+    return format ? { submodelKey: props.item!.submodelKey, elementKey: props.item!.elementKey!, element: value.value, format } : null
+  })
+  const builtInViews = computed<BuiltInView[]>(() => (model3d.value ? [{ id: model3dViewId, title: t('model3d.title'), icon: 'mdi-cube-outline' }] : []))
+
+  /** The Visualization tab with the 3D view (FileValue's "View in 3D"). */
+  function showModel3d () {
+    view.value = model3dViewId
+    mode.value = 'visualization'
+  }
+
   const modes = computed<Array<{ value: DetailsMode, title: string, icon: string }>>(() => [
     { value: 'details', title: t('details.modes.details'), icon: 'mdi-information-outline' },
-    ...(views.value.length > 0 ? [{ value: 'visualization' as const, title: t('details.modes.visualization'), icon: 'mdi-puzzle-outline' }] : []),
+    ...(views.value.length > 0 || builtInViews.value.length > 0 ? [{ value: 'visualization' as const, title: t('details.modes.visualization'), icon: 'mdi-puzzle-outline' }] : []),
     { value: 'json', title: t('details.modes.json'), icon: 'mdi-code-json' },
     // Operation variable groups have no AAS serialization of their own.
     ...(props.item?.variableGroup ? [] : [{ value: 'xml' as const, title: t('details.modes.xml'), icon: 'mdi-xml' }]),
     { value: 'uml', title: t('details.modes.uml'), icon: 'mdi-sitemap-outline' },
   ])
   // A mode the selection does not offer (no app view, a variable group)
-  // shows the details; app views are known once the contributions arrived.
-  watch([modes, () => contributions.data.value], ([available, data]) => {
-    const known = mode.value !== 'visualization' || data !== undefined
+  // shows the details; views are known once the contributions and the
+  // details (the 3D view of a File) arrived.
+  watch([modes, () => contributions.data.value, () => details.data.value], ([available, data, loaded]) => {
+    const known = mode.value !== 'visualization' || (data !== undefined && loaded !== undefined)
     if (props.item && known && !available.some(entry => entry.value === mode.value)) {
       mode.value = 'details'
     }

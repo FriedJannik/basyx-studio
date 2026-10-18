@@ -1,0 +1,22 @@
+# BaSyx Studio test fixture: L bracket (mm)
+o Bracket
+v 0 0 0
+v 60 0 0
+v 60 0 8
+v 8 0 8
+v 8 0 40
+v 0 0 40
+v 0 30 0
+v 60 30 0
+v 60 30 8
+v 8 30 8
+v 8 30 40
+v 0 30 40
+f 1 2 3 4 5 6
+f 7 12 11 10 9 8
+f 2 1 7 8
+f 3 2 8 9
+f 4 3 9 10
+f 5 4 10 11
+f 6 5 11 12
+f 1 6 12 7

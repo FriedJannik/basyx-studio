@@ -50,6 +50,7 @@
           :sub-path="subPath"
           :submodel="submodel"
           :target="target"
+          :view-state="fullscreenState"
         />
       </v-card-fullscreen>
     </v-dialog>
@@ -75,6 +76,8 @@
     fit?: boolean
     /** The frame inside the full-screen dialog; it cannot open another one. */
     fullscreen?: boolean
+    /** In that dialog, the state the embedded view passed to `studio.ui.openFullscreen`. */
+    viewState?: string
   }>()
   const emit = defineEmits<{
     'navigate': [subPath: string]
@@ -109,12 +112,19 @@
     subPath: props.subPath ?? '',
     mode: ui.mode,
     fullscreen: props.fullscreen ?? false,
+    viewState: props.viewState ?? '',
     locale: locale.value,
     theme: { dark: theme.current.value.dark, colors: themeColors.value },
   }))
 
   const mounted = ref(false)
   const fullscreenOpen = ref(false)
+  /** What the view handed to `studio.ui.openFullscreen`, for the frame in the dialog. */
+  const fullscreenState = ref('')
+  function openFullscreen (state = '') {
+    fullscreenState.value = state
+    fullscreenOpen.value = true
+  }
   /** Seconds an app may take to connect before the frame offers a retry. */
   const startTimeoutMs = 15_000
   /** Set once the start timed out and the entry file was checked. */
@@ -163,14 +173,14 @@
     targetId: props.target?.id ?? null,
     context: () => context.value,
     onNavigate: subPath => emit('navigate', subPath),
-    onOpenFullscreen: props.fullscreen ? undefined : () => (fullscreenOpen.value = true),
+    onOpenFullscreen: props.fullscreen ? undefined : openFullscreen,
   })
   watch(height, value => {
     if (value !== null) {
       emit('content-height', value)
     }
   })
-  defineExpose({ openFullscreen: () => (fullscreenOpen.value = true) })
+  defineExpose({ openFullscreen: () => openFullscreen() })
   watch(connected, value => {
     if (value) {
       clearTimeout(startTimer)

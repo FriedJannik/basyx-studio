@@ -1,0 +1,3794 @@
+{
+  "assetAdministrationShells": [
+    {
+      "idShort": "Models3DDemo",
+      "displayName": [
+        {
+          "language": "en",
+          "text": "3D models demo"
+        }
+      ],
+      "id": "urn:studio:test:aas:models3d",
+      "assetInformation": {
+        "assetKind": "Instance",
+        "globalAssetId": "urn:studio:test:asset:models3d"
+      },
+      "submodels": [
+        {
+          "type": "ModelReference",
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "urn:studio:test:sm:files-3d"
+            }
+          ]
+        },
+        {
+          "type": "ModelReference",
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "urn:studio:test:sm:models3d"
+            }
+          ]
+        }
+      ],
+      "modelType": "AssetAdministrationShell"
+    }
+  ],
+  "submodels": [
+    {
+      "idShort": "Files3D",
+      "id": "urn:studio:test:sm:files-3d",
+      "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+          {
+            "type": "GlobalReference",
+            "value": "urn:studio:test:semantic:files-3d"
+          }
+        ]
+      },
+      "submodelElements": [
+        {
+          "idShort": "Stl",
+          "value": "/aasx/files/models3d/bracket.stl",
+          "contentType": "model/stl",
+          "modelType": "File"
+        },
+        {
+          "idShort": "Obj",
+          "value": "/aasx/files/models3d/bracket.obj",
+          "contentType": "model/obj",
+          "modelType": "File"
+        },
+        {
+          "idShort": "Gltf",
+          "value": "/aasx/files/models3d/bracket.gltf",
+          "contentType": "model/gltf+json",
+          "modelType": "File"
+        },
+        {
+          "idShort": "Glb",
+          "value": "/aasx/files/models3d/bracket.glb",
+          "contentType": "model/gltf-binary",
+          "modelType": "File"
+        },
+        {
+          "idShort": "GltfExternalBuffer",
+          "value": "/aasx/files/models3d/bracket-external.gltf",
+          "contentType": "model/gltf+json",
+          "modelType": "File"
+        },
+        {
+          "idShort": "GltfExternalTexture",
+          "value": "/aasx/files/models3d/bracket-external-texture.gltf",
+          "contentType": "model/gltf+json",
+          "modelType": "File"
+        },
+        {
+          "idShort": "Step",
+          "value": "/aasx/files/models3d/bracket.step",
+          "contentType": "model/step",
+          "modelType": "File"
+        },
+        {
+          "idShort": "Ifc",
+          "value": "/aasx/files/models3d/workshop.ifc",
+          "contentType": "application/x-step",
+          "modelType": "File"
+        },
+        {
+          "idShort": "Preview",
+          "value": "/aasx/files/models3d/bracket.png",
+          "contentType": "image/png",
+          "modelType": "File"
+        }
+      ],
+      "modelType": "Submodel"
+    },
+    {
+      "idShort": "Models3D",
+      "id": "urn:studio:test:sm:models3d",
+      "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+          {
+            "type": "GlobalReference",
+            "value": "https://admin-shell.io/idta/Models3D/1/0"
+          }
+        ]
+      },
+      "submodelElements": [
+        {
+          "idShort": "Model3D",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/idta/Models3D/Model3D/1/0"
+              }
+            ]
+          },
+          "semanticIdListElement": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/idta/Models3D/Model3D/1/0"
+              }
+            ]
+          },
+          "typeValueListElement": "SubmodelElementCollection",
+          "value": [
+            {
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/idta/Models3D/Model3D/1/0"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "idShort": "File",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/1/0"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "FileId",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "FileDomainId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/FileDomainId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "StudioFixtures",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "ValueId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/ValueId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "BRK-60-40",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "IsPrimary",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/IsPrimary/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:boolean",
+                              "value": "true",
+                              "modelType": "Property"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        },
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "FileDomainId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/FileDomainId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "Catalog",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "ValueId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/ValueId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "4711",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "IsPrimary",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/IsPrimary/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:boolean",
+                              "value": "false",
+                              "modelType": "Property"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "FileVersion",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "Title",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/Title/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "language": "en",
+                                  "text": "L bracket (CAD)"
+                                },
+                                {
+                                  "language": "de",
+                                  "text": "Winkel (CAD)"
+                                }
+                              ],
+                              "modelType": "MultiLanguageProperty"
+                            },
+                            {
+                              "idShort": "FileName",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileName/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "bracket.step",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "FileVersionId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileVersionId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "1.0",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "StatusValue",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/StatusValue/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "InReview",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "SetDate",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SetDate/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:date",
+                              "value": "2026-09-01",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "PreviewFile",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/PreviewFile/1/0"
+                                  }
+                                ]
+                              },
+                              "value": "/aasx/files/models3d/bracket.png",
+                              "contentType": "image/png",
+                              "modelType": "File"
+                            },
+                            {
+                              "idShort": "DigitalFile",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/DigitalFile/1/0"
+                                  }
+                                ]
+                              },
+                              "value": "/aasx/files/models3d/bracket.step",
+                              "contentType": "model/step",
+                              "modelType": "File"
+                            },
+                            {
+                              "idShort": "FileFormat",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "FormatName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "STEP",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "FormatVersion",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatVersion/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "AP214",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "FormatQualifier",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatQualifier/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "ISO 10303-214",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            },
+                            {
+                              "idShort": "SourceApplication",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "ApplicationName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/ApplicationName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "FreeCAD",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "ApplicationVersion",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/ApplicationVersion/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "1.1",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "ApplicationQualifier",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/ApplicationQualifier/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Part workbench",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "VendorOrganization",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/VendorOrganization/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "value": [
+                                    {
+                                      "idShort": "OrganizationName",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/VendorOrganization/OrganizationName/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "valueType": "xs:string",
+                                      "value": "FreeCAD project",
+                                      "modelType": "Property"
+                                    },
+                                    {
+                                      "idShort": "OrganizationOfficialName",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/VendorOrganization/OrganizationOfficialName/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "valueType": "xs:string",
+                                      "value": "FreeCAD project GmbH",
+                                      "modelType": "Property"
+                                    }
+                                  ],
+                                  "modelType": "SubmodelElementCollection"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            },
+                            {
+                              "idShort": "ProvidingOrganization",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "OrganizationName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/OrganizationName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Studio Fixtures",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "OrganizationOfficialName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/OrganizationOfficialName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Studio Fixtures Inc.",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        },
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "Title",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/Title/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "language": "en",
+                                  "text": "L bracket"
+                                },
+                                {
+                                  "language": "de",
+                                  "text": "Winkel"
+                                }
+                              ],
+                              "modelType": "MultiLanguageProperty"
+                            },
+                            {
+                              "idShort": "FileName",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileName/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "bracket.glb",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "FileVersionId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileVersionId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "1.1",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "StatusValue",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/StatusValue/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "Released",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "SetDate",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SetDate/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:date",
+                              "value": "2026-10-01",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "BasedOn",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/BasedOn/1/0"
+                                  }
+                                ]
+                              },
+                              "semanticIdListElement": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/BasedOn/1/0"
+                                  }
+                                ]
+                              },
+                              "typeValueListElement": "ReferenceElement",
+                              "value": [
+                                {
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/BasedOn/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "value": {
+                                    "type": "ModelReference",
+                                    "keys": [
+                                      {
+                                        "type": "Submodel",
+                                        "value": "urn:studio:test:sm:models3d"
+                                      },
+                                      {
+                                        "type": "SubmodelElementList",
+                                        "value": "Model3D"
+                                      }
+                                    ]
+                                  },
+                                  "modelType": "ReferenceElement"
+                                }
+                              ],
+                              "modelType": "SubmodelElementList"
+                            },
+                            {
+                              "idShort": "PreviewFile",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/PreviewFile/1/0"
+                                  }
+                                ]
+                              },
+                              "value": "/aasx/files/models3d/bracket.png",
+                              "contentType": "image/png",
+                              "modelType": "File"
+                            },
+                            {
+                              "idShort": "DigitalFile",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/DigitalFile/1/0"
+                                  }
+                                ]
+                              },
+                              "value": "/aasx/files/models3d/bracket.glb",
+                              "contentType": "model/gltf-binary",
+                              "modelType": "File"
+                            },
+                            {
+                              "idShort": "ExternalFile",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/1/0"
+                                  }
+                                ]
+                              },
+                              "semanticIdListElement": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/1/0"
+                                  }
+                                ]
+                              },
+                              "typeValueListElement": "SubmodelElementCollection",
+                              "value": [
+                                {
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "value": [
+                                    {
+                                      "idShort": "ExternalUrl",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/ExternalUrl/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "valueType": "xs:string",
+                                      "value": "https://models.example.com/brk-60-40.glb",
+                                      "modelType": "Property"
+                                    },
+                                    {
+                                      "idShort": "FileIdentifier",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/FileIdentifier/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "valueType": "xs:string",
+                                      "value": "BRK-60-40-GLB",
+                                      "modelType": "Property"
+                                    },
+                                    {
+                                      "idShort": "HostOrganization",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/HostOrganization/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "value": [
+                                        {
+                                          "idShort": "OrganizationName",
+                                          "semanticId": {
+                                            "type": "ExternalReference",
+                                            "keys": [
+                                              {
+                                                "type": "GlobalReference",
+                                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/HostOrganization/OrganizationName/1/0"
+                                              }
+                                            ]
+                                          },
+                                          "valueType": "xs:string",
+                                          "value": "Example Models",
+                                          "modelType": "Property"
+                                        },
+                                        {
+                                          "idShort": "OrganizationOfficialName",
+                                          "semanticId": {
+                                            "type": "ExternalReference",
+                                            "keys": [
+                                              {
+                                                "type": "GlobalReference",
+                                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/HostOrganization/OrganizationOfficialName/1/0"
+                                              }
+                                            ]
+                                          },
+                                          "valueType": "xs:string",
+                                          "value": "Example Models AG",
+                                          "modelType": "Property"
+                                        }
+                                      ],
+                                      "modelType": "SubmodelElementCollection"
+                                    },
+                                    {
+                                      "idShort": "Api",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/Api/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "semanticIdListElement": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/Api/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "typeValueListElement": "SubmodelElementCollection",
+                                      "value": [
+                                        {
+                                          "semanticId": {
+                                            "type": "ExternalReference",
+                                            "keys": [
+                                              {
+                                                "type": "GlobalReference",
+                                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/Api/1/0"
+                                              }
+                                            ]
+                                          },
+                                          "value": [
+                                            {
+                                              "idShort": "ApiVersion",
+                                              "semanticId": {
+                                                "type": "ExternalReference",
+                                                "keys": [
+                                                  {
+                                                    "type": "GlobalReference",
+                                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/Api/ApiVersion/1/0"
+                                                  }
+                                                ]
+                                              },
+                                              "valueType": "xs:string",
+                                              "value": "1.0",
+                                              "modelType": "Property"
+                                            },
+                                            {
+                                              "idShort": "ApiDocumentationUrl",
+                                              "semanticId": {
+                                                "type": "ExternalReference",
+                                                "keys": [
+                                                  {
+                                                    "type": "GlobalReference",
+                                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/Api/ApiDocumentationUrl/1/0"
+                                                  }
+                                                ]
+                                              },
+                                              "valueType": "xs:string",
+                                              "value": "https://example.com/docs/model-library-api",
+                                              "modelType": "Property"
+                                            }
+                                          ],
+                                          "modelType": "SubmodelElementCollection"
+                                        }
+                                      ],
+                                      "modelType": "SubmodelElementList"
+                                    }
+                                  ],
+                                  "modelType": "SubmodelElementCollection"
+                                }
+                              ],
+                              "modelType": "SubmodelElementList"
+                            },
+                            {
+                              "idShort": "FileFormat",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "FormatName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "glTF",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "FormatVersion",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatVersion/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "2.0",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "FormatQualifier",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatQualifier/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "binary (.glb)",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            },
+                            {
+                              "idShort": "SourceApplication",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "ApplicationName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/ApplicationName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Blender",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "ApplicationVersion",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/ApplicationVersion/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "5.2",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "ApplicationQualifier",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/ApplicationQualifier/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "glTF exporter",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "Api",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/Api/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "semanticIdListElement": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/Api/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "typeValueListElement": "SubmodelElementCollection",
+                                  "value": [
+                                    {
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/Api/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "value": [
+                                        {
+                                          "idShort": "ApiVersion",
+                                          "semanticId": {
+                                            "type": "ExternalReference",
+                                            "keys": [
+                                              {
+                                                "type": "GlobalReference",
+                                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/Api/ApiVersion/1/0"
+                                              }
+                                            ]
+                                          },
+                                          "valueType": "xs:string",
+                                          "value": "2.1",
+                                          "modelType": "Property"
+                                        },
+                                        {
+                                          "idShort": "ApiDocumentationUrl",
+                                          "semanticId": {
+                                            "type": "ExternalReference",
+                                            "keys": [
+                                              {
+                                                "type": "GlobalReference",
+                                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/Api/ApiDocumentationUrl/1/0"
+                                              }
+                                            ]
+                                          },
+                                          "valueType": "xs:string",
+                                          "value": "https://example.com/docs/cad-api",
+                                          "modelType": "Property"
+                                        }
+                                      ],
+                                      "modelType": "SubmodelElementCollection"
+                                    }
+                                  ],
+                                  "modelType": "SubmodelElementList"
+                                },
+                                {
+                                  "idShort": "VendorOrganization",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/VendorOrganization/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "value": [
+                                    {
+                                      "idShort": "OrganizationName",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/VendorOrganization/OrganizationName/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "valueType": "xs:string",
+                                      "value": "Blender Foundation",
+                                      "modelType": "Property"
+                                    },
+                                    {
+                                      "idShort": "OrganizationOfficialName",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SourceApplication/VendorOrganization/OrganizationOfficialName/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "valueType": "xs:string",
+                                      "value": "Blender Foundation GmbH",
+                                      "modelType": "Property"
+                                    }
+                                  ],
+                                  "modelType": "SubmodelElementCollection"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            },
+                            {
+                              "idShort": "ProvidingOrganization",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "OrganizationName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/OrganizationName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Studio Fixtures",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "OrganizationOfficialName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/OrganizationOfficialName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Studio Fixtures Inc.",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "ConsumingApplication",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/ConsumingApplication/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/ConsumingApplication/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/ConsumingApplication/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "ApplicationName",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/ConsumingApplication/ApplicationName/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "Godot Engine",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "ApplicationVersion",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/ConsumingApplication/ApplicationVersion/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "4.7",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "ApplicationQualifier",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/ConsumingApplication/ApplicationQualifier/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "Virtual Factory runtime",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "VendorOrganization",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/ConsumingApplication/VendorOrganization/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "OrganizationName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/ConsumingApplication/VendorOrganization/OrganizationName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Godot Foundation",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "OrganizationOfficialName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/ConsumingApplication/VendorOrganization/OrganizationOfficialName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Godot Foundation GmbH",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "FileClassification",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "ClassId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/ClassId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "3D-VIS",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "ClassName",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/ClassName/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "language": "en",
+                                  "text": "3D visualisation model"
+                                }
+                              ],
+                              "modelType": "MultiLanguageProperty"
+                            },
+                            {
+                              "idShort": "ClassificationSystem",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/ClassificationSystem/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "StudioFixtures",
+                              "modelType": "Property"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                },
+                {
+                  "idShort": "Capability",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/1/0"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "PosModelPurpose",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/PosModelPurpose/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/PosModelPurpose/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "Property",
+                      "valueTypeListElement": "xs:string",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/PosModelPurpose/1/0"
+                              }
+                            ]
+                          },
+                          "valueType": "xs:string",
+                          "value": "Rendering",
+                          "modelType": "Property"
+                        },
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/PosModelPurpose/1/0"
+                              }
+                            ]
+                          },
+                          "valueType": "xs:string",
+                          "value": "VirtualCommisioning",
+                          "modelType": "Property"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "NegModelPurpose",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/NegModelPurpose/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/NegModelPurpose/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "Property",
+                      "valueTypeListElement": "xs:string",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/NegModelPurpose/1/0"
+                              }
+                            ]
+                          },
+                          "valueType": "xs:string",
+                          "value": "3DPrintingSlicer",
+                          "modelType": "Property"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "EmbeddedInfo",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/EmbeddedInfo/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/EmbeddedInfo/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "Property",
+                      "valueTypeListElement": "xs:string",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/EmbeddedInfo/1/0"
+                              }
+                            ]
+                          },
+                          "valueType": "xs:string",
+                          "value": "ReferencePoints",
+                          "modelType": "Property"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "State",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/State/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/State/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "Property",
+                      "valueTypeListElement": "xs:string",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/State/1/0"
+                              }
+                            ]
+                          },
+                          "valueType": "xs:string",
+                          "value": "InSeries",
+                          "modelType": "Property"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "ObjectType",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/ObjectType/1/0"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:string",
+                      "value": "Component",
+                      "modelType": "Property"
+                    },
+                    {
+                      "idShort": "Origin",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/Origin/1/0"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:string",
+                      "value": "DesignEngineering",
+                      "modelType": "Property"
+                    },
+                    {
+                      "idShort": "Simplification",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/Simplification/1/0"
+                          }
+                        ]
+                      },
+                      "value": [
+                        {
+                          "idShort": "Description",
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/Simplification/Description/1/0"
+                              }
+                            ]
+                          },
+                          "valueType": "xs:string",
+                          "value": "Edges not filleted",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ReducedElements",
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/Simplification/ReducedElements/1/0"
+                              }
+                            ]
+                          },
+                          "semanticIdListElement": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/Simplification/ReducedElements/1/0"
+                              }
+                            ]
+                          },
+                          "typeValueListElement": "Property",
+                          "valueTypeListElement": "xs:string",
+                          "value": [
+                            {
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/Simplification/ReducedElements/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "Graphics",
+                              "modelType": "Property"
+                            }
+                          ],
+                          "modelType": "SubmodelElementList"
+                        }
+                      ],
+                      "modelType": "SubmodelElementCollection"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                },
+                {
+                  "idShort": "Geometry",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/1/0"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "Representation",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/Representation/1/0"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:string",
+                      "value": "SolidBody",
+                      "modelType": "Property"
+                    },
+                    {
+                      "idShort": "LengthUnit",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/LengthUnit/1/0"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:string",
+                      "value": "mm",
+                      "modelType": "Property"
+                    },
+                    {
+                      "idShort": "CartBoundingBox",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "BoundingBoxKind",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/BoundingBoxKind/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "MinEnvelope",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "CartRefSystem",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartRefSystem/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "CartOffsetVector",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartRefSystem/CartOffsetVector/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "value": [
+                                    {
+                                      "idShort": "X",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartRefSystem/CartOffsetVector/X/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "valueType": "xs:string",
+                                      "value": "0",
+                                      "modelType": "Property"
+                                    },
+                                    {
+                                      "idShort": "Y",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartRefSystem/CartOffsetVector/Y/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "valueType": "xs:string",
+                                      "value": "0",
+                                      "modelType": "Property"
+                                    },
+                                    {
+                                      "idShort": "Z",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartRefSystem/CartOffsetVector/Z/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "valueType": "xs:string",
+                                      "value": "0",
+                                      "modelType": "Property"
+                                    }
+                                  ],
+                                  "modelType": "SubmodelElementCollection"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            },
+                            {
+                              "idShort": "CartBoundingVector",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartBoundingVector/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "X",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartBoundingVector/X/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "60",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "Y",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartBoundingVector/Y/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "30",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "Z",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartBoundingVector/Z/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "40",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            },
+            {
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/idta/Models3D/Model3D/1/0"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "idShort": "File",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/1/0"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "FileId",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "FileDomainId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/FileDomainId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "StudioFixtures",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "ValueId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/ValueId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "WORKSHOP",
+                              "modelType": "Property"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "FileVersion",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "Title",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/Title/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "language": "en",
+                                  "text": "Workshop building"
+                                }
+                              ],
+                              "modelType": "MultiLanguageProperty"
+                            },
+                            {
+                              "idShort": "FileName",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileName/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "workshop.ifc",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "FileVersionId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileVersionId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "2.0.0",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "StatusValue",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/StatusValue/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "Released",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "SetDate",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SetDate/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:date",
+                              "value": "2026-08-15",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "PreviewFile",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/PreviewFile/1/0"
+                                  }
+                                ]
+                              },
+                              "value": "/aasx/files/models3d/workshop.png",
+                              "contentType": "image/png",
+                              "modelType": "File"
+                            },
+                            {
+                              "idShort": "DigitalFile",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/DigitalFile/1/0"
+                                  }
+                                ]
+                              },
+                              "value": "/aasx/files/models3d/workshop.ifc",
+                              "contentType": "application/x-step",
+                              "modelType": "File"
+                            },
+                            {
+                              "idShort": "FileFormat",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "FormatName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "IFC",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "FormatVersion",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatVersion/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "4",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "FormatQualifier",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatQualifier/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Reference View",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            },
+                            {
+                              "idShort": "ProvidingOrganization",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "OrganizationName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/OrganizationName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Studio Fixtures",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "OrganizationOfficialName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/OrganizationOfficialName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Studio Fixtures Inc.",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "FileClassification",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "ClassId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/ClassId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "BIM",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "ClassName",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/ClassName/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "language": "en",
+                                  "text": "Building information model"
+                                }
+                              ],
+                              "modelType": "MultiLanguageProperty"
+                            },
+                            {
+                              "idShort": "ClassificationSystem",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/ClassificationSystem/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "StudioFixtures",
+                              "modelType": "Property"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                },
+                {
+                  "idShort": "Capability",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/1/0"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "PosModelPurpose",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/PosModelPurpose/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/PosModelPurpose/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "Property",
+                      "valueTypeListElement": "xs:string",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/PosModelPurpose/1/0"
+                              }
+                            ]
+                          },
+                          "valueType": "xs:string",
+                          "value": "Logistics",
+                          "modelType": "Property"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "ObjectType",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/ObjectType/1/0"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:string",
+                      "value": "Assembly",
+                      "modelType": "Property"
+                    },
+                    {
+                      "idShort": "Origin",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Capability/Origin/1/0"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:string",
+                      "value": "DesignEngineering",
+                      "modelType": "Property"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                },
+                {
+                  "idShort": "Geometry",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/1/0"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "Representation",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/Representation/1/0"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:string",
+                      "value": "SolidBody",
+                      "modelType": "Property"
+                    },
+                    {
+                      "idShort": "LengthUnit",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/LengthUnit/1/0"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:string",
+                      "value": "m",
+                      "modelType": "Property"
+                    },
+                    {
+                      "idShort": "CartBoundingBox",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "BoundingBoxKind",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/BoundingBoxKind/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "MaxEnvelope",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "CartBoundingVector",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartBoundingVector/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "X",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartBoundingVector/X/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "5",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "Y",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartBoundingVector/Y/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "4",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "Z",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/Geometry/CartBoundingBox/CartBoundingVector/Z/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "3.25",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            },
+            {
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/idta/Models3D/Model3D/1/0"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "idShort": "File",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/1/0"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "FileId",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "FileDomainId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/FileDomainId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "StudioFixtures",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "ValueId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/ValueId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "MOTOR-EXT",
+                              "modelType": "Property"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "FileVersion",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "Title",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/Title/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "language": "en",
+                                  "text": "Motor (external)"
+                                }
+                              ],
+                              "modelType": "MultiLanguageProperty"
+                            },
+                            {
+                              "idShort": "FileName",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileName/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "motor.step",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "FileVersionId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileVersionId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "3",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "StatusValue",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/StatusValue/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "Released",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "SetDate",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SetDate/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:date",
+                              "value": "2026-07-01",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "PreviewFile",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/PreviewFile/1/0"
+                                  }
+                                ]
+                              },
+                              "value": "/aasx/files/models3d/bracket.png",
+                              "contentType": "image/png",
+                              "modelType": "File"
+                            },
+                            {
+                              "idShort": "ExternalFile",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/1/0"
+                                  }
+                                ]
+                              },
+                              "semanticIdListElement": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/1/0"
+                                  }
+                                ]
+                              },
+                              "typeValueListElement": "SubmodelElementCollection",
+                              "value": [
+                                {
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "value": [
+                                    {
+                                      "idShort": "ExternalUrl",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/ExternalUrl/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "valueType": "xs:string",
+                                      "value": "https://models.example.com/motor.step",
+                                      "modelType": "Property"
+                                    },
+                                    {
+                                      "idShort": "FileIdentifier",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/FileIdentifier/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "valueType": "xs:string",
+                                      "value": "MOTOR-EXT",
+                                      "modelType": "Property"
+                                    },
+                                    {
+                                      "idShort": "HostOrganization",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/HostOrganization/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "value": [
+                                        {
+                                          "idShort": "OrganizationName",
+                                          "semanticId": {
+                                            "type": "ExternalReference",
+                                            "keys": [
+                                              {
+                                                "type": "GlobalReference",
+                                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/HostOrganization/OrganizationName/1/0"
+                                              }
+                                            ]
+                                          },
+                                          "valueType": "xs:string",
+                                          "value": "Example Models",
+                                          "modelType": "Property"
+                                        },
+                                        {
+                                          "idShort": "OrganizationOfficialName",
+                                          "semanticId": {
+                                            "type": "ExternalReference",
+                                            "keys": [
+                                              {
+                                                "type": "GlobalReference",
+                                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/HostOrganization/OrganizationOfficialName/1/0"
+                                              }
+                                            ]
+                                          },
+                                          "valueType": "xs:string",
+                                          "value": "Example Models AG",
+                                          "modelType": "Property"
+                                        }
+                                      ],
+                                      "modelType": "SubmodelElementCollection"
+                                    },
+                                    {
+                                      "idShort": "Api",
+                                      "semanticId": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/Api/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "semanticIdListElement": {
+                                        "type": "ExternalReference",
+                                        "keys": [
+                                          {
+                                            "type": "GlobalReference",
+                                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/Api/1/0"
+                                          }
+                                        ]
+                                      },
+                                      "typeValueListElement": "SubmodelElementCollection",
+                                      "value": [
+                                        {
+                                          "semanticId": {
+                                            "type": "ExternalReference",
+                                            "keys": [
+                                              {
+                                                "type": "GlobalReference",
+                                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/Api/1/0"
+                                              }
+                                            ]
+                                          },
+                                          "value": [
+                                            {
+                                              "idShort": "ApiVersion",
+                                              "semanticId": {
+                                                "type": "ExternalReference",
+                                                "keys": [
+                                                  {
+                                                    "type": "GlobalReference",
+                                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/Api/ApiVersion/1/0"
+                                                  }
+                                                ]
+                                              },
+                                              "valueType": "xs:string",
+                                              "value": "1.0",
+                                              "modelType": "Property"
+                                            },
+                                            {
+                                              "idShort": "ApiDocumentationUrl",
+                                              "semanticId": {
+                                                "type": "ExternalReference",
+                                                "keys": [
+                                                  {
+                                                    "type": "GlobalReference",
+                                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ExternalFile/Api/ApiDocumentationUrl/1/0"
+                                                  }
+                                                ]
+                                              },
+                                              "valueType": "xs:string",
+                                              "value": "https://example.com/docs/model-library-api",
+                                              "modelType": "Property"
+                                            }
+                                          ],
+                                          "modelType": "SubmodelElementCollection"
+                                        }
+                                      ],
+                                      "modelType": "SubmodelElementList"
+                                    }
+                                  ],
+                                  "modelType": "SubmodelElementCollection"
+                                }
+                              ],
+                              "modelType": "SubmodelElementList"
+                            },
+                            {
+                              "idShort": "FileFormat",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "FormatName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "STEP",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "FormatVersion",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatVersion/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "AP242",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "FormatQualifier",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatQualifier/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "ISO 10303-242",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            },
+                            {
+                              "idShort": "ProvidingOrganization",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "OrganizationName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/OrganizationName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Studio Fixtures",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "OrganizationOfficialName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/OrganizationOfficialName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Studio Fixtures Inc.",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "FileClassification",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "ClassId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/ClassId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "CAD",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "ClassName",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/ClassName/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "language": "en",
+                                  "text": "CAD model"
+                                }
+                              ],
+                              "modelType": "MultiLanguageProperty"
+                            },
+                            {
+                              "idShort": "ClassificationSystem",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/ClassificationSystem/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "StudioFixtures",
+                              "modelType": "Property"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            },
+            {
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/idta/Models3D/Model3D/1/0"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "idShort": "File",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/1/0"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "FileId",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "FileDomainId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/FileDomainId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "StudioFixtures",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "ValueId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileId/ValueId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "GEARBOX",
+                              "modelType": "Property"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "FileVersion",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "Title",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/Title/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "language": "en",
+                                  "text": "Gearbox"
+                                }
+                              ],
+                              "modelType": "MultiLanguageProperty"
+                            },
+                            {
+                              "idShort": "FileName",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileName/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "gearbox.jt",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "FileVersionId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileVersionId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "1",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "StatusValue",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/StatusValue/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "Released",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "SetDate",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/SetDate/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:date",
+                              "value": "2026-06-01",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "PreviewFile",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/PreviewFile/1/0"
+                                  }
+                                ]
+                              },
+                              "value": "/aasx/files/models3d/bracket.png",
+                              "contentType": "image/png",
+                              "modelType": "File"
+                            },
+                            {
+                              "idShort": "DigitalFile",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/DigitalFile/1/0"
+                                  }
+                                ]
+                              },
+                              "value": "/aasx/files/models3d/gearbox.jt",
+                              "contentType": "application/octet-stream",
+                              "modelType": "File"
+                            },
+                            {
+                              "idShort": "FileFormat",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "FormatName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "JT",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "FormatVersion",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatVersion/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "10.0",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "FormatQualifier",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/FileFormat/FormatQualifier/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "ISO 14306",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            },
+                            {
+                              "idShort": "ProvidingOrganization",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "idShort": "OrganizationName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/OrganizationName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Studio Fixtures",
+                                  "modelType": "Property"
+                                },
+                                {
+                                  "idShort": "OrganizationOfficialName",
+                                  "semanticId": {
+                                    "type": "ExternalReference",
+                                    "keys": [
+                                      {
+                                        "type": "GlobalReference",
+                                        "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileVersion/ProvidingOrganization/OrganizationOfficialName/1/0"
+                                      }
+                                    ]
+                                  },
+                                  "valueType": "xs:string",
+                                  "value": "Studio Fixtures Inc.",
+                                  "modelType": "Property"
+                                }
+                              ],
+                              "modelType": "SubmodelElementCollection"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    },
+                    {
+                      "idShort": "FileClassification",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/1/0"
+                          }
+                        ]
+                      },
+                      "semanticIdListElement": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/1/0"
+                          }
+                        ]
+                      },
+                      "typeValueListElement": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/1/0"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "idShort": "ClassId",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/ClassId/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "CAD",
+                              "modelType": "Property"
+                            },
+                            {
+                              "idShort": "ClassName",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/ClassName/1/0"
+                                  }
+                                ]
+                              },
+                              "value": [
+                                {
+                                  "language": "en",
+                                  "text": "CAD model"
+                                }
+                              ],
+                              "modelType": "MultiLanguageProperty"
+                            },
+                            {
+                              "idShort": "ClassificationSystem",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "GlobalReference",
+                                    "value": "https://admin-shell.io/idta/Models3D/Model3D/File/FileClassification/ClassificationSystem/1/0"
+                                  }
+                                ]
+                              },
+                              "valueType": "xs:string",
+                              "value": "StudioFixtures",
+                              "modelType": "Property"
+                            }
+                          ],
+                          "modelType": "SubmodelElementCollection"
+                        }
+                      ],
+                      "modelType": "SubmodelElementList"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            }
+          ],
+          "modelType": "SubmodelElementList"
+        }
+      ],
+      "modelType": "Submodel"
+    }
+  ]
+}

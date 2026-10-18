@@ -3,7 +3,7 @@
     <v-list-item class="py-3" :subtitle="String(element.contentType ?? '')" :title="fileName || t('details.noFile')">
       <template #prepend>
         <v-avatar :color="isPdf ? 'error' : 'primary'" variant="tonal">
-          <v-icon :icon="isImage ? 'mdi-file-image-outline' : (isPdf ? 'mdi-file-pdf-box' : 'mdi-file-outline')" />
+          <v-icon :icon="icon" />
         </v-avatar>
       </template>
     </v-list-item>
@@ -19,6 +19,14 @@
     />
 
     <v-card-actions v-if="fileName">
+      <v-btn
+        v-if="modelFormat"
+        data-test="file-view-3d"
+        prepend-icon="mdi-rotate-3d-variant"
+        :text="t('model3d.view')"
+        @click="emit('visualize')"
+      />
+
       <v-btn
         :href="external ?? url"
         prepend-icon="mdi-eye-outline"
@@ -53,9 +61,10 @@
 
 <script lang="ts" setup>
   import type { ElementDetail } from '#shared/contract'
+  import { fileModelFormat } from '~/utils/visualizations'
 
   const props = defineProps<{ targetId: string, submodelKey: string, detail: ElementDetail, canReplace: boolean }>()
-  const emit = defineEmits<{ changed: [detail: ElementDetail] }>()
+  const emit = defineEmits<{ changed: [detail: ElementDetail], visualize: [] }>()
 
   const { t } = useI18n()
   const api = useStudioApi()
@@ -68,6 +77,17 @@
   const isImage = computed(() => contentType.value.startsWith('image/'))
   const external = computed(() => typeof element.value.value === 'string' && /^https?:\/\//i.test(element.value.value) ? element.value.value : null)
   const isPdf = computed(() => contentType.value === 'application/pdf')
+  /** A 3D model the Visualization tab can show. */
+  const modelFormat = computed(() => fileModelFormat(element.value))
+  const icon = computed(() => {
+    if (isImage.value) {
+      return 'mdi-file-image-outline'
+    }
+    if (isPdf.value) {
+      return 'mdi-file-pdf-box'
+    }
+    return modelFormat.value ? 'mdi-cube-outline' : 'mdi-file-outline'
+  })
   const studioUrl = useStudioUrl()
   const url = computed(() => studioUrl.api(`/targets/${props.targetId}/submodels/${props.submodelKey}/elements/${props.detail.key}/attachment`))
 

@@ -232,6 +232,8 @@ test('contains a hostile app and refuses what it did not declare (DoD 5, 6)', as
     studioApi: expect.stringMatching(/^blocked/),
     foreignAppScript: expect.stringMatching(/^blocked/),
     externalScript: expect.stringMatching(/^blocked/),
+    webAssembly: expect.stringMatching(/^blocked/),
+    blobWorker: expect.stringMatching(/^blocked/),
     embedStudio: 'blocked (frame-src)',
     secondConnect: 'refused',
     ownFile: 200,
@@ -285,7 +287,7 @@ test('runs a backend app in Deno with the user\'s rights (DoD 8)', async ({ page
   const frame = appFrame(page)
 
   await frame.getByRole('button', { name: 'Summarize target' }).click()
-  await expect(frame.locator('[data-test="summary"]')).toContainText('62 shells', { timeout: 30_000 })
+  await expect(frame.locator('[data-test="summary"]')).toContainText('63 shells', { timeout: 30_000 })
   await expect(frame.locator('[data-test="summary"]')).toContainText('Deno 2.')
 
   await frame.getByRole('button', { name: 'Check isolation' }).click()

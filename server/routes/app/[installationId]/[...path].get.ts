@@ -24,7 +24,7 @@ export default defineEventHandler(async event => {
   }
   const headers = event.res.headers
   headers.set('Content-Type', file.contentType)
-  headers.set('Content-Security-Policy', appContentSecurityPolicy(appFileUrl(baseUrl!, installationId, ''), allowedOrigins(studio.config.publicUrl, desktop)))
+  headers.set('Content-Security-Policy', appContentSecurityPolicy(appFileUrl(baseUrl!, installationId, ''), allowedOrigins(studio.config.publicUrl, desktop), file.sandbox))
   headers.set('X-Content-Type-Options', 'nosniff')
   headers.set('Referrer-Policy', 'no-referrer')
   // The frame has an opaque origin, so module scripts are CORS requests

@@ -1,7 +1,7 @@
 import type { AppCallResult, AppContext, AppContributionInfo, AppMethodName, Problem } from '#shared/contract'
 import type { Ref } from 'vue'
 import { useQueryCache } from '@pinia/colada'
-import { appHelloSchema, appMethodNameSchema, appMethodParamsSchemas, appProtocol, appRequestMessageSchema } from '#shared/contract'
+import { appHelloSchema, appMethodNameSchema, appMethodParamsSchemas, appProtocol, appRequestMessageSchema, readFileMaxBytes } from '#shared/contract'
 import { StudioApiError } from '~/composables/useStudioApi'
 import { resourceKey } from '~/utils/aas'
 
@@ -11,8 +11,8 @@ export interface AppBridgeOptions {
   targetId: string | null
   context: () => AppContext
   onNavigate: (subPath: string) => void
-  /** Opens the frame's view in a full-screen dialog; absent inside that dialog. */
-  onOpenFullscreen?: () => void
+  /** Opens the frame's view in a full-screen dialog with the view's state; absent inside that dialog. */
+  onOpenFullscreen?: (state: string) => void
 }
 
 /** A refusal of the host itself, in the shape of Studio's problems. */
@@ -55,8 +55,8 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
   let reloading = false
   let lastContext = ''
 
-  function respond (message: unknown) {
-    port?.postMessage(message)
+  function respond (message: unknown, transfer: Transferable[] = []) {
+    port?.postMessage(message, transfer)
   }
 
   async function onRequest (event: MessageEvent) {
@@ -85,7 +85,10 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
     }
     if (method.data === 'studio.ui.openFullscreen') {
       // Like setHeight, it only affects how Studio shows the app's own view.
-      options.onOpenFullscreen?.()
+      const parsedFullscreen = appMethodParamsSchemas['studio.ui.openFullscreen'].safeParse(params ?? {})
+      if (parsedFullscreen.success) {
+        options.onOpenFullscreen?.(parsedFullscreen.data.state ?? '')
+      }
       respond({ type: 'response', id, result: null })
       return
     }
@@ -102,14 +105,17 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
         body: { installationId: contribution.installationId, targetId: options.targetId, shellId: options.context().shell?.id ?? null, method: method.data, params },
       })
       const replaced = await carryOut(method.data, params, contribution)
-      respond({ type: 'response', id, result: replaced ? replaced.result : result })
+      respond({ type: 'response', id, result: replaced ? replaced.result : result }, replaced?.transfer)
     } catch (error) {
       respond({ type: 'error', id, problem: problemOf(error) })
     }
   }
 
-  /** Studio authorized the call; UI methods are carried out here. A returned result replaces Studio's. */
-  async function carryOut (method: AppMethodName, params: unknown, contribution: AppContributionInfo): Promise<{ result: unknown } | null> {
+  /**
+   * Studio authorized the call; UI methods are carried out here. A returned
+   * result replaces Studio's; its `transfer` buffers move to the frame.
+   */
+  async function carryOut (method: AppMethodName, params: unknown, contribution: AppContributionInfo): Promise<{ result: unknown, transfer?: Transferable[] } | null> {
     switch (method) {
       case 'studio.ui.notify': {
         const notice = appMethodParamsSchemas['studio.ui.notify'].parse(params)
@@ -123,6 +129,19 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
           window.open(url, '_blank', 'noopener')
         }
         break
+      }
+      case 'studio.ui.readFile': {
+        // Through Studio's API, so the user's own rights apply as in Studio.
+        if (!options.targetId) {
+          throw hostProblem('invalid_request', 'This app frame is not bound to a target.', 400)
+        }
+        const file = appMethodParamsSchemas['studio.ui.readFile'].parse(params)
+        const blob = await api<Blob>(`/targets/${options.targetId}/submodels/${resourceKey(file.submodelId)}/elements/${resourceKey(file.idShortPath)}/attachment`, { responseType: 'blob' })
+        if (blob.size > readFileMaxBytes) {
+          throw hostProblem('unsupported_operation', `The file is larger than ${readFileMaxBytes / 1024 / 1024} MiB.`, 422)
+        }
+        const bytes = new Uint8Array(await blob.arrayBuffer())
+        return { result: { bytes, contentType: blob.type || 'application/octet-stream' }, transfer: [bytes.buffer] }
       }
       case 'studio.ui.navigate': {
         if (contribution.kind === 'module') {
