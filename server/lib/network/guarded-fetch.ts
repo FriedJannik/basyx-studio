@@ -54,6 +54,12 @@ export function networkFailureOf (error: unknown): NetworkFailure | undefined {
 /** Collects the first transport failure, because the SDK hides fetch errors behind status 0. */
 export interface FailureRecorder {
   failure?: NetworkFailure
+  /**
+   * The last answer if it was 2xx, with the JSON read from it (set by
+   * `TargetHttp`), because the SDK reports a payload it cannot deserialize
+   * as HTTP 500.
+   */
+  answer?: { status: number, payload?: unknown }
 }
 
 type LookupCallback = (error: NodeJS.ErrnoException | null, address: string | LookupAddress[], family?: number) => void

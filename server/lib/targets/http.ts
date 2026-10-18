@@ -127,6 +127,10 @@ export class TargetHttp {
         }
       }
     }
+    if (recorder.answer) {
+      // The target answered 2xx, and the SDK could not deserialize the payload.
+      return new StudioProblem('target_invalid_response', invalidPayloadDetail(recorder.answer))
+    }
     const mode = this.securityMode
     switch (status) {
       case 401: {
@@ -165,7 +169,6 @@ export class TargetHttp {
         if (status >= 500) {
           return new StudioProblem('target_error', `The target answered with HTTP ${status}.`)
         }
-        // The SDK reports undeserializable payloads with its own code.
         return new StudioProblem('target_invalid_response', `Unexpected answer (HTTP ${status}).`)
       }
     }
@@ -187,8 +190,61 @@ export class TargetHttp {
     if (this.options.access.accessToken) {
       headers.Authorization = `Bearer ${this.options.access.accessToken}`
     }
-    return createGuardedFetch(this.options.policy, { recorder, headers, returnRedirects })
+    const guarded = createGuardedFetch(this.options.policy, { recorder, headers, returnRedirects })
+    return async (input, init) => {
+      const response = await guarded(input, init)
+      recordAnswer(recorder, response)
+      return response
+    }
   }
+}
+
+/** Notes a 2xx answer and the JSON the SDK reads from it, and forgets it on any other answer. */
+function recordAnswer (recorder: FailureRecorder, response: Response): void {
+  if (!response.ok) {
+    recorder.answer = undefined
+    return
+  }
+  const answer: NonNullable<FailureRecorder['answer']> = { status: response.status }
+  recorder.answer = answer
+  const json = response.json.bind(response)
+  response.json = async () => {
+    answer.payload = await json()
+    return answer.payload
+  }
+}
+
+/**
+ * The path of the first `null` in a JSON value, e.g.
+ * `$.result[0].referredSemanticId`, or `null` without any. The AAS JSON
+ * schema allows `null` nowhere: an unset attribute is omitted.
+ */
+export function nullPathOf (value: unknown, path = '$'): string | null {
+  if (value === null) {
+    return path
+  }
+  if (typeof value !== 'object') {
+    return null
+  }
+  const entries = Array.isArray(value)
+    ? value.map((item, index) => [`${path}[${index}]`, item] as const)
+    : Object.entries(value).map(([key, item]) => [`${path}.${key}`, item] as const)
+  for (const [itemPath, item] of entries) {
+    const found = nullPathOf(item, itemPath)
+    if (found) {
+      return found
+    }
+  }
+  return null
+}
+
+/** Why a 2xx payload is not AAS JSON, naming the first `null` field of the content (not of the paging envelope). */
+function invalidPayloadDetail (answer: NonNullable<FailureRecorder['answer']>): string {
+  const { payload } = answer
+  const paged = typeof payload === 'object' && payload !== null && 'result' in payload
+  const field = paged ? nullPathOf((payload as { result: unknown }).result, '$.result') : nullPathOf(payload)
+  const summary = `The target answered with HTTP ${answer.status}, but the payload is not valid AAS JSON`
+  return field ? `${summary}: ${field} is null (AAS JSON omits unset attributes).` : `${summary}.`
 }
 
 /** The first message text of a BaSyx error body or SDK error result (`messages[].text`), if any. */
