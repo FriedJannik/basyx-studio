@@ -13,7 +13,7 @@ FROM denoland/deno:bin-2.9.6 AS deno
 
 # The build emits platform-independent JavaScript and WebAssembly, so it runs
 # once on the build host's architecture.
-FROM --platform=$BUILDPLATFORM node:24-trixie-slim AS build
+FROM --platform=$BUILDPLATFORM node:26-trixie-slim AS build
 
 ARG STUDIO_VERSION=""
 ARG STUDIO_COMMIT_SHA=""
@@ -27,8 +27,9 @@ WORKDIR /src
 
 # The packageManager field pins pnpm with its integrity hash; Corepack
 # installs exactly that release (as .github/scripts/setup-pnpm.sh does).
+# Node 25 and later no longer bundle Corepack, so it is installed from npm.
 COPY package.json ./
-RUN corepack enable pnpm && pnpm --version
+RUN npm install --global corepack@0.36.0 && corepack enable pnpm && pnpm --version
 
 # The whole tree is needed before the install: the root postinstall runs
 # `nuxt prepare`. The store cache keeps repeated installs fast.
@@ -43,7 +44,7 @@ RUN STUDIO_VERSION="${STUDIO_VERSION}" \
     STUDIO_BUILD_DATE="${STUDIO_BUILD_DATE}" \
     pnpm build
 
-FROM node:24-trixie-slim AS runtime
+FROM node:26-trixie-slim AS runtime
 
 ARG STUDIO_VERSION=""
 ARG STUDIO_COMMIT_SHA=""
