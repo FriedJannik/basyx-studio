@@ -14,9 +14,9 @@
     "nl": "Toont de 3D-modellen van een asset (IDTA 02026, beschikbaarstelling van 3D-modellen): STL, OBJ, glTF, IFC en STEP in 3D, met hun versies, beoogd gebruik en technische details.",
     "zh-Hans": "显示资产的 3D 模型（IDTA 02026，3D 模型的提供）：以 3D 方式显示 STL、OBJ、glTF、IFC 和 STEP，以及其版本、预期用途和技术细节。"
   },
-  "studioApi": "^0.1.1",
+  "studioApi": "^0.1.2",
   "runtimes": ["hosted", "desktop"],
-  "permissions": ["studio.aas.read", "studio.ui.navigation"],
+  "permissions": ["studio.aas.read", "studio.ui.navigation", "studio.ui.externalFiles"],
   "sandbox": { "webAssembly": true, "workers": true },
   "contributes": {
     "submodelViews": [

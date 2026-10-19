@@ -1,0 +1,90 @@
+{
+  "config": {
+    "title": "Preview configuration",
+    "segment": "Segment",
+    "time": "Time value",
+    "values": "Values",
+    "noData": "No entries",
+    "fetch": "Fetch data"
+  },
+  "chart": {
+    "type": "Chart type",
+    "emptyTitle": "No data in the selected time range",
+    "emptyText": "Choose another time range or fetch the data again.",
+    "interpolation": "Interpolation",
+    "bins": "Bins",
+    "stacked": "Stacked"
+  },
+  "chartType": {
+    "line": "Line chart",
+    "area": "Area chart",
+    "scatter": "Scatter chart",
+    "histogram": "Histogram",
+    "gauge": "Gauge",
+    "display": "Display field"
+  },
+  "interpolation": {
+    "smooth": "Smooth",
+    "straight": "Straight",
+    "stepline": "Steps"
+  },
+  "timeRange": {
+    "title": "Time range",
+    "button": "Time range: {label}",
+    "close": "Close time range menu",
+    "last": "Last {range}",
+    "absoluteRange": "Absolute range",
+    "relative": "Relative",
+    "absolute": "Absolute",
+    "custom": "Custom",
+    "customTitle": "Custom relative range",
+    "range": "Range",
+    "unit": "Unit",
+    "from": "From",
+    "to": "To"
+  },
+  "units": {
+    "milliseconds": "Milliseconds",
+    "seconds": "Seconds",
+    "minutes": "Minutes",
+    "hours": "Hours",
+    "days": "Days",
+    "weeks": "Weeks",
+    "months": "Months",
+    "years": "Years"
+  },
+  "autoRefresh": {
+    "title": "Auto refresh",
+    "button": "Auto refresh: {label}",
+    "close": "Close auto refresh menu",
+    "off": "Off",
+    "enabled": "Auto refresh",
+    "every": "Refresh every",
+    "unit": "Unit"
+  },
+  "validation": {
+    "rangeInvalid": "Enter a valid time range.",
+    "rangeMode": "Select a valid time range mode.",
+    "rangePositive": "Enter a time range greater than zero.",
+    "rangeUnit": "Select a supported time unit.",
+    "rangeWhole": "Months and years must be whole numbers.",
+    "rangeSupported": "Enter a time range within the supported date range.",
+    "rangeBothDates": "Enter both a start and an end date.",
+    "rangeValidDates": "Enter valid start and end dates.",
+    "rangeOrder": "The start date must be before the end date.",
+    "refreshInvalid": "Enter a valid auto-refresh interval.",
+    "refreshPositive": "Enter an auto-refresh interval greater than zero.",
+    "refreshRange": "Use an auto-refresh interval between 5 seconds and 24 days.",
+    "bins": "Enter a whole number of bins from 1 to {max}."
+  },
+  "warnings": {
+    "value_missing": "{value} is not available in the data of this segment.",
+    "time_missing": "The time value {time} is not available in the data of this segment.",
+    "points_skipped": "{count} points of {value} without a valid time or number were left out.",
+    "points_reduced": "{value} has {count} points in this range; the chart shows {limit} of them."
+  },
+  "errors": {
+    "load": "The submodel could not be read: {message}",
+    "fetch": "The time series could not be read."
+  }
+}

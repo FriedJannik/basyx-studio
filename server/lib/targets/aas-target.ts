@@ -122,6 +122,12 @@ export interface AasTarget {
   thumbnail: (shellId: string) => Promise<BinaryContent | null>
   /** The content of a File element. */
   attachment: (submodelId: string, idShortPath: string) => Promise<BinaryContent>
+  /**
+   * A file at an absolute URL on one of the target's own endpoints, read with
+   * its credentials, e.g. the data of a Time Series ExternalSegment
+   * (ADR 0040). Other URLs are refused; there is no generic proxy.
+   */
+  download: (url: string) => Promise<BinaryContent>
   /** Replaces the content of a File element, based on the revision the user saw. */
   replaceAttachment: (submodelId: string, idShortPath: string, file: BinaryContent, revision: string) => Promise<ElementSnapshot>
   invoke: (submodelId: string, idShortPath: string, args: Array<{ idShort: string, value: string | null }>, async: boolean) => Promise<Invocation>

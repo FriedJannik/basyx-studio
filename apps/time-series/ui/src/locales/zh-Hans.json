@@ -1,0 +1,90 @@
+{
+  "config": {
+    "title": "预览配置",
+    "segment": "分段",
+    "time": "时间值",
+    "values": "数值",
+    "noData": "没有条目",
+    "fetch": "获取数据"
+  },
+  "chart": {
+    "type": "图表类型",
+    "emptyTitle": "所选时间范围内没有数据",
+    "emptyText": "请选择其他时间范围，或重新获取数据。",
+    "interpolation": "插值",
+    "bins": "分组数",
+    "stacked": "堆叠"
+  },
+  "chartType": {
+    "line": "折线图",
+    "area": "面积图",
+    "scatter": "散点图",
+    "histogram": "直方图",
+    "gauge": "仪表盘",
+    "display": "显示字段"
+  },
+  "interpolation": {
+    "smooth": "平滑",
+    "straight": "直线",
+    "stepline": "阶梯"
+  },
+  "timeRange": {
+    "title": "时间范围",
+    "button": "时间范围：{label}",
+    "close": "关闭时间范围菜单",
+    "last": "最近 {range}",
+    "absoluteRange": "绝对范围",
+    "relative": "相对",
+    "absolute": "绝对",
+    "custom": "自定义",
+    "customTitle": "自定义相对范围",
+    "range": "时长",
+    "unit": "单位",
+    "from": "从",
+    "to": "到"
+  },
+  "units": {
+    "milliseconds": "毫秒",
+    "seconds": "秒",
+    "minutes": "分钟",
+    "hours": "小时",
+    "days": "天",
+    "weeks": "周",
+    "months": "月",
+    "years": "年"
+  },
+  "autoRefresh": {
+    "title": "自动刷新",
+    "button": "自动刷新：{label}",
+    "close": "关闭自动刷新菜单",
+    "off": "关",
+    "enabled": "自动刷新",
+    "every": "刷新间隔",
+    "unit": "单位"
+  },
+  "validation": {
+    "rangeInvalid": "请输入有效的时间范围。",
+    "rangeMode": "请选择有效的时间范围类型。",
+    "rangePositive": "请输入大于零的时间范围。",
+    "rangeUnit": "请选择受支持的时间单位。",
+    "rangeWhole": "月和年必须是整数。",
+    "rangeSupported": "请输入受支持日期范围内的时间范围。",
+    "rangeBothDates": "请同时输入开始日期和结束日期。",
+    "rangeValidDates": "请输入有效的开始日期和结束日期。",
+    "rangeOrder": "开始日期必须早于结束日期。",
+    "refreshInvalid": "请输入有效的刷新间隔。",
+    "refreshPositive": "请输入大于零的刷新间隔。",
+    "refreshRange": "刷新间隔须介于 5 秒和 24 天之间。",
+    "bins": "请输入 1 到 {max} 之间的整数分组数。"
+  },
+  "warnings": {
+    "value_missing": "此分段的数据中没有 {value}。",
+    "time_missing": "此分段的数据中没有时间值 {time}。",
+    "points_skipped": "已忽略 {value} 中 {count} 个没有有效时间或数值的点。",
+    "points_reduced": "{value} 在此范围内有 {count} 个点；图表显示其中 {limit} 个。"
+  },
+  "errors": {
+    "load": "无法读取子模型：{message}",
+    "fetch": "无法读取时间序列。"
+  }
+}

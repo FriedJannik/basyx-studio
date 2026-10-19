@@ -1,4 +1,4 @@
-import type { ClientCertificateSummary, EndpointInput, InfrastructureTemplate, ListSource, Preferences, SecuritySummary, ServiceProfiles, StackComponentId, StackSpec, SyncSettings } from '#shared/contract'
+import type { ClientCertificateSummary, Connection, EndpointInput, InfrastructureTemplate, ListSource, Preferences, SecuritySummary, ServiceProfiles, StackComponentId, StackSpec, SyncSettings } from '#shared/contract'
 import type { AppManifest } from '@basyx/studio-sdk/protocol'
 import { boolean, customType, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
@@ -28,6 +28,10 @@ export const infrastructures = pgTable('infrastructures', {
   /** Encrypted PKCS#12 bundle and passphrase of desktop `stored` certificates; never returned by the API. */
   clientCertificateCiphertext: text('client_certificate_ciphertext'),
   allowPrivateNetwork: boolean('allow_private_network').notNull().default(false),
+  /** Connections to third-party services, with secret summaries only (ADR 0040). */
+  connections: jsonb('connections').$type<Connection[]>().notNull().default([]),
+  /** Encrypted map from connection key to its desktop `stored` secrets; never returned by the API. */
+  connectionSecretsCiphertext: text('connection_secrets_ciphertext'),
   /** Key of the entry in the deployment's infrastructure file; `null` for infrastructures made in Studio. */
   managedKey: text('managed_key').unique(),
   /** HMAC of the declared entry, so an unchanged entry is not written again at startup. */

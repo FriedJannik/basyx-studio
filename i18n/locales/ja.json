@@ -233,7 +233,16 @@
     "app_not_found": "このアプリはインストールされていません（またはアンインストールされました）。",
     "app_permission_not_declared": "アプリはこの操作の権限を宣言していません。",
     "app_backend_unavailable": "アプリのバックエンドを利用できません。",
-    "app_backend_failed": "アプリのバックエンドでエラーが発生しました。"
+    "app_backend_failed": "アプリのバックエンドでエラーが発生しました。",
+    "connection_not_configured": "このサービスの接続は構成されていません。",
+    "connection_credentials_unavailable": "接続の認証情報を読み取れませんでした。",
+    "connection_rejected": "サービスが接続の認証情報を拒否しました。",
+    "connection_unavailable": "サービスに到達できませんでした。",
+    "connection_error": "サービスがエラーを報告しました。",
+    "connection_request_refused": "Studio はこの要求を送信しません。",
+    "timeseries_invalid": "時系列を読み取れません。",
+    "external_file_unavailable": "外部ファイルを取得できませんでした。",
+    "external_file_refused": "Studio はこのアドレスからファイルを取得しません。"
   },
   "admin": {
     "title": "インフラストラクチャ",
@@ -386,7 +395,80 @@
       "changeFeed": "サービスが変更を報告するため、Studio は最近の変更を表示できます。",
       "rebac": "サービスがユーザーと管理シェルごとにアクセスを確認するため（関係ベースのアクセス制御）、管理シェルを共有できます。"
     },
-    "probedAt": "確認日時 {time}"
+    "probedAt": "確認日時 {time}",
+    "connections": {
+      "title": "接続",
+      "help": "このインフラストラクチャのコンテンツが参照する、AAS サービスではないサービス（時系列データベースなど）です。Studio は認証情報を保管し、このインフラストラクチャから読み取ったコンテンツにのみ使用します。",
+      "unnamed": "新しい接続",
+      "add": "接続を追加",
+      "remove": "削除",
+      "key": "キー",
+      "keyHint": "このインフラストラクチャ内で接続を識別します。",
+      "keyInvalid": "小文字、数字、ハイフンを使用してください。",
+      "keyTaken": "別の接続がこのキーを使用しています。",
+      "type": "種類",
+      "types": {
+        "influxdb2": "InfluxDB 2"
+      },
+      "typeHints": {
+        "influxdb2": "Time Series Data サブモデルの LinkedSegment の時系列（Flux）。"
+      },
+      "url": "URL",
+      "urlHint": "Studio がサービスに到達する方法（例：コンテナーネットワーク内のアドレス）。",
+      "aliases": "別名",
+      "aliasesHint": "サブモデルがサービスを示すその他のアドレス。Studio はこれらに接続しません。",
+      "organization": "組織",
+      "organizationHint": "サブモデル内のエンドポイントの組織を置き換えます。空欄の場合はエンドポイントの組織を使用します。",
+      "scheme": "認証",
+      "schemes": {
+        "none": "なし",
+        "token": "トークン",
+        "bearer": "Bearer トークン",
+        "header": "カスタムヘッダー",
+        "basic": "ユーザー名とパスワード",
+        "oauth2ClientCredentials": "クライアント資格情報（OAuth 2.0）",
+        "delegatedUser": "サインイン中のユーザー"
+      },
+      "schemeHints": {
+        "none": "Studio は認証情報を送信しません。",
+        "token": "Studio は InfluxDB の想定どおり、シークレットを「Authorization: Token」で送信します。",
+        "bearer": "Studio はシークレットを「Authorization: Bearer」で送信します。",
+        "header": "Studio は指定したヘッダーでシークレットを送信します。",
+        "basic": "Studio は HTTP Basic 認証を送信します。",
+        "oauth2ClientCredentials": "Studio はこのクライアント資格情報で発行者からトークンを取得します。",
+        "delegatedUser": "Studio はユーザーのトークンを、サービス向けに発行されたトークンと交換します（RFC 8693）。"
+      },
+      "headerName": "ヘッダー名",
+      "username": "ユーザー名",
+      "audience": "オーディエンス",
+      "audienceHint": "サービスがトークンに求めるオーディエンス。",
+      "forwardUserToken": "ユーザーのトークンを交換せずにそのまま転送する",
+      "forwardUserTokenWarning": "サービスはユーザーのトークンを受け取り、AAS サーバーに対しても使用できます。Studio はトークンがこのオーディエンス向けに発行されている場合にのみ転送します。",
+      "secrets": {
+        "token": "トークン",
+        "value": "ヘッダー値",
+        "password": "パスワード",
+        "clientSecret": "クライアントシークレット"
+      },
+      "secretStored": "保存済み。保持する場合は空欄のままにしてください。",
+      "secretValueHint": "このコンピューターに暗号化して保存されます。",
+      "secretRefHint": "env:変数名 または file:/run/secrets/name。シークレット自体が Studio の UI に届くことはありません。",
+      "secretRefInvalid": "env:NAME または file:/絶対パス を使用してください。",
+      "timeout": "タイムアウト（秒）",
+      "timeoutHint": "既定値：{seconds} 秒、最大 120 秒。",
+      "timeoutInvalid": "1 から 120 までの整数を使用してください。",
+      "test": "接続をテスト",
+      "testAfterSave": "接続をテストするには、インフラストラクチャを保存してください。",
+      "testOk": "接続は機能しています。",
+      "testFailed": "接続は機能していません。",
+      "checks": {
+        "token": "認証情報",
+        "health": "サービスの応答",
+        "query": "読み取りアクセス"
+      },
+      "required": "必須",
+      "httpUrl": "http(s) の URL を入力してください。"
+    }
   },
   "apps": {
     "title": "アプリ",
@@ -426,7 +508,9 @@
       "studio_ui_navigation": "自身のページアドレスの変更、ターゲットを開く、ブラウザーでリンクを開く",
       "studio_backend": "サーバー側コードの実行（分離）",
       "studio_ui_clipboard": "クリック時にテキストをクリップボードへコピー",
-      "studio_containers": "Docker または Podman 上のローカル BaSyx インスタンスの起動、停止、エクスポート、削除（Studio 同梱アプリのみ）"
+      "studio_containers": "Docker または Podman 上のローカル BaSyx インスタンスの起動、停止、エクスポート、削除（Studio 同梱アプリのみ）",
+      "studio_timeseries_read": "時系列を読み取る（インフラストラクチャの接続先データベースからも。Studio に同梱のアプリのみ）",
+      "studio_ui_externalFiles": "管理シェルが他のホスト上で指定するファイルをブラウザーで取得する（それらのホストにはあなたのアドレスが見えます）"
     },
     "bundled": "同梱",
     "bundledHint": "Studio に同梱され、Studio と一緒に更新されます。",

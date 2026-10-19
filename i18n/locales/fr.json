@@ -233,7 +233,16 @@
     "app_not_found": "L'application n'est pas (ou plus) installée.",
     "app_permission_not_declared": "L'application n'a pas déclaré l'autorisation pour cette action.",
     "app_backend_unavailable": "Le backend de l'application n'est pas disponible.",
-    "app_backend_failed": "Le backend de l'application a échoué."
+    "app_backend_failed": "Le backend de l'application a échoué.",
+    "connection_not_configured": "Aucune connexion n'est configurée pour ce service.",
+    "connection_credentials_unavailable": "Les identifiants de la connexion n'ont pas pu être lus.",
+    "connection_rejected": "Le service a refusé les identifiants de la connexion.",
+    "connection_unavailable": "Le service n'a pas pu être joint.",
+    "connection_error": "Le service a signalé une erreur.",
+    "connection_request_refused": "Studio n'envoie pas cette requête.",
+    "timeseries_invalid": "La série temporelle ne peut pas être lue.",
+    "external_file_unavailable": "Le fichier externe n'a pas pu être récupéré.",
+    "external_file_refused": "Studio ne récupère pas de fichiers depuis cette adresse."
   },
   "admin": {
     "title": "Infrastructures",
@@ -386,7 +395,80 @@
       "changeFeed": "Les services signalent les modifications, ce qui permet à Studio d'afficher ce qui a changé récemment.",
       "rebac": "Les services vérifient l'accès par utilisateur et par AAS (contrôle d'accès basé sur les relations), ce qui permet de partager des AAS."
     },
-    "probedAt": "Vérifié {time}"
+    "probedAt": "Vérifié {time}",
+    "connections": {
+      "title": "Connexions",
+      "help": "Services auxquels renvoie le contenu de cette infrastructure mais qui ne sont pas des services AAS, comme une base de données de séries temporelles. Studio conserve leurs identifiants et ne les utilise que pour le contenu lu dans cette infrastructure.",
+      "unnamed": "Nouvelle connexion",
+      "add": "Ajouter une connexion",
+      "remove": "Supprimer",
+      "key": "Clé",
+      "keyHint": "Identifie la connexion au sein de cette infrastructure.",
+      "keyInvalid": "Utilisez des minuscules, des chiffres et des traits d'union.",
+      "keyTaken": "Une autre connexion a cette clé.",
+      "type": "Type",
+      "types": {
+        "influxdb2": "InfluxDB 2"
+      },
+      "typeHints": {
+        "influxdb2": "Séries temporelles des LinkedSegments des sous-modèles Time Series Data (Flux)."
+      },
+      "url": "URL",
+      "urlHint": "Comment Studio joint le service, p. ex. dans son réseau de conteneurs.",
+      "aliases": "Alias",
+      "aliasesHint": "Autres adresses sous lesquelles les sous-modèles nomment le service. Studio ne les contacte jamais.",
+      "organization": "Organisation",
+      "organizationHint": "Remplace l'organisation des points d'accès dans les sous-modèles. Laissez vide pour utiliser la leur.",
+      "scheme": "Authentification",
+      "schemes": {
+        "none": "Aucune",
+        "token": "Jeton",
+        "bearer": "Jeton Bearer",
+        "header": "En-tête personnalisé",
+        "basic": "Nom d'utilisateur et mot de passe",
+        "oauth2ClientCredentials": "Identifiants client (OAuth 2.0)",
+        "delegatedUser": "Utilisateur connecté"
+      },
+      "schemeHints": {
+        "none": "Studio n'envoie aucun identifiant.",
+        "token": "Studio envoie « Authorization: Token » avec le secret, comme InfluxDB l'attend.",
+        "bearer": "Studio envoie « Authorization: Bearer » avec le secret.",
+        "header": "Studio envoie le secret dans un en-tête de votre choix.",
+        "basic": "Studio envoie une authentification HTTP Basic.",
+        "oauth2ClientCredentials": "Studio obtient un jeton auprès de l'émetteur avec ces identifiants client.",
+        "delegatedUser": "Studio échange le jeton de l'utilisateur contre un jeton émis pour le service (RFC 8693)."
+      },
+      "headerName": "Nom de l'en-tête",
+      "username": "Nom d'utilisateur",
+      "audience": "Audience",
+      "audienceHint": "L'audience que le service attend dans ses jetons.",
+      "forwardUserToken": "Transmettre le jeton de l'utilisateur tel quel au lieu de l'échanger",
+      "forwardUserTokenWarning": "Le service reçoit le jeton de l'utilisateur et pourrait aussi l'utiliser auprès du serveur AAS. Studio ne le transmet que s'il est émis pour cette audience.",
+      "secrets": {
+        "token": "Jeton",
+        "value": "Valeur de l'en-tête",
+        "password": "Mot de passe",
+        "clientSecret": "Secret client"
+      },
+      "secretStored": "Enregistré. Laissez vide pour le conserver.",
+      "secretValueHint": "Enregistré chiffré sur cet ordinateur.",
+      "secretRefHint": "env:NOM_DE_VARIABLE ou file:/run/secrets/nom. Le secret n'atteint jamais l'interface de Studio.",
+      "secretRefInvalid": "Utilisez env:NOM ou file:/chemin/absolu.",
+      "timeout": "Délai d'attente en secondes",
+      "timeoutHint": "Par défaut : {seconds} s, au plus 120 s.",
+      "timeoutInvalid": "Utilisez un nombre entier de 1 à 120.",
+      "test": "Tester la connexion",
+      "testAfterSave": "Enregistrez l'infrastructure pour tester ses connexions.",
+      "testOk": "La connexion fonctionne.",
+      "testFailed": "La connexion ne fonctionne pas.",
+      "checks": {
+        "token": "Identifiants",
+        "health": "Le service répond",
+        "query": "Accès en lecture"
+      },
+      "required": "Obligatoire",
+      "httpUrl": "Saisissez une URL http(s)."
+    }
   },
   "apps": {
     "title": "Applications",
@@ -426,7 +508,9 @@
       "studio_ui_navigation": "Modifier l'adresse de sa propre page, ouvrir des cibles et ouvrir des liens dans votre navigateur",
       "studio_backend": "Exécuter du code côté serveur (isolé)",
       "studio_ui_clipboard": "Copier du texte dans le presse-papiers lorsque vous cliquez",
-      "studio_containers": "Démarrer, arrêter, exporter et supprimer des instances BaSyx locales sur Docker ou Podman (applications fournies avec Studio uniquement)"
+      "studio_containers": "Démarrer, arrêter, exporter et supprimer des instances BaSyx locales sur Docker ou Podman (applications fournies avec Studio uniquement)",
+      "studio_timeseries_read": "Lire des séries temporelles, y compris dans les bases de données des connexions de l'infrastructure (applications fournies avec Studio uniquement)",
+      "studio_ui_externalFiles": "Récupérer dans votre navigateur des fichiers que l'AAS désigne sur d'autres hôtes (ces hôtes voient votre adresse)"
     },
     "bundled": "Incluse",
     "bundledHint": "Livrée avec Studio et mise à jour avec lui.",

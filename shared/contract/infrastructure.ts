@@ -1,4 +1,8 @@
 import { z } from 'zod'
+import { connectionInputSchema, connectionSchema } from './connections'
+import { scopesSchema, secretInputSchema, secretRefSchema, secretSummarySchema } from './credentials'
+
+export { type SecretInput, secretInputSchema, type SecretSummary, secretSummarySchema } from './credentials'
 
 /**
  * Service endpoints of an infrastructure. An `aasEnvironment` serves several
@@ -110,27 +114,6 @@ export const securityModes = ['unsecured', 'deployment_client_credentials', 'del
 export const securityModeSchema = z.enum(securityModes)
 export type SecurityMode = z.infer<typeof securityModeSchema>
 
-const scopesSchema = z.array(z.string().regex(/^[\u0021\u0023-\u005B\u005D-\u007E]+$/, 'invalid scope')).max(20)
-
-/**
- * A client secret is either a reference to deployment-provided secret material
- * (`env:NAME`, `file:/path`; hosted) or a value that the desktop Studio stores
- * encrypted with a key held in the OS credential store.
- */
-const secretRefSchema = z.string().regex(/^(?:env:[A-Z_][A-Z0-9_]*|file:\/\S+)$/, 'use env:NAME or file:/absolute/path')
-
-export const secretInputSchema = z.union([
-  z.object({ ref: secretRefSchema }),
-  z.object({ value: z.string().min(1).max(4096) }),
-])
-export type SecretInput = z.infer<typeof secretInputSchema>
-
-export const secretSummarySchema = z.object({
-  kind: z.enum(['env', 'file', 'stored']),
-  /** The reference for env/file secrets; never the secret value. */
-  ref: z.string().nullable(),
-})
-
 /** Largest accepted PKCS#12 bundle, base64-encoded (about 96 KiB of DER). */
 export const maxClientCertificateLength = 131_072
 
@@ -229,7 +212,19 @@ export const infrastructureInputSchema = z.object({
   clientCertificate: clientCertificateInputSchema.nullish(),
   /** Permit loopback and private-network addresses; subject to the deployment policy. */
   allowPrivateNetwork: z.boolean().default(false),
+  /** Third-party services that content of this infrastructure refers to (ADR 0040). */
+  connections: z.array(connectionInputSchema).max(20).default([]),
 }).superRefine((input, context) => {
+  const keys = new Set<string>()
+  for (const [index, connection] of input.connections.entries()) {
+    if (keys.has(connection.key)) {
+      context.addIssue({ code: 'custom', path: ['connections', index, 'key'], message: 'each connection key may occur only once' })
+    }
+    keys.add(connection.key)
+    if (connection.auth.scheme === 'delegatedUser' && input.security.mode !== 'delegated_user') {
+      context.addIssue({ code: 'custom', path: ['connections', index, 'auth', 'scheme'], message: 'the user\'s identity needs an infrastructure whose users sign in (delegated_user)' })
+    }
+  }
   const rules = templateRules[input.template]
   for (const [index, endpoint] of input.endpoints.entries()) {
     if (!rules.allowed.includes(endpoint.type)) {
@@ -302,6 +297,7 @@ export const infrastructureSchema = z.object({
   security: securitySummarySchema,
   clientCertificate: clientCertificateSummarySchema.nullable(),
   allowPrivateNetwork: z.boolean(),
+  connections: z.array(connectionSchema),
   /** Declared in the deployment's infrastructure file: read-only in Studio. */
   managed: z.boolean(),
   revision: z.number().int(),

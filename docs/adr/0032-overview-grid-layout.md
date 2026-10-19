@@ -1,7 +1,7 @@
 # 0032: Overview grid layout
 
 - Status: Accepted
-- Date: 2026-10-17; revised 2026-10-18 (rows, layouts per breakpoint, widget widths)
+- Date: 2026-10-17; revised 2026-10-18 (rows, layouts per breakpoint, widget widths) and 2026-10-19 (4 px grid rows)
 - Deciders: BaSyx Studio maintainers
 - Requirements: PROD-004
 
@@ -39,7 +39,12 @@ will need the same kind of grid later.
   than its content. Frames take no pointer events while a widget moves, so a
   drag over them is not lost.
 - A row follows its content height until the user resizes it; *Fit to
-  content* (or a double click on the corner) turns that back on. Widgets can
+  content* (or a double click on the corner) turns that back on. Grid rows
+  are 4 px with no gap between them; each widget keeps the 16 px gap below
+  it inside its grid item. A widget that follows its content therefore ends
+  within 4 px of it, where 16 px rows with 16 px gaps left up to 31 px empty.
+  Layouts stored with the old rows (no `rowStep`) are converted when read,
+  so every widget keeps its height in pixels. Widgets can
   be collapsed (a row whose widgets are all collapsed shrinks to their
   headers), hidden and shown again from the widget palette, a compact menu
   that lists each widget with the title and subtitle of its header. Every

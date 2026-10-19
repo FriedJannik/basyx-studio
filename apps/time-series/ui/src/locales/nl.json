@@ -1,0 +1,90 @@
+{
+  "config": {
+    "title": "Voorbeeldconfiguratie",
+    "segment": "Segment",
+    "time": "Tijdwaarde",
+    "values": "Waarden",
+    "noData": "Geen items",
+    "fetch": "Gegevens ophalen"
+  },
+  "chart": {
+    "type": "Grafiektype",
+    "emptyTitle": "Geen gegevens in het gekozen tijdsbereik",
+    "emptyText": "Kies een ander tijdsbereik of haal de gegevens opnieuw op.",
+    "interpolation": "Interpolatie",
+    "bins": "Klassen",
+    "stacked": "Gestapeld"
+  },
+  "chartType": {
+    "line": "Lijngrafiek",
+    "area": "Vlakgrafiek",
+    "scatter": "Spreidingsgrafiek",
+    "histogram": "Histogram",
+    "gauge": "Meter",
+    "display": "Weergaveveld"
+  },
+  "interpolation": {
+    "smooth": "Vloeiend",
+    "straight": "Recht",
+    "stepline": "Trappen"
+  },
+  "timeRange": {
+    "title": "Tijdsbereik",
+    "button": "Tijdsbereik: {label}",
+    "close": "Menu tijdsbereik sluiten",
+    "last": "Laatste {range}",
+    "absoluteRange": "Absoluut bereik",
+    "relative": "Relatief",
+    "absolute": "Absoluut",
+    "custom": "Aangepast",
+    "customTitle": "Aangepast relatief bereik",
+    "range": "Duur",
+    "unit": "Eenheid",
+    "from": "Van",
+    "to": "Tot"
+  },
+  "units": {
+    "milliseconds": "Milliseconden",
+    "seconds": "Seconden",
+    "minutes": "Minuten",
+    "hours": "Uren",
+    "days": "Dagen",
+    "weeks": "Weken",
+    "months": "Maanden",
+    "years": "Jaren"
+  },
+  "autoRefresh": {
+    "title": "Automatisch vernieuwen",
+    "button": "Automatisch vernieuwen: {label}",
+    "close": "Menu automatisch vernieuwen sluiten",
+    "off": "Uit",
+    "enabled": "Automatisch vernieuwen",
+    "every": "Vernieuwen elke",
+    "unit": "Eenheid"
+  },
+  "validation": {
+    "rangeInvalid": "Voer een geldig tijdsbereik in.",
+    "rangeMode": "Kies een geldig soort tijdsbereik.",
+    "rangePositive": "Voer een tijdsbereik groter dan nul in.",
+    "rangeUnit": "Kies een ondersteunde tijdseenheid.",
+    "rangeWhole": "Maanden en jaren moeten gehele getallen zijn.",
+    "rangeSupported": "Voer een tijdsbereik binnen het ondersteunde datumbereik in.",
+    "rangeBothDates": "Voer zowel een begin- als een einddatum in.",
+    "rangeValidDates": "Voer geldige begin- en einddatums in.",
+    "rangeOrder": "De begindatum moet voor de einddatum liggen.",
+    "refreshInvalid": "Voer een geldig vernieuwingsinterval in.",
+    "refreshPositive": "Voer een vernieuwingsinterval groter dan nul in.",
+    "refreshRange": "Gebruik een vernieuwingsinterval tussen 5 seconden en 24 dagen.",
+    "bins": "Voer een geheel aantal klassen tussen 1 en {max} in."
+  },
+  "warnings": {
+    "value_missing": "{value} is niet beschikbaar in de gegevens van dit segment.",
+    "time_missing": "De tijdwaarde {time} is niet beschikbaar in de gegevens van dit segment.",
+    "points_skipped": "{count} punten van {value} zonder geldige tijd of geldig getal zijn weggelaten.",
+    "points_reduced": "{value} heeft {count} punten in dit bereik; de grafiek toont er {limit}."
+  },
+  "errors": {
+    "load": "Het submodel kon niet worden gelezen: {message}",
+    "fetch": "De tijdreeks kon niet worden gelezen."
+  }
+}

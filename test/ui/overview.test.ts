@@ -1,7 +1,7 @@
 import type { OverviewItem, OverviewRow } from '#shared/overview'
 import { describe, expect, it } from 'vitest'
 import { defaultPreferences, preferencesSchema } from '#shared/contract'
-import { columnsAt, dropInRows, fillWidths, fitRow, groupRows, itemsAt, layoutRows, mergeOverviewLayout, moveInRows, overviewBreakpoint, overviewRows, readingOrder, resizeInRows, rowHeight, sameRows } from '#shared/overview'
+import { columnsAt, dropInRows, fillWidths, fitRow, groupRows, itemsAt, layoutRows, mergeOverviewLayout, moveInRows, overviewBreakpoint, overviewRows, readingOrder, resizeInRows, rowHeight, sameRows, shellOverviewSchema } from '#shared/overview'
 
 /** An item at the given place; following its content unless `fit` is given. */
 function item (i: string, x: number, y: number, w: number, h = 4, fit = true): OverviewItem {
@@ -15,10 +15,23 @@ function shape (rows: OverviewRow[]) {
 
 describe('overview layout', () => {
   it('sizes rows to hold their content', () => {
-    // A row is 16 px with a 16 px gap: n rows hold 32n - 16 px.
-    expect(overviewRows(48)).toBe(2)
-    expect(overviewRows(49)).toBe(3)
-    expect(overviewRows(0)).toBe(2)
+    // Rows are 4 px, and a widget keeps a 16 px gap below it: n rows hold 4n - 16 px.
+    expect(overviewRows(48)).toBe(16)
+    expect(overviewRows(49)).toBe(17)
+    expect(overviewRows(52)).toBe(17)
+    expect(overviewRows(0)).toBe(16)
+  })
+
+  it('converts layouts stored with 16 px rows and gaps, keeping every height in pixels', () => {
+    const stored = { layouts: { lg: [item('a', 0, 0, 12, 10), item('b', 0, 10, 6, 3, false)] }, items: [item('c', 0, 2, 12, 2)] }
+    const layout = shellOverviewSchema.parse(stored)
+    expect(layout.rowStep).toBe(4)
+    // 10 old rows were 32 · 10 - 16 = 304 px; 80 new rows are 4 · 80 - 16 = 304 px.
+    expect(layout.layouts.lg).toEqual([item('a', 0, 0, 12, 80), item('b', 0, 80, 6, 24, false)])
+    expect(layout.items).toEqual([item('c', 0, 16, 12, 16)])
+    // Converted once: a layout saved with the new rows stays as it is.
+    expect(shellOverviewSchema.parse(layout)).toEqual(layout)
+    expect(shellOverviewSchema.parse({}).rowStep).toBe(4)
   })
 
   it('orders widgets row by row, left to right', () => {
@@ -223,7 +236,7 @@ describe('overview layout', () => {
     const parsed = preferencesSchema.parse({ overviews: { t1: { broken: { items: [{ i: 'a', x: 99 }] }, kept: valid }, t2: { other: {} } } })
     expect(Object.keys(parsed.overviews.t1!)).toEqual(['kept'])
     expect(parsed.overviews.t1!.kept!.layouts.lg![0]).toMatchObject({ i: 'a', fit: true, collapsed: false })
-    expect(parsed.overviews.t2!.other).toEqual({ layouts: {}, items: [], hidden: [], pins: [] })
+    expect(parsed.overviews.t2!.other).toEqual({ layouts: {}, items: [], hidden: [], pins: [], rowStep: 4 })
   })
 
   it('drops overviews that are not records at all', () => {

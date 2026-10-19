@@ -14,6 +14,9 @@ export function createAppVuetify (components: Record<string, Component>) {
     defaults: {
       VBtn: { variant: 'text' },
       VBtnPrimary: { color: 'primary', variant: 'flat' },
+      // Grouped buttons as in Studio (shared/vuetify-defaults.ts in the Studio repository).
+      VBtnToggle: { density: 'compact', rounded: 'lg', color: 'primary', border: true, divided: true, variant: 'text', VBtn: { rounded: false } },
+      VBtnGroup: { density: 'compact', rounded: 'lg', border: true, divided: true, variant: 'text', VBtn: { rounded: false } },
       VCard: { variant: 'outlined' },
       VList: { color: 'primary' },
       VChip: { label: true, size: 'small', variant: 'tonal' },

@@ -14,6 +14,7 @@ import { performContainerMethod } from './containers'
 import { requestIdOf } from './handler'
 import { useStudio } from './studio'
 import { openTargetFor } from './target'
+import { performTimeSeriesRead } from './timeseries'
 
 export function requireAppsBaseUrl (studio: StudioRuntime): string {
   if (!studio.config.apps.baseUrl) {
@@ -81,6 +82,9 @@ export async function performAppCall (event: RequestEvent, call: AppCall): Promi
       await auditFailure(error)
       throw error
     }
+  }
+  if (method === 'studio.timeseries.read') {
+    return performTimeSeriesRead(studio, call, params as never, requestId)
   }
   if (!isAasMethod(method)) {
     return null

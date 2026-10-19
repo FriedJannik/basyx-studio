@@ -1,0 +1,167 @@
+# BaSyx Studio time series example (ADR 0040): Studio without login, a
+# BaSyx Go AAS environment with an IDTA Time Series Data submodel, and an
+# InfluxDB 2.7 that a sensor writes to every two seconds. Studio reads the
+# LinkedSegment through an influxdb2 connection whose read-only token never
+# leaves the Studio Service.
+#
+#   docker compose up -d
+#   open http://localhost:3000     → Local BaSyx → Climate sensor → Overview
+#
+# smoke-test.sh starts the same stack and checks it end to end.
+
+name: basyx-studio-time-series
+
+x-influx: &influx-cli
+  image: influxdb:2.7
+  environment:
+    INFLUX_HOST: http://influxdb:8086
+    INFLUX_ORG: basyx
+    INFLUX_TOKEN: ${INFLUX_ADMIN_TOKEN:-time-series-example-admin-token}
+  depends_on:
+    influxdb:
+      condition: service_healthy
+
+services:
+  studio:
+    image: ${STUDIO_IMAGE:-eclipsebasyx/basyx-studio:SNAPSHOT}
+    ports:
+      # Loopback only: every visitor is an administrator.
+      - "127.0.0.1:${STUDIO_PORT:-3000}:3000"
+    environment:
+      STUDIO_PUBLIC_URL: http://localhost:${STUDIO_PORT:-3000}
+      # Apps run on a separate origin (ADR 0017); *.localhost is loopback.
+      STUDIO_APPS_URL: http://apps.localhost:${STUDIO_PORT:-3000}
+      # Example only: generate your own (see docs/deployment).
+      STUDIO_DATA_KEY: ${STUDIO_DATA_KEY:-dGltZS1zZXJpZXMtZXhhbXBsZS1kYXRhLWtleS0wMDA}
+      STUDIO_AUTH_MODE: none
+      STUDIO_ANONYMOUS_ROLES: studio-admin
+      # BaSyx and InfluxDB are on the compose network, a private network.
+      STUDIO_PRIVATE_NETWORK_TARGETS: allow
+      STUDIO_INFRASTRUCTURES_FILE: /etc/basyx-studio/infrastructures.yaml
+    volumes:
+      - studio-data:/data
+      - ./infrastructures.yaml:/etc/basyx-studio/infrastructures.yaml:ro
+      # The read-only InfluxDB token, as file:/run/influx/read-token.
+      - influx-tokens:/run/influx:ro
+    depends_on:
+      basyx:
+        condition: service_started
+      influx-read-token:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      # The address the submodel's LinkedSegment names (an alias of the connection).
+      - "127.0.0.1:${INFLUX_PORT:-8086}:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUX_ADMIN_PASSWORD:-time-series-example}
+      DOCKER_INFLUXDB_INIT_ORG: basyx
+      DOCKER_INFLUXDB_INIT_BUCKET: basyx
+      DOCKER_INFLUXDB_INIT_RETENTION: 7d
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_ADMIN_TOKEN:-time-series-example-admin-token}
+    volumes:
+      - influx-data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping", "--host", "http://localhost:8086"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Creates the token Studio uses: read access to the basyx bucket only.
+  # The read-only token is the boundary; Studio's Flux check is defence in depth.
+  influx-read-token:
+    <<: *influx-cli
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        if [ -s /tokens/read-token ]; then exit 0; fi
+        bucket="$$(influx bucket list --name basyx --hide-headers | cut -f1)"
+        influx auth create --read-bucket "$$bucket" --description "BaSyx Studio (read-only)" --hide-headers \
+          | cut -f3 > /tokens/read-token
+        test -s /tokens/read-token
+    volumes:
+      - influx-tokens:/tokens
+
+  # A climate sensor: an hour of history once, then a point every two seconds,
+  # tagged like Telegraf's MQTT consumer (topic EnvironmentalSensor/<record>).
+  sensor:
+    <<: *influx-cli
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        point () {
+          awk -v t="$$1" -v s="$$RANDOM" 'BEGIN { srand(s)
+            printf "mqtt_consumer,host=sensor,topic=EnvironmentalSensor/Temperature value=%.2f %d\n", 21 + 2 * sin(t / 600) + rand() / 2, t
+            printf "mqtt_consumer,host=sensor,topic=EnvironmentalSensor/Humidity value=%.2f %d\n", 45 + 5 * cos(t / 900) + rand(), t }'
+        }
+        now="$$(date +%s)"
+        for ((t = now - 3600; t < now; t += 10)); do point "$$t"; done | influx write --bucket basyx --precision s
+        while true; do point "$$(date +%s)" | influx write --bucket basyx --precision s; sleep 2; done
+    restart: unless-stopped
+
+  basyx-postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: basyx
+      POSTGRES_PASSWORD: basyx
+      POSTGRES_DB: basyx
+    volumes:
+      - ../quickstart/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - basyx-db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U basyx"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  basyx-schema:
+    image: eclipsebasyx/basyxconfigurationservice-go:SNAPSHOT
+    environment: &basyx-db
+      POSTGRES_HOST: basyx-postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: basyx
+      POSTGRES_PASSWORD: basyx
+      POSTGRES_DBNAME: basyx
+    depends_on:
+      basyx-postgres:
+        condition: service_healthy
+
+  basyx:
+    image: eclipsebasyx/aasenvironment-go:SNAPSHOT
+    command: ["/app/aasenvironmentservice"]
+    environment:
+      <<: *basyx-db
+      SERVER_PORT: "5004"
+      ABAC_ENABLED: "false"
+      GENERAL_AASREGISTRYINTEGRATION: "true"
+      GENERAL_SUBMODELREGISTRYINTEGRATION: "true"
+      GENERAL_EXTERNALURL: http://basyx:5004
+    depends_on:
+      basyx-schema:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # Adds the climate sensor's shell, its Time Series Data submodel, the
+  # concept descriptions with the units, and the ExternalSegment's CSV.
+  seed:
+    image: curlimages/curl:8.17.0
+    entrypoint: ["sh", "/seed/seed.sh"]
+    environment:
+      BASYX_URL: http://basyx:5004
+    volumes:
+      - ./seed:/seed:ro
+    depends_on:
+      basyx:
+        condition: service_started
+
+volumes:
+  studio-data:
+  basyx-db:
+  influx-data:
+  influx-tokens:

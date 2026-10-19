@@ -55,7 +55,11 @@ export function useStudioApi () {
         responseType: request.responseType,
       }) as T
     } catch (error) {
-      const data = (error as { data?: unknown }).data
+      let data = (error as { data?: unknown }).data
+      // A file request reads its error body as a Blob too.
+      if (data instanceof Blob && data.type.includes('json')) {
+        data = await data.text().then(text => JSON.parse(text) as unknown, () => null)
+      }
       throw new StudioApiError(isProblem(data) ? data : null)
     }
   }

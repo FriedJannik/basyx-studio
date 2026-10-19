@@ -81,7 +81,6 @@
                   :aria-label="`Edit ${row.label}`"
                   icon="mdi-pencil-outline"
                   size="small"
-                  variant="text"
                   @click="startEdit(row)"
                 />
               </template>

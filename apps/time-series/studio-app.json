@@ -1,0 +1,31 @@
+{
+  "$schema": "../../packages/studio-sdk/app-manifest.schema.json",
+  "manifestVersion": 0,
+  "id": "org.eclipse.basyx.studio.time-series",
+  "version": "1.0.0",
+  "publisher": { "name": "Eclipse BaSyx" },
+  "title": { "en": "Time Series Data", "de": "Zeitreihendaten", "es": "Datos de series temporales", "fr": "Données de séries temporelles", "ja": "時系列データ", "nl": "Tijdreeksgegevens", "zh-Hans": "时间序列数据" },
+  "description": {
+    "en": "Shows the time series of an asset (IDTA 02008, Time Series Data) as line, area, scatter, histogram, gauge or display-field charts, from internal, linked and external segments, with time ranges and auto refresh.",
+    "de": "Zeigt die Zeitreihen eines Assets (IDTA 02008, Zeitreihendaten) als Linien-, Flächen-, Streu-, Histogramm-, Tacho- oder Anzeigefeld-Diagramm, aus internen, verknüpften und externen Segmenten, mit Zeiträumen und automatischer Aktualisierung.",
+    "es": "Muestra las series temporales de un activo (IDTA 02008, datos de series temporales) como gráfico de líneas, de áreas, de dispersión, histograma, indicador o campo de visualización, a partir de segmentos internos, vinculados y externos, con intervalos de tiempo y actualización automática.",
+    "fr": "Affiche les séries temporelles d'un actif (IDTA 02008, données de séries temporelles) sous forme de courbe, d'aires, de nuage de points, d'histogramme, de jauge ou de champ d'affichage, à partir de segments internes, liés et externes, avec des plages de temps et une actualisation automatique.",
+    "ja": "資産の時系列（IDTA 02008、時系列データ）を、内部・リンク・外部セグメントから、折れ線、面、散布図、ヒストグラム、ゲージ、表示フィールドのチャートで表示します。期間の指定と自動更新に対応しています。",
+    "nl": "Toont de tijdreeksen van een asset (IDTA 02008, tijdreeksgegevens) als lijn-, vlak-, spreidings-, histogram-, meter- of weergaveveldgrafiek, uit interne, gekoppelde en externe segmenten, met tijdsbereiken en automatisch vernieuwen.",
+    "zh-Hans": "以折线图、面积图、散点图、直方图、仪表盘或显示字段显示资产的时间序列（IDTA 02008，时间序列数据），数据来自内部、链接和外部分段，支持时间范围和自动刷新。"
+  },
+  "studioApi": "^0.1.2",
+  "runtimes": ["hosted", "desktop"],
+  "permissions": ["studio.aas.read", "studio.timeseries.read", "studio.ui.notifications"],
+  "contributes": {
+    "submodelViews": [
+      {
+        "id": "time-series",
+        "title": { "en": "Time Series Data", "de": "Zeitreihendaten", "es": "Datos de series temporales", "fr": "Données de séries temporelles", "ja": "時系列データ", "nl": "Tijdreeksgegevens", "zh-Hans": "时间序列数据" },
+        "entry": "ui/index.html",
+        "semanticIds": ["https://admin-shell.io/idta/TimeSeries/1/1"],
+        "columns": { "md": 12, "xl": 6 }
+      }
+    ]
+  }
+}

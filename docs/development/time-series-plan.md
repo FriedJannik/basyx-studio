@@ -1,6 +1,6 @@
 # Time series plan: the Time Series Data view in Studio
 
-- Status: Proposed
+- Status: Implemented 2026-10-19 (see [implementation status](#implementation-status))
 - Date: 2026-10-19
 - Depends on: the app platform of [MVP-3](mvp-3-plan.md), bundled apps
   ([ADR 0023](../adr/0023-bundled-first-party-apps.md)), the capability bridge
@@ -313,3 +313,35 @@ infrastructures:
 - The `http` connection type with operations that an administrator approved
   for an app ([MVP-7](mvp-7-plan.md)).
 - Deployment-wide connections for desktop workspaces (K9).
+
+## Implementation status
+
+Implemented on the `time-series` branch on 2026-10-19. The connections core
+is complete for [MVP-7](mvp-7-plan.md): every authentication scheme of
+CON-007 works at runtime, so MVP-7 only adds the `http` type, app bindings
+and `studio.connections.call`.
+
+| Phase | Status | Evidence |
+| --- | --- | --- |
+| A | Done | ADR 0040, ADR 0041; `security.md` and `app-platform.md` updated |
+| B | Done | Contract, adapter registry, migration 0007, secret storage, YAML, export and import, admin section, *Test connection*. Unit tests (`test/connections`) for storage, summaries, export stripping, the YAML file, every auth scheme's headers, client credentials and token exchange against a fake IdP, forwarding with the audience check, a fake InfluxDB, redirects and foreign origins. In the browser: hosted (references) and desktop (stored values kept on update, stripped from exports) |
+| C | Done | `server/lib/timeseries`, the capability and its audit. Unit tests (`test/timeseries`) with the Web UI's fixtures, plus the Flux check, injection through values, foreign endpoints, wrong paths, HTML instead of CSV, limits and the `latest` anchor |
+| D | Done | `apps/time-series`; 56 unit tests ported from the Web UI's time range and auto refresh tests plus series preparation; lint, typecheck and i18n check |
+| E | Done for hosted | `examples/deployment/time-series` with InfluxDB 2.7, a simulated sensor and a read-only token. In headless Chromium against a dev Studio: all three segments charted in light and dark, auto refresh at 5 s, and the database token in no request or answer of the page. `smoke-test.mjs` checks the stack through the API and runs in CI after the image build. The desktop app was checked through the API in desktop mode, not in Electron |
+| F | Done | Deployment guide: connections, the read-only token and the migration from `INFLUXDB_TOKEN` |
+
+Deviations from the decisions above:
+
+- **K2:** `range` also takes `anchor` (`fixed` or `latest`). With `latest`,
+  internal and external segments move the range to end at their latest
+  point, as the Web UI does for relative ranges; the result's `range` says
+  which range the series cover.
+- **K4:** a query without `{{y-value}}` is sent once and its tables are
+  matched to the values by key, ignoring case. A query per value may also
+  name its only table differently (for example after an MQTT topic).
+- **K1:** the app API becomes 0.1.2; MVP-7's methods raise it to 0.2.0 as
+  planned.
+- **D:** there is no component test setup in the repository, so the Web
+  UI's component tests were ported as tests of the logic modules.
+- The Web UI's Telegraf and MQTT setup is replaced by a small writer in the
+  example, which tags points like Telegraf's MQTT consumer.

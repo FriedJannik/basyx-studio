@@ -58,6 +58,10 @@ export const problemCodes = [
   'app_permission_not_declared',
   'app_backend_unavailable',
   'app_backend_failed',
+  /** A file that AAS content names at another host could not be fetched (unreachable, refused by CORS, an error status, or too large). */
+  'external_file_unavailable',
+  /** The deployment does not let Studio's server fetch files from that origin or address (ADR 0042). */
+  'external_file_refused',
   // Local BaSyx instances (ADR 0033)
   /** No container engine answers, or the chosen one is not running. */
   'container_engine_unavailable',
@@ -73,6 +77,22 @@ export const problemCodes = [
   'container_start_failed',
   /** The engine refused an operation. */
   'container_operation_failed',
+  // Connections to third-party services (ADR 0040)
+  /** No connection of the infrastructure serves this purpose for the service the content names. */
+  'connection_not_configured',
+  /** The secret of the connection could not be resolved (a missing env: or file: reference). */
+  'connection_credentials_unavailable',
+  /** The service rejected the connection's credentials (HTTP 401 or 403). */
+  'connection_rejected',
+  /** The service could not be reached, did not answer in time or answered too much. */
+  'connection_unavailable',
+  /** The service reported an error for the request. */
+  'connection_error',
+  /** The content asks for something the adapter does not send, e.g. a Flux query that writes. */
+  'connection_request_refused',
+  // Time series (ADR 0040)
+  /** The submodel is not an IDTA Time Series Data submodel, or the segment or records are not in it. */
+  'timeseries_invalid',
 ] as const
 
 export const problemCodeSchema = z.enum(problemCodes)

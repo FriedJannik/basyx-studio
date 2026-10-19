@@ -6,25 +6,13 @@
         <div v-show="showModel" ref="host" class="position-absolute top-0 left-0 w-100 h-100" data-test="viewer-canvas" />
 
         <div v-if="!showModel" class="d-flex flex-column align-center justify-center h-100 w-100">
-          <div class="flex-grow-1 w-100 overflow-hidden">
-            <PreviewImage
-              :alt="title"
-              :client="client"
-              contain
-              :file="version?.preview ?? null"
-              icon-size="64"
-              :submodel-id="submodelId"
-            />
-          </div>
-
-          <v-btn
-            v-if="!version?.digital && externalUrl"
-            class="mb-4"
-            color="primary"
-            prepend-icon="mdi-open-in-new"
-            :text="t('viewer.openExternal')"
-            variant="tonal"
-            @click="emit('open', externalUrl)"
+          <PreviewImage
+            :alt="title"
+            :client="client"
+            contain
+            :file="version?.preview ?? null"
+            icon-size="64"
+            :submodel-id="submodelId"
           />
         </div>
 
@@ -45,7 +33,7 @@
         />
 
         <v-chip
-          v-if="viewer.problem.value && !showImage"
+          v-if="viewer.problem.value && !showImage && !externalFailed"
           class="position-absolute bottom-0 left-0 ma-2"
           color="warning"
           prepend-icon="mdi-alert-outline"
@@ -53,15 +41,16 @@
           variant="elevated"
         />
 
-        <!-- Controls over the canvas, as the BOM viewer's graph has them. -->
+        <!-- Controls over the canvas, as the BOM viewer's graph has them; solid, like the format chip, so they show on a light preview image too. -->
         <div class="position-absolute top-0 right-0 d-flex ga-1 ma-2">
           <v-btn
             v-if="showModel"
             :aria-label="t('viewer.resetView')"
+            color="surface"
             :disabled="viewer.status.value !== 'ready'"
             icon
             size="small"
-            variant="tonal"
+            variant="flat"
             @click="viewer.resetView()"
           >
             <v-icon icon="mdi-fit-to-screen-outline" />
@@ -71,10 +60,11 @@
           <v-btn
             v-if="canToggle"
             :aria-label="toggleLabel"
+            color="surface"
             data-test="viewer-toggle"
             icon
             size="small"
-            variant="tonal"
+            variant="flat"
             @click="showImage = !showImage"
           >
             <v-icon :icon="showImage ? 'mdi-rotate-3d-variant' : 'mdi-image-outline'" />
@@ -84,9 +74,10 @@
           <v-btn
             v-if="version?.digital"
             :aria-label="t('viewer.download')"
+            color="surface"
             icon
             size="small"
-            variant="tonal"
+            variant="flat"
             @click="emit('download', version.digital.path)"
           >
             <v-icon icon="mdi-download" />
@@ -94,12 +85,26 @@
           </v-btn>
 
           <v-btn
+            v-if="external && !externalFailed"
+            :aria-label="t('viewer.openExternal')"
+            color="surface"
+            icon
+            size="small"
+            variant="flat"
+            @click="emit('open', externalUrl)"
+          >
+            <v-icon icon="mdi-open-in-new" />
+            <v-tooltip activator="parent" location="bottom" :text="t('viewer.openExternalAt', { host: externalHost })" />
+          </v-btn>
+
+          <v-btn
             v-if="!fullscreen"
             :aria-label="t('viewer.fullscreen')"
+            color="surface"
             data-test="viewer-fullscreen"
             icon
             size="small"
-            variant="tonal"
+            variant="flat"
             @click="emit('fullscreen')"
           >
             <v-icon icon="mdi-fullscreen" />
@@ -110,7 +115,22 @@
     </v-sheet>
 
     <v-alert v-if="notice" density="compact" :text="notice" type="info" />
-    <v-alert v-if="problemText && !showImage" density="compact" :text="problemText" type="warning" />
+
+    <!-- A file at another host that is not shown in 3D (its format, or the host refused Studio):
+         the preview fills the box, and the link is said and offered below it. -->
+    <v-alert
+      v-if="!version?.digital && externalUrl && (!external || externalFailed)"
+      data-test="viewer-external"
+      density="compact"
+      :text="externalFailed ? t('viewer.externalFailed', { host: externalHost }) : t('viewer.external', { host: externalHost })"
+      type="info"
+    >
+      <template #append>
+        <v-btn prepend-icon="mdi-open-in-new" :text="t('viewer.openExternal')" @click="emit('open', externalUrl)" />
+      </template>
+    </v-alert>
+
+    <v-alert v-if="problemText && !showImage && !externalFailed" density="compact" :text="problemText" type="warning" />
 
     <v-alert
       v-if="viewer.result.value && viewer.result.value.missingImages.length > 0"
@@ -158,7 +178,7 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import DefinitionList from './DefinitionList.vue'
   import { useI18n } from './i18n'
-  import { viewerFormat } from './models3d'
+  import { externalModel, viewerFormat } from './models3d'
   import { formatLabel } from './presentation'
   import PreviewImage from './PreviewImage.vue'
 
@@ -184,12 +204,17 @@
   const viewer = useModelViewer(host, () => props.theme)
 
   const showImage = ref(false)
-  const format = computed(() => viewerFormat(props.version))
+  // A file of its own, else one at another host, which Studio's page fetches (`readExternalFile`).
+  const external = computed(() => externalModel(props.version))
+  const format = computed(() => viewerFormat(props.version) ?? external.value?.format ?? null)
   const canView = computed(() => format.value !== null)
   const showModel = computed(() => canView.value && !showImage.value && !viewer.problem.value)
   const canToggle = computed(() => canView.value && Boolean(props.version?.preview) && !viewer.problem.value)
   const toggleLabel = computed(() => (showImage.value ? t('viewer.showModel') : t('viewer.showImage')))
-  const externalUrl = computed(() => props.version?.externalFiles.find(file => /^https?:\/\//i.test(file.url))?.url ?? '')
+  const externalUrl = computed(() => external.value?.file.url ?? props.version?.externalFiles.find(file => /^https?:\/\//i.test(file.url))?.url ?? '')
+  /** The host did not hand out the file (unreachable, CORS, too large): its preview and link instead. */
+  const externalFailed = computed(() => Boolean(external.value) && viewer.problem.value?.code === 'download')
+  const externalHost = computed(() => URL.parse(externalUrl.value)?.host ?? externalUrl.value)
   const formatText = computed(() => {
     // "binary (.glb)" → ".glb"
     const qualifier = props.version?.format.qualifier.match(/\(([^)]+)\)/)?.[1]
@@ -224,11 +249,16 @@
 
   async function load () {
     const version = props.version
-    if (!version?.digital || !format.value) {
+    if (!format.value) {
       return
     }
-    const path = version.digital.path
-    await viewer.load(async () => (await props.client.ui.readFile(props.submodelId, path)).bytes, format.value)
+    if (version?.digital) {
+      const path = version.digital.path
+      await viewer.load(async () => (await props.client.ui.readFile(props.submodelId, path)).bytes, format.value)
+    } else if (external.value) {
+      const path = external.value.file.urlPath
+      await viewer.load(async () => (await props.client.ui.readExternalFile(props.submodelId, path)).bytes, format.value)
+    }
   }
 
   onMounted(load)

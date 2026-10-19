@@ -7,9 +7,20 @@ import { z } from 'zod'
  * stored layout can later become one.
  */
 export const overviewColumns = 12
-/** Height of a grid row and the gap between rows and columns, in CSS pixels. */
-export const overviewRowHeight = 16
+/**
+ * Height of a grid row, in CSS pixels. Rows are fine, so a widget that
+ * follows its content ends within 4 px of it. There is no gap between grid
+ * rows: each widget keeps `overviewGap` free below it instead, so widgets
+ * are 16 px apart in both directions.
+ */
+export const overviewRowStep = 4
+/** The gap between widgets, in CSS pixels. */
 export const overviewGap = 16
+/**
+ * The row step of layouts stored before rows were fine: 16 px rows with
+ * 16 px gaps between them. Such layouts are converted when read.
+ */
+export const legacyRowStep = 32
 
 /** Vuetify's breakpoint names, smallest first. */
 export const displayBreakpoints = ['xs', 'sm', 'md', 'lg', 'xl', 'xxl'] as const
@@ -24,10 +35,10 @@ const widgetId = z.string().min(1).max(1200)
 export const overviewItemSchema = z.object({
   i: widgetId,
   x: z.number().int().min(0).max(overviewColumns - 1),
-  y: z.number().int().min(0).max(10_000),
+  y: z.number().int().min(0).max(80_000),
   w: z.number().int().min(1).max(overviewColumns),
   /** Rows when expanded; a collapsed widget shows only its header. */
-  h: z.number().int().min(1).max(400),
+  h: z.number().int().min(1).max(3200),
   /** Follows the height of its content until the user resizes it. */
   fit: z.boolean().default(true),
   collapsed: z.boolean().default(false),
@@ -48,6 +59,11 @@ export type OverviewPin = z.infer<typeof overviewPinSchema>
 
 const overviewItemsSchema = z.array(overviewItemSchema).max(100)
 
+/** Items stored with another row step, at the current one: the same widgets at the same heights in pixels. */
+function convertRows (items: OverviewItem[], factor: number): OverviewItem[] {
+  return items.map(item => ({ ...item, y: Math.round(item.y * factor), h: Math.round(item.h * factor) }))
+}
+
 export const shellOverviewSchema = z.object({
   /** The layout per breakpoint of the Overview's width. */
   layouts: z.partialRecord(z.enum(overviewBreakpoints), overviewItemsSchema).default({}),
@@ -55,8 +71,21 @@ export const shellOverviewSchema = z.object({
   items: overviewItemsSchema.default([]),
   hidden: z.array(widgetId).max(100).default([]),
   pins: z.array(overviewPinSchema).max(overviewPinLimit).default([]),
+  /** The row step in pixels the positions are in; missing in layouts stored before rows were fine. */
+  rowStep: z.number().int().min(1).max(64).default(legacyRowStep),
+}).transform(layout => {
+  if (layout.rowStep === overviewRowStep) {
+    return layout
+  }
+  const factor = layout.rowStep / overviewRowStep
+  return {
+    ...layout,
+    layouts: Object.fromEntries(Object.entries(layout.layouts).map(([breakpoint, items]) => [breakpoint, convertRows(items, factor)])),
+    items: convertRows(layout.items, factor),
+    rowStep: overviewRowStep,
+  }
 })
-export type ShellOverviewLayout = z.infer<typeof shellOverviewSchema>
+export type ShellOverviewLayout = z.output<typeof shellOverviewSchema>
 
 /** What one undo puts back: positions, hidden widgets and pins. */
 export type OverviewSnapshot = Pick<ShellOverviewLayout, 'layouts' | 'items' | 'hidden' | 'pins'>
@@ -86,9 +115,15 @@ export const overviewShellLimit = 30
 /** Height of a widget's header with the divider below it, in CSS pixels. */
 export const overviewHeaderHeight = 45
 
-/** Grid rows that hold `pixels` of content. */
+/** A widget's height besides its content: the header with its divider, and the card's 1 px border at the top and bottom. */
+export const overviewChromeHeight = overviewHeaderHeight + 2
+
+/** The shortest a widget gets, in CSS pixels. */
+const minimumHeight = 48
+
+/** Grid rows that hold a widget `pixels` tall, with the gap below it. */
 export function overviewRows (pixels: number): number {
-  return Math.max(2, Math.ceil((pixels + overviewGap) / (overviewRowHeight + overviewGap)))
+  return Math.ceil((Math.max(pixels, minimumHeight) + overviewGap) / overviewRowStep)
 }
 
 /** A grid position; `i` is the widget's ID. */
@@ -108,8 +143,8 @@ export function readingOrder<T extends GridBox> (items: T[]): T[] {
 export const overviewMinColumns = 3
 export const overviewRowLimit = Math.floor(overviewColumns / overviewMinColumns)
 
-/** The edge of a row, in grid rows, where a dropped widget gets a row of its own. */
-export const overviewRowEdge = 3
+/** The edge of a row, in grid rows (96 px), where a dropped widget gets a row of its own. */
+export const overviewRowEdge = Math.round(96 / overviewRowStep)
 
 /** A row of the Overview: its widgets, left to right. */
 export type OverviewRow = OverviewItem[]

@@ -11,6 +11,12 @@ const hexColor = z.string().regex(/^#[0-9A-F]{6}$/i, 'use #RRGGBB')
 const flag = z.enum(['true', 'false']).optional()
 const httpsUrl = z.url({ protocol: /^https?$/ })
 
+/** `*`, or an http(s) origin without path, e.g. `https://downloads.example.com`. */
+function isOriginOrAny (value: string): boolean {
+  const url = URL.parse(value)
+  return value === '*' || (url !== null && /^https?:$/.test(url.protocol) && url.origin === value.replace(/\/$/, ''))
+}
+
 const envSchema = z.object({
   STUDIO_PUBLIC_URL: z.url({ protocol: /^https?$/ }).optional(),
   STUDIO_DATABASE_URL: z.string().regex(/^postgres(?:ql)?:\/\//).optional(),
@@ -28,6 +34,7 @@ const envSchema = z.object({
   STUDIO_ADMIN_ROLE: z.string().min(1).default('studio-admin'),
   STUDIO_SESSION_TTL_HOURS: z.coerce.number().positive().max(24 * 30).default(12),
   STUDIO_PRIVATE_NETWORK_TARGETS: z.enum(['allow', 'deny']).optional(),
+  STUDIO_EXTERNAL_FILE_ORIGINS: csv.pipe(z.array(z.string().refine(isOriginOrAny, 'use * or origins such as https://downloads.example.com'))).optional(),
   STUDIO_LAUNCH_SECRET: z.string().optional(),
   STUDIO_APPS_URL: z.url({ protocol: /^https?$/ }).optional(),
   STUDIO_APPS_ALLOW_UNSIGNED: z.enum(['true', 'false']).optional(),
@@ -115,6 +122,11 @@ export interface StudioConfig {
   adminRole: string
   sessionTtlMs: number
   allowPrivateNetworkTargets: boolean
+  /**
+   * Origins whose files, named by AAS content, Studio's server fetches when
+   * the browser may not read them (ADR 0042); `*` for any.
+   */
+  externalFileOrigins: '*' | string[]
   secureCookies: boolean
   apps: StudioAppsConfig
   /**
@@ -306,6 +318,7 @@ export function loadStudioConfig (env: NodeJS.ProcessEnv, deploymentMode: Deploy
     adminRole: values.STUDIO_ADMIN_ROLE,
     sessionTtlMs: values.STUDIO_SESSION_TTL_HOURS * 60 * 60 * 1000,
     allowPrivateNetworkTargets: (values.STUDIO_PRIVATE_NETWORK_TARGETS ?? (deploymentMode === 'desktop' ? 'allow' : 'deny')) === 'allow',
+    externalFileOrigins: externalFileOrigins(values.STUDIO_EXTERNAL_FILE_ORIGINS, deploymentMode),
     secureCookies: publicUrl.startsWith('https://'),
     apps: {
       baseUrl: appsBaseUrl,
@@ -322,6 +335,12 @@ export function loadStudioConfig (env: NodeJS.ProcessEnv, deploymentMode: Deploy
     uploadMaxBytes: values.STUDIO_UPLOAD_MAX_BYTES,
     containers: deploymentMode === 'desktop' ? { dataDir: resolve(values.STUDIO_DATA_DIR, 'containers') } : null,
   }
+}
+
+/** The listed origins; by default any on desktop, where the user's own machine fetches, and none when hosted. */
+function externalFileOrigins (entries: string[] | undefined, mode: DeploymentMode): '*' | string[] {
+  const listed = entries ?? (mode === 'desktop' ? ['*'] : [])
+  return listed.includes('*') ? '*' : listed.map(entry => new URL(entry).origin)
 }
 
 /** Settings that work but deserve a line in the log at startup. */

@@ -18,6 +18,8 @@ export function record (url: string, security: InfrastructureRecord['security'])
     security,
     secretCiphertext: null,
     allowPrivateNetwork: true,
+    connections: [],
+    connectionSecretsCiphertext: null,
     managedKey: null,
     managedDigest: null,
     revision: 1,

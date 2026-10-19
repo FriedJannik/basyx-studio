@@ -1,5 +1,7 @@
 import vuetify from 'eslint-config-vuetify'
 import withNuxt from './.nuxt/eslint.config.mjs'
+import { appDefaults } from './apps/shared/defaults.ts'
+import { buttonGroupStyleProps } from './shared/vuetify-defaults.ts'
 import vuetifyConfig from './vuetify.config.ts'
 
 // VAppBar -> v-app-bar, maxWidth -> max-width
@@ -11,7 +13,7 @@ const toKebab = name => name.replace(/[A-Z]/g, (letter, index) => (index ? '-' :
  * a default and the config stays the single source of truth. Contextual
  * defaults (nested components) and `class` are not derived.
  */
-function restatedDefaults (defaults) {
+function restatedDefaults (defaults, source = 'vuetify.config.ts') {
   return Object.entries(defaults).flatMap(([component, props]) => {
     const element = toKebab(component)
     return Object.entries(props)
@@ -20,10 +22,20 @@ function restatedDefaults (defaults) {
         element,
         key: toKebab(key),
         value: value === true ? true : String(value),
-        message: `\`${toKebab(key)}\` on <${element}> restates the global default in vuetify.config.ts; remove it.`,
+        message: `\`${toKebab(key)}\` on <${element}> restates the global default in ${source}; remove it.`,
       }))
   })
 }
+
+/**
+ * Grouped buttons look the same everywhere (shared/vuetify-defaults.ts): a
+ * bare <v-btn-toggle> or <v-btn-group>, never styled in a template.
+ */
+const styledButtonGroups = ['v-btn-toggle', 'v-btn-group'].flatMap(element => buttonGroupStyleProps.map(key => ({
+  element,
+  key,
+  message: `\`${key}\` on <${element}>: grouped buttons get their look from shared/vuetify-defaults.ts; remove it (see AGENTS.md).`,
+})))
 
 export default withNuxt(
   vuetify({
@@ -50,11 +62,13 @@ export default withNuxt(
   },
 }).append({
   // Apps (apps/, examples/apps/) create their own Vuetify instance, so only
-  // Studio's own components are checked against vuetify.config.ts.
+  // Studio's own components are checked against vuetify.config.ts; the apps
+  // shipped with Studio are checked against apps/shared/defaults.ts below.
   files: ['app/**/*.vue'],
   rules: {
     'vue/no-restricted-static-attribute': ['error',
       ...restatedDefaults(vuetifyConfig.defaults),
+      ...styledButtonGroups,
       {
         element: 'v-btn',
         key: 'variant',
@@ -62,6 +76,20 @@ export default withNuxt(
         message: 'Use <v-btn-primary> (vuetify.config.ts alias) for primary actions.',
       },
     ],
+  },
+}).append({
+  files: ['apps/**/*.vue'],
+  rules: {
+    'vue/no-restricted-static-attribute': ['error',
+      ...restatedDefaults(appDefaults, 'apps/shared/defaults.ts'),
+      ...styledButtonGroups,
+    ],
+  },
+}).append({
+  // Example apps bring their own defaults (examples/apps/shared/vuetify.ts).
+  files: ['examples/apps/**/*.vue'],
+  rules: {
+    'vue/no-restricted-static-attribute': ['error', ...styledButtonGroups],
   },
 }).append({
   // Studio may run under a base path (STUDIO_BASE_PATH). Plain `href` and

@@ -45,13 +45,14 @@ functional level without duplicating the OpenAPI schemas.
 | `POST /targets/{targetId}/authorization` | Starts or resumes authentication for exactly this target. Other target sessions stay unchanged. |
 | `DELETE /targets/{targetId}/authorization` | Disconnects only the credential context of this target. |
 | `GET /infrastructures` | Lists administratively managed live infrastructures. |
-| `POST /infrastructures` | Accepts an admin configuration (template, endpoints, `listSource`, `sync`, security), validates the template and SSRF/network rules as well as an optional client certificate (`clientCertificate`, PKCS#12), runs a probe and only then registers it. When hosted, secrets and certificates are handled only as references; the desktop stores uploaded values encrypted. |
+| `POST /infrastructures` | Accepts an admin configuration (template, endpoints, `listSource`, `sync`, security, `connections` to third-party services), validates the template and SSRF/network rules as well as an optional client certificate (`clientCertificate`, PKCS#12), runs a probe and only then registers it. When hosted, secrets and certificates are handled only as references; the desktop stores uploaded values encrypted. |
 | `GET /infrastructures/{infrastructureId}` | Returns sanitized configuration details, endpoints, service profiles (`serviceProfiles`, `probedAt`, `announced`) and revision. |
 | `PUT /infrastructures/{infrastructureId}` | Replaces the configuration with `If-Match`, renewed validation and a probe. An omitted `clientCertificate` is kept; `null` removes it. |
 | `DELETE /infrastructures/{infrastructureId}` | Removes the Studio configuration, not the data of the infrastructure. |
 | `GET /infrastructures/export` | Exports all infrastructures, or those named by `ids`, in the format of `STUDIO_INFRASTRUCTURES_FILE` (YAML, [ADR 0037](../adr/0037-declared-infrastructures-export-and-import.md)). References to deployment secrets are kept; secrets and certificates stored in Studio are replaced by a comment. `?download` answers with a file. |
 | `POST /infrastructures/import` | Checks (`dryRun`) or imports YAML in the same format: reports problems and name conflicts per entry, and creates or replaces entries one by one (`resolutions`), each with a probe. Refused when the deployment fixes its infrastructures. |
 | `POST /infrastructures/{infrastructureId}/probe` | Queries `/description` of each endpoint again, returns reachability and profiles per endpoint and replaces the stored profiles. |
+| `POST /infrastructures/{infrastructureId}/connections/{connectionKey}/test` | Tests a connection to a third-party service (ADR 0040): obtains its credentials and runs the type's checks, e.g. `GET /health` and a read-only query for `influxdb2`. Tests the stored connection, or the edited one in the body with the stored secret where none is given. Returns each check without the secret; audited. |
 
 ## AAS and target data
 
@@ -79,6 +80,7 @@ selects the BaSyx TypeScript SDK client or the Workspace Worker server-side.
 | `POST /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/moves` | Moves an element to a position among its siblings; `If-Match` with the structure revision of the parent node (`structure_conflict` on a concurrent structural change). |
 | `PUT /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/value` | Sets the value of a Property or MultiLanguageProperty with `If-Match`. |
 | `GET/PUT /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/attachment` | Streams the content of a File element or replaces it with `If-Match`. |
+| `GET /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/external-file` | Fetches the file that a File or Property element names at another host, for origins the deployment lists (ADR 0042). |
 | `POST /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/invocations` | Invokes an Operation synchronously or asynchronously; asynchronous invocations return a handle. |
 | `GET /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/invocations/{handle}` | Queries the state and outputs of an asynchronous invocation. |
 | `GET/POST /targets/{targetId}/concept-descriptions` | Lists or creates concept descriptions (without an ID, Studio generates one following the infrastructure's scheme; `identifier_conflict` if the ID exists). |

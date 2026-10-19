@@ -128,6 +128,22 @@ These build on the connections core of the [time series plan](time-series-plan.m
 (C1–C8): infrastructure-scoped entries with `type`, `url`, `aliases`, `auth`
 and `settings`, secrets as references or encrypted values, and guarded fetch.
 
+The time series work implemented this core in full, so MVP-7 does not change
+it ([ADR 0040](../adr/0040-connections-on-infrastructures.md)):
+
+- the `auth` union with every scheme of K5 and CON-007, including
+  `delegatedUser` with token exchange (RFC 8693) and `forwardUserToken` with
+  the audience check (K5a), in `server/lib/connections/auth.ts` and the
+  credential broker;
+- per-connection `timeoutSeconds` up to 120 s and the 20 MiB response cap
+  (K7), the stored format (migration 0007), declared YAML, export and import,
+  the admin section and *Test connection*.
+
+MVP-7 adds the `http` member of the `type` union with its `settings` and the
+`apps` binding list (K3), the adapter in `server/lib/connections/http.ts`,
+`studio.connections.call` (K4, K6, K8, K9), and the limit of four concurrent
+calls per session and connection (K7).
+
 | # | Topic | Proposal |
 | --- | --- | --- |
 | K1 | Type | `type: http`, a generic HTTP service whose usable surface is a set of declared operations. There is no free path or method (CON-002). |

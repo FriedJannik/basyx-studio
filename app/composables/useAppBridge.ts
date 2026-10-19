@@ -1,7 +1,7 @@
-import type { AppCallResult, AppContext, AppContributionInfo, AppMethodName, Problem } from '#shared/contract'
+import type { AppCallResult, AppContext, AppContributionInfo, AppMethodName, ElementDetail, Problem } from '#shared/contract'
 import type { Ref } from 'vue'
 import { useQueryCache } from '@pinia/colada'
-import { appHelloSchema, appMethodNameSchema, appMethodParamsSchemas, appProtocol, appRequestMessageSchema, readFileMaxBytes } from '#shared/contract'
+import { appHelloSchema, appMethodNameSchema, appMethodParamsSchemas, appProtocol, appRequestMessageSchema, externalFileUrl, readFileMaxBytes } from '#shared/contract'
 import { StudioApiError } from '~/composables/useStudioApi'
 import { resourceKey } from '~/utils/aas'
 
@@ -45,6 +45,7 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
   const copy = useClipboard()
   const desktop = useDesktopBridge()
   const studioUrl = useStudioUrl()
+  const readExternalFile = useExternalFile()
   const connected = ref(false)
   /** Content height the app asked for (`studio.ui.setHeight`), or `null`. */
   const height = ref<number | null>(null)
@@ -142,6 +143,20 @@ export function useAppBridge (frame: Ref<HTMLIFrameElement | null>, options: App
         }
         const bytes = new Uint8Array(await blob.arrayBuffer())
         return { result: { bytes, contentType: blob.type || 'application/octet-stream' }, transfer: [bytes.buffer] }
+      }
+      case 'studio.ui.readExternalFile': {
+        // The address comes from the element as the user reads it, never from the app.
+        if (!options.targetId) {
+          throw hostProblem('invalid_request', 'This app frame is not bound to a target.', 400)
+        }
+        const file = appMethodParamsSchemas['studio.ui.readExternalFile'].parse(params)
+        const element = await api<ElementDetail>(`/targets/${options.targetId}/submodels/${resourceKey(file.submodelId)}/elements/${resourceKey(file.idShortPath)}`)
+        const url = externalFileUrl(element.value)
+        if (!url) {
+          throw hostProblem('unsupported_operation', 'The element does not name a file by an http(s) address.', 422)
+        }
+        const content = await readExternalFile(url, { targetId: options.targetId, submodelKey: resourceKey(file.submodelId), elementKey: resourceKey(file.idShortPath) })
+        return { result: content, transfer: [content.bytes.buffer] }
       }
       case 'studio.ui.navigate': {
         if (contribution.kind === 'module') {

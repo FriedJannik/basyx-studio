@@ -4,15 +4,16 @@ import { connect, fitHeight } from '@basyx/studio-sdk'
 import { createApp } from 'vue'
 import { createVuetify } from 'vuetify'
 import { VBtn } from 'vuetify/components/VBtn'
+import { VBtnGroup } from 'vuetify/components/VBtnGroup'
+import { VBtnToggle } from 'vuetify/components/VBtnToggle'
 import { VCard } from 'vuetify/components/VCard'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
+import { appDefaults } from './defaults'
 import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
 
 // Shared setup of the apps shipped with Studio (ADR 0023). They follow
-// Studio's theme and look. A view renders flat inside the card Studio gives
-// it (an Overview widget, the details drawer, the full-screen dialog), which
-// already has the border, the radius and the view's title.
+// Studio's theme and look; the defaults are in ./defaults.ts.
 
 export * from './aas'
 
@@ -20,21 +21,9 @@ export * from './aas'
 export async function mountApp (app: Component, components: Record<string, Component>): Promise<void> {
   const client = await connect()
   const vuetify = createVuetify({
-    components: { ...components, VBtn, VCard },
+    components: { ...components, VBtn, VBtnGroup, VBtnToggle, VCard },
     aliases: { VBtnPrimary: VBtn, VViewCard: VCard },
-    defaults: {
-      // Studio's card shows through: the frame's page and the view have no background of their own.
-      VApp: { class: 'bg-transparent' },
-      VViewCard: { flat: true, border: false, rounded: 0, color: 'transparent' },
-      VCard: { flat: true, border: true, rounded: 'lg' },
-      VBtn: { rounded: 'lg', class: 'text-none', variant: 'text' },
-      VBtnPrimary: { color: 'primary', variant: 'flat', rounded: 'lg', class: 'text-none' },
-      VChip: { label: true, size: 'small', variant: 'tonal' },
-      VList: { density: 'comfortable', bgColor: 'transparent' },
-      VListItem: { rounded: 'lg' },
-      VAlert: { border: 'start', variant: 'tonal' },
-      VProgressLinear: { indeterminate: true, color: 'primary' },
-    },
+    defaults: appDefaults,
     icons: { defaultSet: 'mdi', aliases, sets: { mdi } },
   })
   const apply = (theme: ThemeTokens) => {

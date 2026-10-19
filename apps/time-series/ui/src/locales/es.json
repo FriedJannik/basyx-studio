@@ -1,0 +1,90 @@
+{
+  "config": {
+    "title": "Configuración de la vista previa",
+    "segment": "Segmento",
+    "time": "Valor de tiempo",
+    "values": "Valores",
+    "noData": "Sin entradas",
+    "fetch": "Obtener datos"
+  },
+  "chart": {
+    "type": "Tipo de gráfico",
+    "emptyTitle": "No hay datos en el intervalo de tiempo seleccionado",
+    "emptyText": "Elija otro intervalo de tiempo u obtenga los datos de nuevo.",
+    "interpolation": "Interpolación",
+    "bins": "Intervalos",
+    "stacked": "Apilado"
+  },
+  "chartType": {
+    "line": "Gráfico de líneas",
+    "area": "Gráfico de áreas",
+    "scatter": "Gráfico de dispersión",
+    "histogram": "Histograma",
+    "gauge": "Indicador",
+    "display": "Campo de visualización"
+  },
+  "interpolation": {
+    "smooth": "Suave",
+    "straight": "Recta",
+    "stepline": "Escalones"
+  },
+  "timeRange": {
+    "title": "Intervalo de tiempo",
+    "button": "Intervalo de tiempo: {label}",
+    "close": "Cerrar el menú del intervalo de tiempo",
+    "last": "Últimos {range}",
+    "absoluteRange": "Intervalo absoluto",
+    "relative": "Relativo",
+    "absolute": "Absoluto",
+    "custom": "Personalizado",
+    "customTitle": "Intervalo relativo personalizado",
+    "range": "Duración",
+    "unit": "Unidad",
+    "from": "Desde",
+    "to": "Hasta"
+  },
+  "units": {
+    "milliseconds": "Milisegundos",
+    "seconds": "Segundos",
+    "minutes": "Minutos",
+    "hours": "Horas",
+    "days": "Días",
+    "weeks": "Semanas",
+    "months": "Meses",
+    "years": "Años"
+  },
+  "autoRefresh": {
+    "title": "Actualización automática",
+    "button": "Actualización automática: {label}",
+    "close": "Cerrar el menú de actualización automática",
+    "off": "Desactivada",
+    "enabled": "Actualización automática",
+    "every": "Actualizar cada",
+    "unit": "Unidad"
+  },
+  "validation": {
+    "rangeInvalid": "Introduzca un intervalo de tiempo válido.",
+    "rangeMode": "Seleccione un tipo de intervalo de tiempo válido.",
+    "rangePositive": "Introduzca un intervalo de tiempo mayor que cero.",
+    "rangeUnit": "Seleccione una unidad de tiempo admitida.",
+    "rangeWhole": "Los meses y los años deben ser números enteros.",
+    "rangeSupported": "Introduzca un intervalo de tiempo dentro del rango de fechas admitido.",
+    "rangeBothDates": "Introduzca una fecha de inicio y una de fin.",
+    "rangeValidDates": "Introduzca fechas de inicio y fin válidas.",
+    "rangeOrder": "La fecha de inicio debe ser anterior a la fecha de fin.",
+    "refreshInvalid": "Introduzca un intervalo de actualización válido.",
+    "refreshPositive": "Introduzca un intervalo de actualización mayor que cero.",
+    "refreshRange": "Use un intervalo de actualización de entre 5 segundos y 24 días.",
+    "bins": "Introduzca un número entero de intervalos entre 1 y {max}."
+  },
+  "warnings": {
+    "value_missing": "{value} no está disponible en los datos de este segmento.",
+    "time_missing": "El valor de tiempo {time} no está disponible en los datos de este segmento.",
+    "points_skipped": "Se omitieron {count} puntos de {value} sin una hora o un número válidos.",
+    "points_reduced": "{value} tiene {count} puntos en este intervalo; el gráfico muestra {limit} de ellos."
+  },
+  "errors": {
+    "load": "No se pudo leer el submodelo: {message}",
+    "fetch": "No se pudo leer la serie temporal."
+  }
+}

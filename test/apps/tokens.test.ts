@@ -52,6 +52,15 @@ describe('app call authorization', () => {
   it('limits backends to AAS methods', () => {
     expect(code(() => authorizeAppCall(installation, 'studio.aas.listShells', 'backend'))).toBe('allowed')
     expect(code(() => authorizeAppCall(installation, 'studio.ui.getContext', 'backend'))).toBe('unsupported_operation')
+    expect(code(() => authorizeAppCall(installation, 'studio.timeseries.read', 'backend'))).toBe('unsupported_operation')
+  })
+
+  it('reserves time series reads for the apps shipped with Studio (ADR 0040)', () => {
+    const manifest = manifestOf({ permissions: ['studio.aas.read', 'studio.timeseries.read'] })
+    const installed = { ...installation, manifest, bundled: false } as AppInstallationRecord
+    expect(code(() => authorizeAppCall(installed, 'studio.timeseries.read', 'host'))).toBe('app_permission_not_declared')
+    expect(code(() => authorizeAppCall({ ...installed, bundled: true }, 'studio.timeseries.read', 'host'))).toBe('allowed')
+    expect(code(() => authorizeAppCall({ ...installation, bundled: true } as AppInstallationRecord, 'studio.timeseries.read', 'host'))).toBe('app_permission_not_declared')
   })
 })
 

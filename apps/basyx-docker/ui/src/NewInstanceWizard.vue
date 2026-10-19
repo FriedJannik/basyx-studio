@@ -136,34 +136,22 @@
 
               <v-switch
                 v-model="spec.features.history"
-                color="primary"
-                density="compact"
-                hide-details
                 :label="t('wizard.history')"
               />
 
               <v-switch
                 v-model="spec.features.eventFeed"
-                color="primary"
-                density="compact"
-                hide-details
                 :label="t('wizard.eventFeed')"
               />
 
               <v-switch
                 v-model="spec.features.registrySync"
-                color="primary"
-                density="compact"
                 :disabled="spec.topology === 'separate'"
-                hide-details
                 :label="t('wizard.registrySync')"
               />
 
               <v-switch
                 v-model="spec.features.discoverySync"
-                color="primary"
-                density="compact"
-                hide-details
                 :label="t('wizard.discoverySync')"
               />
 
@@ -190,9 +178,6 @@
 
               <v-switch
                 v-model="network"
-                color="primary"
-                density="compact"
-                hide-details
                 :label="t('wizard.exposure')"
               />
 
@@ -213,9 +198,6 @@
 
               <v-switch
                 v-model="restartAlways"
-                color="primary"
-                density="compact"
-                hide-details
                 :label="t('wizard.restart')"
               />
             </v-expansion-panel-text>

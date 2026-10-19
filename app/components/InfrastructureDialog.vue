@@ -205,6 +205,16 @@
           />
         </template>
 
+        <v-divider />
+        <div class="text-title-small">{{ t('admin.connections.title') }}</div>
+
+        <InfrastructureConnections
+          v-model="model.connections"
+          :infrastructure-id="existing?.id ?? null"
+          :readonly="readonly"
+          :security-mode="model.mode"
+        />
+
         <ProblemAlert v-if="error" :error="error" />
 
         <ul v-if="violations.length > 0" class="text-body-small my-0">
@@ -222,6 +232,7 @@
 
 <script lang="ts" setup>
   import type { EndpointType, Infrastructure, InfrastructureInput, InfrastructureTemplate, ListSource, SecurityMode, SyncSettings } from '#shared/contract'
+  import type { ConnectionForm } from '~/utils/connections'
   import { defaultSyncSettings, endpointTypes, infrastructureTemplates, maxClientCertificateLength, securityModes, serviceUrl, syncModes, templateRules } from '#shared/contract'
   import { StudioApiError } from '~/composables/useStudioApi'
 
@@ -258,6 +269,7 @@
       certificateRef: '',
       certificatePassphraseRef: '',
       removeCertificate: false,
+      connections: [] as ConnectionForm[],
     }
   }
   const model = ref(emptyModel())
@@ -281,6 +293,7 @@
         sync: { ...existing.sync },
         allowPrivateNetwork: existing.allowPrivateNetwork,
         mode: existing.security.mode,
+        connections: existing.connections.map(connection => connectionFormOf(connection, session.isDesktop)),
       })
       if (existing.security.mode !== 'unsecured') {
         Object.assign(model.value, {
@@ -395,6 +408,7 @@
       security,
       clientCertificate: await certificateInput(),
       allowPrivateNetwork: m.allowPrivateNetwork,
+      connections: m.connections.map(connection => connectionInputOf(connection, session.isDesktop)),
     }
   }
 

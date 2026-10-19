@@ -18,9 +18,17 @@
   component `defaults` (including contextual defaults), and `aliases` for
   recurring roles such as `<v-btn-primary>` and `<v-card-pane>`. Do not
   restate a global default in a template; add or change the default instead.
+- Group buttons with a bare `<v-btn-toggle>` (one choice of several) or
+  `<v-btn-group>` (related actions or menus). Do not style the group or its
+  buttons (`variant`, `color`, `density`, `rounded`, `border`, `divided`,
+  `size`) and do not build a toggle from separate buttons with `:active`.
+  The look comes from `shared/vuetify-defaults.ts`.
+- The bundled apps (`apps/`) have their own Vuetify instance. Its defaults
+  are in `apps/shared/defaults.ts`, and the rules above apply there too.
 - Vue single-file components are ordered `<template>`, `<script>`, `<style>`.
 - ESLint enforces these rules (`eslint.config.js`); restated defaults are
-  derived from `vuetify.config.ts` automatically.
+  derived from `vuetify.config.ts` and `apps/shared/defaults.ts`
+  automatically.
 
 ## Server code
 - Route handlers, server middleware, and `server/utils` import their helpers

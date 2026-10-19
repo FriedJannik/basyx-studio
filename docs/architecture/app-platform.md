@@ -49,6 +49,7 @@ Apps use `@basyx/studio-sdk` capabilities rather than host implementation object
 - `studio.semantic`: active semantic index and applicability information
 - `studio.jobs`: start and observe bounded long-running app tasks
 - `studio.views`: contribute widget types and interact with scoped view context
+- `studio.timeseries`: read a segment of an IDTA Time Series Data submodel; Studio reads the submodel and the database behind it ([ADR 0040](../adr/0040-connections-on-infrastructures.md))
 
 Capabilities are versioned, validated, authorized per call, and audited. The app receives a short-lived internal capability token, never an infrastructure OAuth token.
 

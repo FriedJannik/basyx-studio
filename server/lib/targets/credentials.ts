@@ -1,4 +1,4 @@
-import type { AuthenticationState, AuthorizationStart } from '#shared/contract'
+import type { AuthenticationState, AuthorizationStart, Connection } from '#shared/contract'
 import type { StudioDeps } from '../deps'
 import type { InfrastructureRecord } from '../infrastructures'
 import type { OidcClientSettings, TokenSet } from '../oidc/client'
@@ -8,7 +8,7 @@ import { targetCredentials } from '../../database/schema'
 import { recordAudit } from '../audit'
 import { resolveClientCertificate, resolveClientSecret } from '../infrastructures'
 import { networkFailureOf } from '../network/guarded-fetch'
-import { clientCredentialsTokens, completeAuthorization, getOidcClient, OidcError, refreshTokens, startAuthorization } from '../oidc/client'
+import { clientCredentialsTokens, completeAuthorization, exchangeToken, getOidcClient, OidcError, refreshTokens, startAuthorization, tokenAudiences } from '../oidc/client'
 import { saveTransaction } from '../oidc/transactions'
 import { StudioProblem } from '../problem'
 import { callbackUri } from '../urls'
@@ -21,6 +21,14 @@ export interface TargetAccess {
   accessToken: string | undefined
   /** Identity the downstream service sees, for the audit trail. */
   downstreamIdentity: string | null
+}
+
+/** A bearer token for a connection (ADR 0040) and who the service sees. */
+export interface ConnectionToken {
+  token: string
+  downstreamIdentity: string | null
+  /** How a user's identity was passed: exchanged (RFC 8693) or forwarded unchanged. */
+  delegation?: 'exchanged' | 'forwarded'
 }
 
 const accessTokenPurpose = 'target_credentials.access_token'
@@ -45,6 +53,16 @@ function toProblem (error: unknown, mode: 'delegated' | 'service'): StudioProble
     : new StudioProblem('target_credentials_rejected', 'The identity provider rejected Studio\'s client credentials.', { cause: error })
 }
 
+function connectionTokenProblem (error: unknown, connection: Connection, what: string): StudioProblem {
+  if (error instanceof StudioProblem) {
+    return error
+  }
+  if (error instanceof OidcError && error.kind === 'unreachable') {
+    return new StudioProblem('connection_unavailable', `The identity provider of the connection ${connection.key} could not be reached.`, { cause: error })
+  }
+  return new StudioProblem('connection_rejected', `The identity provider of the connection ${connection.key} did not accept ${what}.`, { cause: error })
+}
+
 /**
  * Owns downstream credentials per target. Delegated user tokens are kept per
  * Studio session and target and never reused for another target; service
@@ -53,6 +71,8 @@ function toProblem (error: unknown, mode: 'delegated' | 'service'): StudioProble
 export class CredentialBroker {
   readonly #serviceTokens = new Map<string, { token: string, expiresAt: number, revision: number }>()
   readonly #inflight = new Map<string, Promise<TargetAccess>>()
+  /** Client-credentials tokens per connection, and exchanged tokens per session and connection, until they expire. */
+  readonly #connectionTokens = new Map<string, { token: string, expiresAt: number }>()
 
   constructor (private readonly deps: StudioDeps) {}
 
@@ -154,6 +174,85 @@ export class CredentialBroker {
     } else {
       this.#serviceTokens.delete(record.id)
     }
+  }
+
+  /**
+   * A bearer token for a connection whose scheme gets one from an issuer
+   * (ADR 0040): the deployment's client credentials, or the signed-in user's
+   * token for this infrastructure, exchanged for the connection's audience
+   * or, where the connection allows it, forwarded if issued for it.
+   * `fresh` skips the cache, e.g. for *Test connection*.
+   */
+  async connectionToken (record: InfrastructureRecord, connection: Connection, sessionId: string, clientSecret: string | undefined, fresh = false): Promise<ConnectionToken> {
+    const { auth } = connection
+    if (auth.scheme === 'oauth2ClientCredentials') {
+      const identity = `client:${auth.clientId}`
+      const key = `client:${record.id}:${record.revision}:${connection.key}`
+      const token = await this.#cachedConnectionToken(key, fresh, async () => {
+        try {
+          const client = await getOidcClient({
+            issuer: auth.issuer,
+            clientId: auth.clientId,
+            clientSecret,
+            allowPrivateNetwork: connection.allowPrivateNetwork && this.deps.config.allowPrivateNetworkTargets,
+          })
+          return await clientCredentialsTokens(client, auth.scopes, auth.audience)
+        } catch (error) {
+          throw connectionTokenProblem(error, connection, 'its client credentials')
+        }
+      })
+      return { token, downstreamIdentity: identity }
+    }
+    if (auth.scheme !== 'delegatedUser') {
+      throw new Error(`The ${auth.scheme} scheme has no token from an issuer.`)
+    }
+    if (record.security.mode !== 'delegated_user') {
+      throw new StudioProblem('connection_request_refused', `The connection ${connection.key} passes the user's identity, but users do not sign in to this infrastructure.`)
+    }
+    const user = await this.access(record, sessionId)
+    if (!user.accessToken) {
+      throw new StudioProblem('target_auth_required', 'Authorize this target to access its data.')
+    }
+    if (auth.forwardUserToken) {
+      const audiences = tokenAudiences(user.accessToken)
+      if (!audiences?.includes(auth.audience)) {
+        throw new StudioProblem('connection_request_refused', `The user's token is not issued for ${auth.audience}, so Studio does not forward it to the connection ${connection.key}.`)
+      }
+      return { token: user.accessToken, downstreamIdentity: user.downstreamIdentity, delegation: 'forwarded' }
+    }
+    const key = `user:${sessionId}:${record.id}:${record.revision}:${connection.key}`
+    const subjectToken = user.accessToken
+    const token = await this.#cachedConnectionToken(key, fresh, async () => {
+      try {
+        return await exchangeToken(await getOidcClient(await this.#oidcSettings(record)), subjectToken, { audience: auth.audience, scopes: auth.scopes })
+      } catch (error) {
+        throw connectionTokenProblem(error, connection, 'the user\'s token in exchange')
+      }
+    })
+    return { token, downstreamIdentity: user.downstreamIdentity, delegation: 'exchanged' }
+  }
+
+  /** Drops the cached tokens of a connection the service rejected. */
+  invalidateConnection (record: InfrastructureRecord, connectionKey: string): void {
+    for (const key of this.#connectionTokens.keys()) {
+      if (key.endsWith(`:${record.id}:${record.revision}:${connectionKey}`)) {
+        this.#connectionTokens.delete(key)
+      }
+    }
+  }
+
+  async #cachedConnectionToken (key: string, fresh: boolean, request: () => Promise<TokenSet>): Promise<string> {
+    const cached = this.#connectionTokens.get(key)
+    if (!fresh && cached && cached.expiresAt - expirySkewMs > Date.now()) {
+      return cached.token
+    }
+    const tokens = await request()
+    if (fresh) {
+      return tokens.accessToken
+    }
+    // Without an expiry, request again after five minutes rather than caching forever.
+    this.#connectionTokens.set(key, { token: tokens.accessToken, expiresAt: tokens.expiresAt?.getTime() ?? Date.now() + 5 * 60_000 })
+    return tokens.accessToken
   }
 
   async #oidcSettings (record: InfrastructureRecord): Promise<OidcClientSettings> {

@@ -103,6 +103,18 @@ jobs:
       - name: Smoke test
         run: bash .github/scripts/image-smoke-test.sh basyx-studio:ci
 
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      # The time series example end to end: InfluxDB 2.7, BaSyx Go, the
+      # influxdb2 connection and the bundled Time Series Data app (ADR 0040).
+      - name: Time series example
+        run: node examples/deployment/time-series/smoke-test.mjs
+        env:
+          STUDIO_IMAGE: basyx-studio:ci
+
   integration:
     name: Integration tests against the test environment
     needs: checks

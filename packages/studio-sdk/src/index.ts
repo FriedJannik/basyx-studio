@@ -56,6 +56,8 @@ export class StudioClient {
     openFile: (submodelId: string, idShortPath: string, download = false) => this.call('studio.ui.openFile', { submodelId, idShortPath, download }),
     /** Reads a File element's content into the app (needs studio.aas.read; Studio ≥ 0.1.1). */
     readFile: (submodelId: string, idShortPath: string) => this.call('studio.ui.readFile', { submodelId, idShortPath }),
+    /** Reads a file an element names by an http(s) address at another host (needs studio.ui.externalFiles; Studio ≥ 0.1.2). */
+    readExternalFile: (submodelId: string, idShortPath: string) => this.call('studio.ui.readExternalFile', { submodelId, idShortPath }),
     /**
      * Opens this view again in a full-screen dialog; `context.fullscreen` is
      * true there, and `context.viewState` is `state` (Studio ≥ 0.1.1).
@@ -107,6 +109,11 @@ export class StudioClient {
       const file = await this.#pickOne('stack-import')
       return file ? this.call('studio.containers.importStack', { fileHandle: file }) : null
     },
+  }
+
+  readonly timeseries = {
+    /** Reads a segment of an IDTA Time Series Data submodel (bundled apps; Studio ≥ 0.1.2). */
+    read: (params: Methods['studio.timeseries.read']['params']) => this.call('studio.timeseries.read', params),
   }
 
   readonly backend = {

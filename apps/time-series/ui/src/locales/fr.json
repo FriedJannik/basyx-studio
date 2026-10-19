@@ -1,0 +1,90 @@
+{
+  "config": {
+    "title": "Configuration de l'aperçu",
+    "segment": "Segment",
+    "time": "Valeur de temps",
+    "values": "Valeurs",
+    "noData": "Aucune entrée",
+    "fetch": "Récupérer les données"
+  },
+  "chart": {
+    "type": "Type de graphique",
+    "emptyTitle": "Aucune donnée dans la plage de temps sélectionnée",
+    "emptyText": "Choisissez une autre plage de temps ou récupérez à nouveau les données.",
+    "interpolation": "Interpolation",
+    "bins": "Classes",
+    "stacked": "Empilé"
+  },
+  "chartType": {
+    "line": "Graphique en courbes",
+    "area": "Graphique en aires",
+    "scatter": "Nuage de points",
+    "histogram": "Histogramme",
+    "gauge": "Jauge",
+    "display": "Champ d'affichage"
+  },
+  "interpolation": {
+    "smooth": "Lissée",
+    "straight": "Droite",
+    "stepline": "Paliers"
+  },
+  "timeRange": {
+    "title": "Plage de temps",
+    "button": "Plage de temps : {label}",
+    "close": "Fermer le menu de la plage de temps",
+    "last": "Dernières {range}",
+    "absoluteRange": "Plage absolue",
+    "relative": "Relative",
+    "absolute": "Absolue",
+    "custom": "Personnalisée",
+    "customTitle": "Plage relative personnalisée",
+    "range": "Durée",
+    "unit": "Unité",
+    "from": "Du",
+    "to": "Au"
+  },
+  "units": {
+    "milliseconds": "Millisecondes",
+    "seconds": "Secondes",
+    "minutes": "Minutes",
+    "hours": "Heures",
+    "days": "Jours",
+    "weeks": "Semaines",
+    "months": "Mois",
+    "years": "Années"
+  },
+  "autoRefresh": {
+    "title": "Actualisation automatique",
+    "button": "Actualisation automatique : {label}",
+    "close": "Fermer le menu d'actualisation automatique",
+    "off": "Désactivée",
+    "enabled": "Actualisation automatique",
+    "every": "Actualiser toutes les",
+    "unit": "Unité"
+  },
+  "validation": {
+    "rangeInvalid": "Saisissez une plage de temps valide.",
+    "rangeMode": "Sélectionnez un type de plage de temps valide.",
+    "rangePositive": "Saisissez une plage de temps supérieure à zéro.",
+    "rangeUnit": "Sélectionnez une unité de temps prise en charge.",
+    "rangeWhole": "Les mois et les années doivent être des nombres entiers.",
+    "rangeSupported": "Saisissez une plage de temps dans l'intervalle de dates pris en charge.",
+    "rangeBothDates": "Saisissez une date de début et une date de fin.",
+    "rangeValidDates": "Saisissez des dates de début et de fin valides.",
+    "rangeOrder": "La date de début doit précéder la date de fin.",
+    "refreshInvalid": "Saisissez un intervalle d'actualisation valide.",
+    "refreshPositive": "Saisissez un intervalle d'actualisation supérieur à zéro.",
+    "refreshRange": "Utilisez un intervalle d'actualisation compris entre 5 secondes et 24 jours.",
+    "bins": "Saisissez un nombre entier de classes entre 1 et {max}."
+  },
+  "warnings": {
+    "value_missing": "{value} n'est pas disponible dans les données de ce segment.",
+    "time_missing": "La valeur de temps {time} n'est pas disponible dans les données de ce segment.",
+    "points_skipped": "{count} points de {value} sans heure ou nombre valide ont été ignorés.",
+    "points_reduced": "{value} a {count} points dans cette plage ; le graphique en affiche {limit}."
+  },
+  "errors": {
+    "load": "Le sous-modèle n'a pas pu être lu : {message}",
+    "fetch": "La série temporelle n'a pas pu être lue."
+  }
+}

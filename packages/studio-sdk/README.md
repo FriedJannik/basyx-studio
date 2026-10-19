@@ -51,6 +51,8 @@ The schema is [`app-manifest.schema.json`](app-manifest.schema.json).
 | `studio.ui.notifications` | `ui.notify` |
 | `studio.ui.navigation` | `ui.navigate`: change the module's own sub-path (nested routes) |
 | `studio.backend` | `backend.call`: call the app's own Deno backend |
+| `studio.ui.externalFiles` | `ui.readExternalFile`: files that elements name at other hosts, fetched by Studio's page; those hosts see the user's address |
+| `studio.timeseries.read` | `timeseries.read`: read a segment of an IDTA Time Series Data submodel of the active target, including LinkedSegments in a database that the infrastructure's connections reach (ADR 0040). Reserved for the apps shipped with Studio; Studio app API 0.1.2 |
 
 ## UI
 
@@ -92,6 +94,14 @@ read it with `ui.readFile(submodelId, idShortPath)` (Studio app API 0.1.1,
 so declare `"studioApi": "^0.1.1"`): Studio's page loads it with the user's
 rights and hands the bytes (`Uint8Array`, up to 200 MiB) and media type to
 the frame. `ui.openFile` opens it in a new tab instead.
+
+A file that an element names by an http(s) address at another host (a File
+whose value is such an address, or a Property such as IDTA 02026's
+`ExternalUrl`) is read with `ui.readExternalFile(submodelId, idShortPath)`
+(permission `studio.ui.externalFiles`, Studio app API 0.1.2). Studio reads
+the address from the element itself and fetches the file in the user's
+browser without credentials or referrer; the host must allow it (CORS).
+Otherwise the call fails with `external_file_unavailable`.
 
 `ui.openFullscreen(state?)` opens the view again in a full-screen dialog,
 as a new frame. Pass what the user has selected as `state` (a string, up to

@@ -1,6 +1,6 @@
 import type { GridBox, OverviewBreakpoint, OverviewItem, OverviewRow, OverviewSnapshot, OverviewWidgetSize } from '#shared/overview'
 import type { Ref } from 'vue'
-import { dropInRows, fitRow, groupRows, itemsAt, layoutRows, mergeOverviewLayout, moveInRows, overviewColumns, overviewGap, overviewHeaderHeight, overviewMinColumns, overviewRowHeight, overviewRows, readingOrder, resizeInRows, rowHeight, sameRows } from '#shared/overview'
+import { dropInRows, fitRow, groupRows, itemsAt, layoutRows, mergeOverviewLayout, moveInRows, overviewChromeHeight, overviewColumns, overviewGap, overviewMinColumns, overviewRows, overviewRowStep, readingOrder, resizeInRows, rowHeight, sameRows } from '#shared/overview'
 
 /** A widget's place on the grid; the grid library moves and resizes these objects. */
 export interface OverviewBox extends GridBox {
@@ -13,7 +13,7 @@ export interface OverviewBox extends GridBox {
 }
 
 /** The rows a collapsed widget keeps: its header. */
-export const collapsedRows = overviewRows(overviewHeaderHeight - 1)
+export const collapsedRows = overviewRows(overviewChromeHeight - 1)
 
 type ShellOverview = ReturnType<typeof useShellOverview>
 
@@ -105,8 +105,9 @@ export function useOverviewGrid (options: {
     // While a widget moves, the preview shows where it lands instead.
     class: dropPreview.value ? 'overview-dropping' : undefined,
     colNum: overviewColumns,
-    rowHeight: overviewRowHeight,
-    margin: [overviewGap, overviewGap],
+    // Fine rows without a gap between them; each widget keeps the gap below it (ShellOverview).
+    rowHeight: overviewRowStep,
+    margin: [overviewGap, 0],
     useStyleCursor: false,
   }))
 
@@ -182,8 +183,7 @@ export function useOverviewGrid (options: {
       const bounds = element.getBoundingClientRect()
       pointer = {
         column: (event.clientX - bounds.left) / bounds.width * overviewColumns,
-        // Rows start after the grid's outer gap, one row and one gap apart.
-        row: (event.clientY - bounds.top - overviewGap) / (overviewRowHeight + overviewGap),
+        row: (event.clientY - bounds.top) / overviewRowStep,
       }
     }
   }
@@ -292,7 +292,7 @@ export function useOverviewGrid (options: {
   // breakpoint already, as the height to start with next time.
   let fitTimer: ReturnType<typeof setTimeout> | undefined
   function onContentHeight (box: OverviewBox, height: number) {
-    const next = overviewRows(height + overviewHeaderHeight)
+    const next = overviewRows(height + overviewChromeHeight)
     if (contentRows.get(box.i) === next) {
       return
     }

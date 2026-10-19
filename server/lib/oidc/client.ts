@@ -170,11 +170,57 @@ export async function refreshTokens (client: oidc.Configuration, refreshToken: s
   }
 }
 
-export async function clientCredentialsTokens (client: oidc.Configuration, scopes: string[]): Promise<TokenSet> {
+export async function clientCredentialsTokens (client: oidc.Configuration, scopes: string[], audience?: string): Promise<TokenSet> {
   try {
-    return toTokenSet(await oidc.clientCredentialsGrant(client, scopes.length > 0 ? { scope: scopes.join(' ') } : {}))
+    return toTokenSet(await oidc.clientCredentialsGrant(client, {
+      ...(scopes.length > 0 ? { scope: scopes.join(' ') } : {}),
+      ...(audience ? { audience } : {}),
+    }))
   } catch (error) {
     throw toOidcError(error)
+  }
+}
+
+const tokenExchangeGrant = 'urn:ietf:params:oauth:grant-type:token-exchange'
+const accessTokenType = 'urn:ietf:params:oauth:token-type:access_token'
+
+/**
+ * Exchanges a user's access token for one issued to another audience
+ * (RFC 8693), e.g. a service behind a connection (ADR 0040). The IdP must
+ * allow the exchange for this client.
+ */
+export async function exchangeToken (client: oidc.Configuration, subjectToken: string, request: { audience: string, scopes: string[] }): Promise<TokenSet> {
+  try {
+    return toTokenSet(await oidc.genericGrantRequest(client, tokenExchangeGrant, {
+      subject_token: subjectToken,
+      subject_token_type: accessTokenType,
+      requested_token_type: accessTokenType,
+      audience: request.audience,
+      ...(request.scopes.length > 0 ? { scope: request.scopes.join(' ') } : {}),
+    }))
+  } catch (error) {
+    throw toOidcError(error)
+  }
+}
+
+/**
+ * The audiences of a JWT access token, read without verifying it: Studio got
+ * the token from the IdP itself and only checks where it may be forwarded.
+ * `null` for tokens that are not JWTs.
+ */
+export function tokenAudiences (token: string): string[] | null {
+  const [, payload] = token.split('.')
+  if (!payload) {
+    return null
+  }
+  try {
+    const { aud } = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { aud?: unknown }
+    if (typeof aud === 'string') {
+      return [aud]
+    }
+    return Array.isArray(aud) ? aud.filter((value): value is string => typeof value === 'string') : []
+  } catch {
+    return null
   }
 }
 

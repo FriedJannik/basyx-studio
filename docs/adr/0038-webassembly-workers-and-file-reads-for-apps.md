@@ -1,7 +1,7 @@
 # 0038: WebAssembly, workers and file reads for app frames
 
 - Status: Proposed
-- Date: 2026-10-18
+- Date: 2026-10-18; revised 2026-10-19 (external files)
 - Deciders: BaSyx Studio maintainers
 - Requirements: APP-006, APP-007, APP-010, APP-011
 
@@ -37,6 +37,18 @@ workers (`worker-src 'none'`).
   from `blob:` URLs because a frame's origin is opaque; they inherit the
   frame's policy, so they load and fetch only the app's own files. The Apps
   page lists both for every installation that declares them.
+- **`studio.ui.readExternalFile(submodelId, idShortPath)`** returns a file
+  that an element names by an http(s) address at another host, e.g. a 3D
+  model of IDTA 02026 kept only as an `ExternalFile`. The element is a File
+  whose value is such an address, or a Property holding one (`ExternalUrl`).
+  Studio's page reads the element itself, through Studio's API as the user,
+  so the app names an element, never an address. It fetches the file as
+  Studio's own viewers do: without credentials or referrer, up to 200 MiB,
+  and only if the host allows it (CORS). A host that does not hand out the
+  file is reported as `external_file_unavailable`. The method needs its own
+  permission, `studio.ui.externalFiles`, which the install dialog and the
+  *Apps* page show: the user's browser contacts that host. The Studio app
+  API version becomes 0.1.2.
 - Everything else of ADR 0017 stays: no network beyond the app's files, no
   frames, no storage, the same sandbox.
 
@@ -49,7 +61,15 @@ workers (`worker-src 'none'`).
   process them but send them nowhere; the frame's `connect-src` is still the
   app's own files.
 - An app that uses `readFile` declares `studioApi: "^0.1.1"`, so an older
-  Studio refuses to install it instead of failing at runtime.
+  Studio refuses to install it instead of failing at runtime; one that uses
+  `readExternalFile` declares `"^0.1.2"`.
+- External files reach an app only from addresses that AAS content holds, as
+  in Studio's own viewers, and the app's CSP stays closed: the frame still
+  contacts no host. The browser cannot read a file from a host that does not
+  allow cross-origin reads (CORS); Studio's server then fetches it for the
+  origins the deployment lists
+  ([ADR 0042](0042-external-files-through-studio.md)), and otherwise the 3D
+  Models app shows the preview image and the link.
 - The hostile probe app checks that WebAssembly and `blob:` workers stay
   blocked for an app that does not declare them.
 

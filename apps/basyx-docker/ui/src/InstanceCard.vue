@@ -148,7 +148,6 @@
           <v-checkbox
             v-model="deleteData"
             data-test="remove-data"
-            density="compact"
             hide-details
             :label="t('remove.data')"
           />
@@ -156,7 +155,6 @@
           <v-checkbox
             v-if="stack.infrastructureId"
             v-model="removeInfrastructure"
-            density="compact"
             hide-details
             :label="t('remove.infrastructure')"
           />

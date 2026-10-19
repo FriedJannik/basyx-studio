@@ -233,7 +233,16 @@
     "app_not_found": "该应用未安装（或已卸载）。",
     "app_permission_not_declared": "该应用未声明执行此操作所需的权限。",
     "app_backend_unavailable": "该应用的后端不可用。",
-    "app_backend_failed": "该应用的后端运行失败。"
+    "app_backend_failed": "该应用的后端运行失败。",
+    "connection_not_configured": "未为此服务配置连接。",
+    "connection_credentials_unavailable": "无法读取连接的凭据。",
+    "connection_rejected": "服务拒绝了连接的凭据。",
+    "connection_unavailable": "无法访问该服务。",
+    "connection_error": "服务报告了错误。",
+    "connection_request_refused": "Studio 不会发送此请求。",
+    "timeseries_invalid": "无法读取时序数据。",
+    "external_file_unavailable": "无法获取外部文件。",
+    "external_file_refused": "Studio 不会从此地址获取文件。"
   },
   "admin": {
     "title": "基础设施",
@@ -386,7 +395,80 @@
       "changeFeed": "服务会报告变更，因此 Studio 可以显示最近发生的变化。",
       "rebac": "服务按用户和管理壳检查访问权限（基于关系的访问控制），因此可以共享管理壳。"
     },
-    "probedAt": "检查于 {time}"
+    "probedAt": "检查于 {time}",
+    "connections": {
+      "title": "连接",
+      "help": "此基础设施的内容所引用的非 AAS 服务，例如时序数据库。Studio 保管其凭据，并仅将其用于从此基础设施读取的内容。",
+      "unnamed": "新连接",
+      "add": "添加连接",
+      "remove": "移除",
+      "key": "键",
+      "keyHint": "在此基础设施中标识该连接。",
+      "keyInvalid": "请使用小写字母、数字和连字符。",
+      "keyTaken": "另一个连接已使用此键。",
+      "type": "类型",
+      "types": {
+        "influxdb2": "InfluxDB 2"
+      },
+      "typeHints": {
+        "influxdb2": "Time Series Data 子模型中 LinkedSegment 的时序数据（Flux）。"
+      },
+      "url": "URL",
+      "urlHint": "Studio 访问该服务的地址，例如其容器网络中的地址。",
+      "aliases": "别名",
+      "aliasesHint": "子模型用来指代该服务的其他地址。Studio 从不访问这些地址。",
+      "organization": "组织",
+      "organizationHint": "替换子模型中端点的组织。留空则使用端点自身的组织。",
+      "scheme": "身份验证",
+      "schemes": {
+        "none": "无",
+        "token": "令牌",
+        "bearer": "Bearer 令牌",
+        "header": "自定义标头",
+        "basic": "用户名和密码",
+        "oauth2ClientCredentials": "客户端凭据（OAuth 2.0）",
+        "delegatedUser": "已登录用户"
+      },
+      "schemeHints": {
+        "none": "Studio 不发送任何凭据。",
+        "token": "Studio 按 InfluxDB 的要求，以“Authorization: Token”发送密钥。",
+        "bearer": "Studio 以“Authorization: Bearer”发送密钥。",
+        "header": "Studio 在您选择的标头中发送密钥。",
+        "basic": "Studio 发送 HTTP Basic 身份验证。",
+        "oauth2ClientCredentials": "Studio 使用这些客户端凭据从签发方获取令牌。",
+        "delegatedUser": "Studio 将用户的令牌交换为为该服务签发的令牌（RFC 8693）。"
+      },
+      "headerName": "标头名称",
+      "username": "用户名",
+      "audience": "受众",
+      "audienceHint": "服务在其令牌中期望的受众。",
+      "forwardUserToken": "不交换，直接原样转发用户的令牌",
+      "forwardUserTokenWarning": "服务会收到用户的令牌，也可能将其用于 AAS 服务器。仅当令牌是为此受众签发时，Studio 才会转发。",
+      "secrets": {
+        "token": "令牌",
+        "value": "标头值",
+        "password": "密码",
+        "clientSecret": "客户端密钥"
+      },
+      "secretStored": "已存储。留空则保留。",
+      "secretValueHint": "加密存储在此计算机上。",
+      "secretRefHint": "env:变量名 或 file:/run/secrets/name。密钥本身从不会到达 Studio 的界面。",
+      "secretRefInvalid": "请使用 env:NAME 或 file:/绝对路径。",
+      "timeout": "超时（秒）",
+      "timeoutHint": "默认：{seconds} 秒，最多 120 秒。",
+      "timeoutInvalid": "请使用 1 到 120 之间的整数。",
+      "test": "测试连接",
+      "testAfterSave": "保存基础设施后即可测试其连接。",
+      "testOk": "连接正常。",
+      "testFailed": "连接不可用。",
+      "checks": {
+        "token": "凭据",
+        "health": "服务响应",
+        "query": "读取权限"
+      },
+      "required": "必填",
+      "httpUrl": "请输入 http(s) URL。"
+    }
   },
   "apps": {
     "title": "应用",
@@ -426,7 +508,9 @@
       "studio_ui_navigation": "更改其自身的页面地址、打开目标并在浏览器中打开链接",
       "studio_backend": "运行服务器端代码（隔离）",
       "studio_ui_clipboard": "点击时将文本复制到剪贴板",
-      "studio_containers": "在 Docker 或 Podman 上启动、停止、导出和删除本地 BaSyx 实例（仅限 Studio 自带的应用）"
+      "studio_containers": "在 Docker 或 Podman 上启动、停止、导出和删除本地 BaSyx 实例（仅限 Studio 自带的应用）",
+      "studio_timeseries_read": "读取时序数据，包括从基础设施连接的数据库中读取（仅限随 Studio 提供的应用）",
+      "studio_ui_externalFiles": "在浏览器中获取管理壳在其他主机上指定的文件（这些主机可以看到您的地址）"
     },
     "bundled": "内置",
     "bundledHint": "随 Studio 一同提供并随其更新。",

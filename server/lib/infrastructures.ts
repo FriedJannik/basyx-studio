@@ -11,6 +11,7 @@ import { infrastructureInputSchema } from '#shared/contract'
 import { infrastructures } from '../database/schema'
 import { recordAudit } from './audit'
 import { ConfigurationError } from './config'
+import { readSecretReference, storeConnections } from './connections/secrets'
 import { randomToken } from './crypto/cipher'
 import { Pkcs12Error, readPkcs12 } from './crypto/pkcs12'
 import { analyzeInfrastructureFile, exportInfrastructureFile } from './infrastructure-file'
@@ -47,6 +48,7 @@ export function toInfrastructure (record: InfrastructureRecord): Infrastructure 
     security: record.security,
     clientCertificate: record.clientCertificate,
     allowPrivateNetwork: record.allowPrivateNetwork,
+    connections: record.connections,
     managed: Boolean(record.managedKey),
     revision: record.revision,
     createdAt: record.createdAt.toISOString(),
@@ -119,26 +121,36 @@ function parseInput (deps: StudioDeps, raw: unknown): ParsedInput {
     })
   }
   const input = parsed.data
-  if (input.allowPrivateNetwork && !deps.config.allowPrivateNetworkTargets) {
+  if ((input.allowPrivateNetwork || input.connections.some(connection => connection.allowPrivateNetwork)) && !deps.config.allowPrivateNetworkTargets) {
     throw new StudioProblem('endpoint_rejected', 'This Studio deployment does not allow private-network or loopback targets.')
   }
   return input
 }
 
-/** The endpoint and issuer URLs of an input, each with its place. */
-function urlsOf (input: ParsedInput): Array<[string, string]> {
-  const urls: Array<[string, string]> = input.endpoints.map(endpoint => [endpoint.type, endpoint.url])
+/**
+ * The URLs Studio contacts for an input, each with its place and whether it
+ * may be private: endpoints, issuers, and the connections' services.
+ * Connection aliases are never contacted.
+ */
+function urlsOf (input: ParsedInput): Array<[string, string, boolean]> {
+  const urls: Array<[string, string, boolean]> = input.endpoints.map(endpoint => [endpoint.type, endpoint.url, input.allowPrivateNetwork])
   if (input.security.mode !== 'unsecured') {
-    urls.push(['security.issuer', input.security.issuer])
+    urls.push(['security.issuer', input.security.issuer, input.allowPrivateNetwork])
+  }
+  for (const connection of input.connections) {
+    urls.push([`connections.${connection.key}.url`, connection.url, connection.allowPrivateNetwork])
+    if (connection.auth.scheme === 'oauth2ClientCredentials') {
+      urls.push([`connections.${connection.key}.auth.issuer`, connection.auth.issuer, connection.allowPrivateNetwork])
+    }
   }
   return urls
 }
 
-/** Checks endpoint and issuer URLs against the static URL rules and the address policy. */
+/** Checks endpoint, issuer and connection URLs against the static URL rules and the address policy. */
 async function validateUrls (input: ParsedInput): Promise<void> {
-  for (const [label, url] of urlsOf(input)) {
+  for (const [label, url, allowPrivateNetwork] of urlsOf(input)) {
     try {
-      await checkHost(new URL(url), { allowPrivateNetwork: input.allowPrivateNetwork })
+      await checkHost(new URL(url), { allowPrivateNetwork })
     } catch (error) {
       if (error instanceof NetworkFailure) {
         throw new StudioProblem('endpoint_rejected', `${label}: ${error.message}`)
@@ -220,16 +232,6 @@ export async function resolveClientSecret (deps: StudioDeps, record: Infrastruct
     throw new StudioProblem('target_credentials_rejected', 'The client secret reference of this target could not be resolved.')
   }
   return value
-}
-
-/** The value of an `env:NAME` or `file:/path` reference, or undefined if it cannot be read. */
-async function readSecretReference (reference: string): Promise<string | undefined> {
-  const [kind, ...rest] = reference.split(':')
-  const ref = rest.join(':')
-  if (kind === 'env') {
-    return process.env[ref]
-  }
-  return kind === 'file' ? readFile(ref, 'utf8').then(content => content.trim(), () => undefined) : undefined
 }
 
 interface CertificateMaterial {
@@ -485,12 +487,19 @@ function requireUnmanaged (record: Pick<InfrastructureRecord, 'managedKey'>): vo
   }
 }
 
+/** Rejects changes to an infrastructure that the deployment fixes or manages. */
+export function requireChangeable (deps: StudioDeps, record: Pick<InfrastructureRecord, 'managedKey'>): void {
+  requireEditable(deps)
+  requireUnmanaged(record)
+}
+
 export async function createInfrastructure (deps: StudioDeps, actor: Actor, raw: unknown, requestId: string): Promise<InfrastructureRecord> {
   requireEditable(deps)
   const input = parseInput(deps, raw)
   await validateUrls(input)
   const { security, secretCiphertext } = resolveSecurityInput(deps, input.security, undefined)
   const { identity, ...certificate } = await resolveCertificateInput(deps, input.clientCertificate, undefined)
+  const connections = storeConnections(deps, input.connections)
   const probe = await requireReachable(deps, input, identity)
 
   const [record] = await deps.db.insert(infrastructures).values({
@@ -506,6 +515,7 @@ export async function createInfrastructure (deps: StudioDeps, actor: Actor, raw:
     security,
     secretCiphertext,
     ...certificate,
+    ...connections,
     allowPrivateNetwork: input.allowPrivateNetwork,
     createdBy: actor.subject,
   }).returning()
@@ -528,6 +538,7 @@ export async function updateInfrastructure (
   await validateUrls(input)
   const { security, secretCiphertext } = resolveSecurityInput(deps, input.security, previous)
   const { identity, ...certificate } = await resolveCertificateInput(deps, input.clientCertificate, previous)
+  const connections = storeConnections(deps, input.connections, previous)
   const probe = await requireReachable(deps, input, identity)
 
   const [record] = await deps.db.update(infrastructures).set({
@@ -542,6 +553,7 @@ export async function updateInfrastructure (
     security,
     secretCiphertext,
     ...certificate,
+    ...connections,
     allowPrivateNetwork: input.allowPrivateNetwork,
     revision: expectedRevision + 1,
     updatedAt: new Date(),
@@ -583,7 +595,8 @@ async function checkDeclared (deps: StudioDeps, raw: unknown) {
   }
   const { security, secretCiphertext } = resolveSecurityInput(deps, input.security, undefined)
   const { identity: _identity, ...certificate } = await resolveCertificateInput(deps, input.clientCertificate, undefined)
-  return { input, security, secretCiphertext, certificate }
+  const connections = storeConnections(deps, input.connections)
+  return { input, security, secretCiphertext, certificate, connections }
 }
 
 export interface ReconcileOutcome {
@@ -617,7 +630,7 @@ export async function reconcileManagedInfrastructures (deps: StudioDeps, declare
   const prepared: Array<{ key: string, digest: string, values: Omit<typeof infrastructures.$inferInsert, 'id' | 'createdBy'> }> = []
   for (const entry of declared) {
     try {
-      const { input, security, secretCiphertext, certificate } = await checkDeclared(deps, entry.input)
+      const { input, security, secretCiphertext, certificate, connections } = await checkDeclared(deps, entry.input)
       // Keyed with the data key, as the input may hold a desktop secret value.
       const digest = createHmac('sha256', deps.config.dataKey)
         .update(JSON.stringify({ input, clientCertificate: certificate.clientCertificate }))
@@ -637,6 +650,7 @@ export async function reconcileManagedInfrastructures (deps: StudioDeps, declare
           security,
           secretCiphertext,
           ...certificate,
+          ...connections,
           allowPrivateNetwork: input.allowPrivateNetwork,
           managedKey: entry.key,
           managedDigest: digest,

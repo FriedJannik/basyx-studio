@@ -35,9 +35,6 @@
 
       <v-switch
         v-model="show"
-        color="primary"
-        density="compact"
-        hide-details
         :label="t('signIn.show')"
       />
 

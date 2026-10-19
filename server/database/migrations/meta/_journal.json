@@ -50,6 +50,13 @@
       "when": 1792332244972,
       "tag": "0006_managed_infrastructures",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792424409745,
+      "tag": "0007_infrastructure_connections",
+      "breakpoints": true
     }
   ]
 }

@@ -505,6 +505,44 @@ paths:
               schema: { $ref: '#/components/schemas/InfrastructureProbeResult' }
         default: { $ref: '#/components/responses/Problem' }
 
+  /infrastructures/{infrastructureId}/connections/{connectionKey}/test:
+    post:
+      tags: [Infrastructures]
+      operationId: testInfrastructureConnection
+      summary: Test a connection to a third-party service without revealing its secret
+      description: |
+        Obtains the connection's credentials (a token from the issuer for
+        `oauth2ClientCredentials` and `delegatedUser`, as the signed-in
+        administrator) and runs the type's checks, e.g. for `influxdb2`
+        `GET /health` and a read-only query (ADR 0040). With `connection` in
+        the body, the edited connection is tested; an omitted secret is the
+        one stored for the same key and scheme. Every test is audited.
+      x-requirements: [CON-005, CON-006]
+      parameters:
+        - $ref: '#/components/parameters/InfrastructureId'
+        - name: connectionKey
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[a-z0-9][a-z0-9-]{0,62}$' }
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                connection: { $ref: '#/components/schemas/ConnectionInput' }
+      responses:
+        '200':
+          description: The checks with their outcome; never the secret
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConnectionTestResult' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        default: { $ref: '#/components/responses/Problem' }
+
   /targets/{targetId}/shells:
     get:
       tags: [AAS]
@@ -1222,6 +1260,34 @@ paths:
         '428': { $ref: '#/components/responses/PreconditionRequired' }
         default: { $ref: '#/components/responses/Problem' }
 
+  /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/external-file:
+    parameters:
+      - $ref: '#/components/parameters/TargetId'
+      - $ref: '#/components/parameters/SubmodelKey'
+      - $ref: '#/components/parameters/ElementKey'
+    get:
+      tags: [AAS]
+      operationId: getElementExternalFile
+      summary: Fetch the file that an element names at another host
+      description: >-
+        For a File element whose value is an http(s) address, or a Property
+        holding one. Studio reads the element as the user and fetches the
+        stored address, without credentials, for browsers that may not read
+        it there (CORS). Only origins listed in `STUDIO_EXTERNAL_FILE_ORIGINS`
+        (desktop: any) are fetched, else `external_file_refused`; a host that
+        fails gives `external_file_unavailable`. At most three redirects,
+        30 s and 200 MiB. The answer always downloads (ADR 0042).
+      x-requirements: [PROD-001, SEC-008]
+      responses:
+        '200':
+          description: File content; the media type is the element's `contentType`, else the host's
+          headers:
+            Content-Disposition:
+              schema: { type: string }
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        default: { $ref: '#/components/responses/Problem' }
   /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/invocations:
     post:
       tags: [AAS]
@@ -2748,7 +2814,12 @@ paths:
         apps and backend callers and is unavailable in hosted Studio.
         Lifecycle methods return jobs polled with studio.containers.getJob;
         export/import/log saving use native file grants added by the host.
-      x-requirements: [APP-006, APP-009, APP-010, SEC-005]
+        Bundled apps may call studio.timeseries.read (ADR 0040): Studio reads
+        the Time Series Data submodel from the frame's target as the user
+        and, for a LinkedSegment, queries the database of a connection of the
+        same infrastructure; the app never sends a URL, query or credential.
+        Every use of a connection and every refusal is audited.
+      x-requirements: [APP-006, APP-009, APP-010, SEC-005, CON-002, CON-003, CON-004, CON-006]
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
       requestBody:
@@ -3661,6 +3732,127 @@ components:
           type: boolean
           default: false
           description: Permit loopback and private-network addresses; subject to the deployment policy.
+        connections:
+          type: array
+          maxItems: 20
+          default: []
+          description: Third-party services that content of this infrastructure refers to (ADR 0040). Keys are unique; `delegatedUser` needs `delegated_user` security.
+          items: { $ref: '#/components/schemas/ConnectionInput' }
+    ConnectionAuthInput:
+      description: |
+        How Studio authenticates at the service (CON-007). Each connection
+        type accepts some schemes (`influxdb2`: `token`). Secrets are
+        `SecretInput`s; omit one on update to keep the stored secret of the
+        same key and scheme.
+      oneOf:
+        - { type: object, additionalProperties: false, required: [scheme], properties: { scheme: { const: none } } }
+        - type: object
+          additionalProperties: false
+          required: [scheme]
+          description: 'Sent as `Authorization: Token <secret>`.'
+          properties: { scheme: { const: token }, token: { $ref: '#/components/schemas/SecretInput' } }
+        - type: object
+          additionalProperties: false
+          required: [scheme]
+          description: 'Sent as `Authorization: Bearer <secret>`.'
+          properties: { scheme: { const: bearer }, token: { $ref: '#/components/schemas/SecretInput' } }
+        - type: object
+          additionalProperties: false
+          required: [scheme, name]
+          properties:
+            scheme: { const: header }
+            name: { type: string, pattern: "^[!#$%&'*+.^\\w`|~-]{1,100}$", description: 'Not a header Studio sets itself (Host, Content-Type, Accept, …).' }
+            value: { $ref: '#/components/schemas/SecretInput' }
+        - type: object
+          additionalProperties: false
+          required: [scheme, username]
+          properties:
+            scheme: { const: basic }
+            username: { type: string, minLength: 1, maxLength: 500, pattern: '^[^:]*$' }
+            password: { $ref: '#/components/schemas/SecretInput' }
+        - type: object
+          additionalProperties: false
+          required: [scheme, issuer, clientId]
+          description: A token from the issuer's token endpoint, cached until it expires.
+          properties:
+            scheme: { const: oauth2ClientCredentials }
+            issuer: { type: string, format: uri, maxLength: 2000 }
+            clientId: { type: string, minLength: 1, maxLength: 500 }
+            clientSecret: { $ref: '#/components/schemas/SecretInput' }
+            scopes: { type: array, maxItems: 20, items: { type: string }, default: [] }
+            audience: { type: string, maxLength: 500 }
+        - type: object
+          additionalProperties: false
+          required: [scheme, audience]
+          description: The signed-in user's token for this infrastructure, exchanged for the audience (RFC 8693) or, with `forwardUserToken`, forwarded if its `aud` contains the audience.
+          properties:
+            scheme: { const: delegatedUser }
+            audience: { type: string, minLength: 1, maxLength: 500 }
+            scopes: { type: array, maxItems: 20, items: { type: string }, default: [] }
+            forwardUserToken: { type: boolean, default: false }
+    ConnectionAuthSummary:
+      description: The authentication of a stored connection; secrets as `SecretSummary`, never their values.
+      type: object
+      required: [scheme]
+      properties:
+        scheme: { type: string, enum: [none, token, bearer, header, basic, oauth2ClientCredentials, delegatedUser] }
+      additionalProperties: true
+    ConnectionInput:
+      type: object
+      additionalProperties: false
+      required: [key, type, url, auth]
+      properties:
+        key: { type: string, pattern: '^[a-z0-9][a-z0-9-]{0,62}$' }
+        type: { type: string, enum: [influxdb2], description: The API the service speaks; selects the adapter and the schema of `settings`. }
+        url: { type: string, format: uri, maxLength: 2000, description: 'How the Studio Service reaches the service; without credentials, query or fragment. Requests go here only.' }
+        aliases:
+          type: array
+          maxItems: 10
+          default: []
+          description: Other origins under which AAS content refers to the service; never contacted.
+          items: { type: string, format: uri, maxLength: 2000 }
+        allowPrivateNetwork: { type: boolean, default: false }
+        timeoutSeconds: { type: integer, minimum: 1, maximum: 120, description: Overrides the adapter's default (`influxdb2` 15 s). }
+        auth: { $ref: '#/components/schemas/ConnectionAuthInput' }
+        settings:
+          type: object
+          additionalProperties: false
+          default: {}
+          description: 'Per type. `influxdb2`: `organization` replaces the `org`/`orgID` of endpoints in AAS content.'
+          properties:
+            organization: { type: string, minLength: 1, maxLength: 200 }
+    Connection:
+      type: object
+      additionalProperties: false
+      required: [key, type, url, aliases, allowPrivateNetwork, auth, settings]
+      properties:
+        key: { type: string }
+        type: { type: string, enum: [influxdb2] }
+        url: { type: string }
+        aliases: { type: array, items: { type: string } }
+        allowPrivateNetwork: { type: boolean }
+        timeoutSeconds: { type: integer }
+        auth: { $ref: '#/components/schemas/ConnectionAuthSummary' }
+        settings: { type: object }
+    ConnectionTestResult:
+      type: object
+      additionalProperties: false
+      required: [checkedAt, ok, checks]
+      properties:
+        checkedAt: { $ref: '#/components/schemas/Timestamp' }
+        ok: { type: boolean }
+        checks:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [check, ok, status, latencyMs, message]
+            properties:
+              check: { type: string, enum: [token, health, query], description: '`token` obtains the credentials, `health` reaches the service, `query` reads with them.' }
+              ok: { type: boolean }
+              status: { type: [integer, 'null'] }
+              latencyMs: { type: [number, 'null'] }
+              message: { type: [string, 'null'], description: What went wrong; never contains the secret. }
     ServiceProfiles:
       type: object
       description: The `/description` profiles of each endpoint at the last probe, per endpoint type; `null` where the endpoint did not answer with them.
@@ -3671,7 +3863,7 @@ components:
     Infrastructure:
       type: object
       additionalProperties: false
-      required: [id, name, description, template, endpoints, listSource, sync, serviceProfiles, probedAt, announced, security, clientCertificate, allowPrivateNetwork, managed, revision, createdAt, updatedAt]
+      required: [id, name, description, template, endpoints, listSource, sync, serviceProfiles, probedAt, announced, security, clientCertificate, allowPrivateNetwork, connections, managed, revision, createdAt, updatedAt]
       properties:
         id: { $ref: '#/components/schemas/TargetId' }
         name: { type: string }
@@ -3705,6 +3897,9 @@ components:
             - { $ref: '#/components/schemas/ClientCertificateSummary' }
             - { type: 'null' }
         allowPrivateNetwork: { type: boolean }
+        connections:
+          type: array
+          items: { $ref: '#/components/schemas/Connection' }
         managed:
           type: boolean
           description: Declared in the deployment's infrastructure file; read-only in Studio (ADR 0037).
@@ -5159,6 +5354,7 @@ components:
         - studio.ui.notifications
         - studio.ui.navigation
         - studio.ui.clipboard
+        - studio.ui.externalFiles
         - studio.ui.commands
         - studio.ui.panels
         - studio.semantic.read
@@ -5170,6 +5366,7 @@ components:
         - studio.views.binding.invoke
         - studio.backend
         - studio.containers
+        - studio.timeseries.read
     AppCapabilityRequest:
       type: object
       additionalProperties: false
@@ -5455,6 +5652,7 @@ components:
             - studio.aas.setElementValue
             - studio.backend.call
             - studio.ui.openFullscreen
+            - studio.ui.readExternalFile
             - studio.ui.openTarget
             - studio.ui.openExternal
             - studio.ui.copyText
@@ -5476,6 +5674,7 @@ components:
             - studio.containers.pickFiles
             - studio.containers.exportStack
             - studio.containers.importStack
+            - studio.timeseries.read
         params:
           description: Method parameters as defined by `@basyx/studio-sdk` (`studio-sdk/0`). The context returned by `studio.ui.getContext` includes Studio's `mode` (`view` or `edit`); apps show edit controls only in `edit` (MVP-4, UX-006).
     AppCallResult:
@@ -5683,6 +5882,14 @@ components:
         `target_client_certificate_rejected`, `app_backend_failed` 502;
         `app_backend_unavailable` 503.
 
+        Connections (ADR 0040) added `connection_not_configured` and
+        `connection_request_refused` 422 (no connection of the infrastructure
+        serves the service the content names; the content asks for something
+        the adapter does not send), `connection_credentials_unavailable`,
+        `connection_rejected`, `connection_unavailable` and `connection_error`
+        502, and `timeseries_invalid` 422 (not a Time Series Data submodel, or
+        its segment or records are missing).
+
         MVP-4 added `descriptor_endpoint_blocked` (a registry descriptor points
         to an endpoint outside the infrastructure, which Studio never contacts),
         `query_invalid` (a raw query failed its checks; findings in
@@ -5739,6 +5946,15 @@ components:
         - app_permission_not_declared
         - app_backend_unavailable
         - app_backend_failed
+        - external_file_unavailable
+        - external_file_refused
+        - connection_not_configured
+        - connection_credentials_unavailable
+        - connection_rejected
+        - connection_unavailable
+        - connection_error
+        - connection_request_refused
+        - timeseries_invalid
     Problem:
       type: object
       additionalProperties: false

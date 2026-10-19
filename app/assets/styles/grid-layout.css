@@ -18,27 +18,30 @@
      no CSS variable of its own; ShellOverview sets the class. */
   --overview-radius: 8px;
 
-  /* The grid's outer gap (16 px, `overviewGap`) is cancelled so widgets line
-     up with the page. The library rounds a widget's left edge and width
-     apart, so a widget in the last column can end a pixel past the grid;
-     one pixel less at the end keeps its border inside the tab window,
+  /* The grid's outer gap (16 px, `overviewGap`) between columns is
+     cancelled so widgets line up with the page. Rows have no gap; each
+     widget keeps 16 px free below it (ShellOverview), and the last one's is
+     cancelled at the bottom. The library rounds a widget's left edge and
+     width apart, so a widget in the last column can end a pixel past the
+     grid; one pixel less at the end keeps its border inside the tab window,
      which clips. */
-  margin: -16px -15px -16px -16px;
+  margin: 0 -15px -16px -16px;
 }
 
 .vgl-layout.vgl-layout.overview-rounded {
   --overview-radius: 24px;
 }
 
-/* Where a dragged widget lands has the widgets' shape. */
+/* Where a widget lands has the widgets' shape, without the gap below it. */
 .vgl-layout.vgl-layout .vgl-item--placeholder {
-  border-radius: var(--overview-radius);
+  clip-path: inset(0 0 16px 0 round var(--overview-radius));
 }
 
 /* The resize corner shows with the pointer over its widget, as the drag
    handle does, and follows the card's rounded corner at a 4 px inset. */
 .vgl-layout.vgl-layout .vgl-item__resizer {
-  inset: auto 4px 4px auto;
+  /* 4 px inside the card, which ends 16 px above the item (the gap below it). */
+  inset: auto 4px 20px auto;
   opacity: 0;
   transition: opacity 0.15s ease;
 }

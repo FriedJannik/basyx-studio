@@ -1,0 +1,90 @@
+{
+  "config": {
+    "title": "プレビューの設定",
+    "segment": "セグメント",
+    "time": "時刻の値",
+    "values": "値",
+    "noData": "項目がありません",
+    "fetch": "データを取得"
+  },
+  "chart": {
+    "type": "チャートの種類",
+    "emptyTitle": "選択した期間にデータがありません",
+    "emptyText": "別の期間を選ぶか、もう一度データを取得してください。",
+    "interpolation": "補間",
+    "bins": "階級数",
+    "stacked": "積み上げ"
+  },
+  "chartType": {
+    "line": "折れ線グラフ",
+    "area": "面グラフ",
+    "scatter": "散布図",
+    "histogram": "ヒストグラム",
+    "gauge": "ゲージ",
+    "display": "表示フィールド"
+  },
+  "interpolation": {
+    "smooth": "滑らか",
+    "straight": "直線",
+    "stepline": "階段"
+  },
+  "timeRange": {
+    "title": "期間",
+    "button": "期間: {label}",
+    "close": "期間メニューを閉じる",
+    "last": "過去 {range}",
+    "absoluteRange": "絶対期間",
+    "relative": "相対",
+    "absolute": "絶対",
+    "custom": "カスタム",
+    "customTitle": "カスタムの相対期間",
+    "range": "長さ",
+    "unit": "単位",
+    "from": "開始",
+    "to": "終了"
+  },
+  "units": {
+    "milliseconds": "ミリ秒",
+    "seconds": "秒",
+    "minutes": "分",
+    "hours": "時間",
+    "days": "日",
+    "weeks": "週",
+    "months": "か月",
+    "years": "年"
+  },
+  "autoRefresh": {
+    "title": "自動更新",
+    "button": "自動更新: {label}",
+    "close": "自動更新メニューを閉じる",
+    "off": "オフ",
+    "enabled": "自動更新",
+    "every": "更新間隔",
+    "unit": "単位"
+  },
+  "validation": {
+    "rangeInvalid": "有効な期間を入力してください。",
+    "rangeMode": "有効な期間の種類を選択してください。",
+    "rangePositive": "0 より大きい期間を入力してください。",
+    "rangeUnit": "対応している時間の単位を選択してください。",
+    "rangeWhole": "月と年は整数で入力してください。",
+    "rangeSupported": "対応している日付の範囲内で期間を入力してください。",
+    "rangeBothDates": "開始日と終了日の両方を入力してください。",
+    "rangeValidDates": "有効な開始日と終了日を入力してください。",
+    "rangeOrder": "開始日は終了日より前にしてください。",
+    "refreshInvalid": "有効な更新間隔を入力してください。",
+    "refreshPositive": "0 より大きい更新間隔を入力してください。",
+    "refreshRange": "更新間隔は 5 秒から 24 日の間で指定してください。",
+    "bins": "階級数は 1 から {max} までの整数で入力してください。"
+  },
+  "warnings": {
+    "value_missing": "{value} はこのセグメントのデータにありません。",
+    "time_missing": "時刻の値 {time} はこのセグメントのデータにありません。",
+    "points_skipped": "{value} のうち、有効な時刻または数値のない {count} 個の点を除外しました。",
+    "points_reduced": "{value} にはこの期間に {count} 個の点があります。チャートにはそのうち {limit} 個を表示します。"
+  },
+  "errors": {
+    "load": "サブモデルを読み込めませんでした: {message}",
+    "fetch": "時系列を読み込めませんでした。"
+  }
+}

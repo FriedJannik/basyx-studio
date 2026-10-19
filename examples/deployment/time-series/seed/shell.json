@@ -1,0 +1,26 @@
+{
+  "modelType": "AssetAdministrationShell",
+  "id": "https://example.org/basyx-studio/time-series/aas/ClimateSensor",
+  "idShort": "ClimateSensor",
+  "displayName": [
+    {
+      "language": "en",
+      "text": "Climate sensor"
+    }
+  ],
+  "assetInformation": {
+    "assetKind": "Instance",
+    "globalAssetId": "https://example.org/basyx-studio/time-series/asset/ClimateSensor"
+  },
+  "submodels": [
+    {
+      "type": "ModelReference",
+      "keys": [
+        {
+          "type": "Submodel",
+          "value": "https://example.org/basyx-studio/time-series/sm/ClimateSensorTimeSeries"
+        }
+      ]
+    }
+  ]
+}

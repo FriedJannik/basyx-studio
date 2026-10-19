@@ -1,0 +1,90 @@
+{
+  "config": {
+    "title": "Vorschau-Konfiguration",
+    "segment": "Segment",
+    "time": "Zeitwert",
+    "values": "Werte",
+    "noData": "Keine Einträge",
+    "fetch": "Daten abrufen"
+  },
+  "chart": {
+    "type": "Diagrammtyp",
+    "emptyTitle": "Keine Daten im gewählten Zeitraum",
+    "emptyText": "Wählen Sie einen anderen Zeitraum oder rufen Sie die Daten erneut ab.",
+    "interpolation": "Interpolation",
+    "bins": "Klassen",
+    "stacked": "Gestapelt"
+  },
+  "chartType": {
+    "line": "Liniendiagramm",
+    "area": "Flächendiagramm",
+    "scatter": "Streudiagramm",
+    "histogram": "Histogramm",
+    "gauge": "Tacho",
+    "display": "Anzeigefeld"
+  },
+  "interpolation": {
+    "smooth": "Glatt",
+    "straight": "Gerade",
+    "stepline": "Stufen"
+  },
+  "timeRange": {
+    "title": "Zeitraum",
+    "button": "Zeitraum: {label}",
+    "close": "Zeitraum-Menü schließen",
+    "last": "Letzte {range}",
+    "absoluteRange": "Absoluter Zeitraum",
+    "relative": "Relativ",
+    "absolute": "Absolut",
+    "custom": "Eigener",
+    "customTitle": "Eigener relativer Zeitraum",
+    "range": "Dauer",
+    "unit": "Einheit",
+    "from": "Von",
+    "to": "Bis"
+  },
+  "units": {
+    "milliseconds": "Millisekunden",
+    "seconds": "Sekunden",
+    "minutes": "Minuten",
+    "hours": "Stunden",
+    "days": "Tage",
+    "weeks": "Wochen",
+    "months": "Monate",
+    "years": "Jahre"
+  },
+  "autoRefresh": {
+    "title": "Automatisch aktualisieren",
+    "button": "Automatisch aktualisieren: {label}",
+    "close": "Menü zur automatischen Aktualisierung schließen",
+    "off": "Aus",
+    "enabled": "Automatisch aktualisieren",
+    "every": "Aktualisieren alle",
+    "unit": "Einheit"
+  },
+  "validation": {
+    "rangeInvalid": "Geben Sie einen gültigen Zeitraum ein.",
+    "rangeMode": "Wählen Sie eine gültige Art des Zeitraums.",
+    "rangePositive": "Geben Sie einen Zeitraum größer als null ein.",
+    "rangeUnit": "Wählen Sie eine unterstützte Zeiteinheit.",
+    "rangeWhole": "Monate und Jahre müssen ganze Zahlen sein.",
+    "rangeSupported": "Geben Sie einen Zeitraum im unterstützten Datumsbereich ein.",
+    "rangeBothDates": "Geben Sie ein Start- und ein Enddatum ein.",
+    "rangeValidDates": "Geben Sie gültige Start- und Enddaten ein.",
+    "rangeOrder": "Das Startdatum muss vor dem Enddatum liegen.",
+    "refreshInvalid": "Geben Sie ein gültiges Aktualisierungsintervall ein.",
+    "refreshPositive": "Geben Sie ein Aktualisierungsintervall größer als null ein.",
+    "refreshRange": "Wählen Sie ein Aktualisierungsintervall zwischen 5 Sekunden und 24 Tagen.",
+    "bins": "Geben Sie eine ganze Zahl von Klassen zwischen 1 und {max} ein."
+  },
+  "warnings": {
+    "value_missing": "{value} ist in den Daten dieses Segments nicht vorhanden.",
+    "time_missing": "Der Zeitwert {time} ist in den Daten dieses Segments nicht vorhanden.",
+    "points_skipped": "{count} Punkte von {value} ohne gültige Zeit oder Zahl wurden ausgelassen.",
+    "points_reduced": "{value} hat {count} Punkte in diesem Zeitraum; das Diagramm zeigt {limit} davon."
+  },
+  "errors": {
+    "load": "Das Teilmodell konnte nicht gelesen werden: {message}",
+    "fetch": "Die Zeitreihe konnte nicht gelesen werden."
+  }
+}

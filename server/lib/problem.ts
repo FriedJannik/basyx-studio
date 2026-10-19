@@ -49,6 +49,8 @@ const definitions: Record<ProblemCode, ProblemDefinition> = {
   app_permission_not_declared: { status: 403, title: 'The app did not declare the permission for this call', retryable: false },
   app_backend_unavailable: { status: 503, title: 'The app backend is not available', retryable: true },
   app_backend_failed: { status: 502, title: 'The app backend failed', retryable: false },
+  external_file_unavailable: { status: 502, title: 'The external file could not be fetched', retryable: true },
+  external_file_refused: { status: 403, title: 'Studio does not fetch files from this address', retryable: false },
   container_engine_unavailable: { status: 503, title: 'No container engine is running', retryable: true },
   container_busy: { status: 409, title: 'Another operation is running for this instance', retryable: true },
   container_port_in_use: { status: 409, title: 'A port is used by another program', retryable: false },
@@ -56,6 +58,13 @@ const definitions: Record<ProblemCode, ProblemDefinition> = {
   container_disk_full: { status: 507, title: 'The container engine has no disk space left', retryable: false },
   container_start_failed: { status: 502, title: 'A component did not start', retryable: true },
   container_operation_failed: { status: 502, title: 'The container engine refused the operation', retryable: false },
+  connection_not_configured: { status: 422, title: 'No connection is configured for this service', retryable: false },
+  connection_credentials_unavailable: { status: 502, title: 'The credentials of the connection could not be resolved', retryable: false },
+  connection_rejected: { status: 502, title: 'The service rejected the connection\'s credentials', retryable: false },
+  connection_unavailable: { status: 502, title: 'The service could not be reached', retryable: true },
+  connection_error: { status: 502, title: 'The service reported an error', retryable: true },
+  connection_request_refused: { status: 422, title: 'Studio does not send this request', retryable: false },
+  timeseries_invalid: { status: 422, title: 'The time series cannot be read', retryable: false },
 }
 
 export interface Violation {

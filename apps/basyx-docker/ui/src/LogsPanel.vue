@@ -8,7 +8,6 @@
         :items="components"
         :label="t('logs.component')"
         max-width="280"
-        variant="outlined"
       />
 
       <v-spacer />

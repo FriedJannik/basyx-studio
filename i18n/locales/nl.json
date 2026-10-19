@@ -233,7 +233,16 @@
     "app_not_found": "De app is niet (meer) geïnstalleerd.",
     "app_permission_not_declared": "De app heeft de machtiging voor deze actie niet gedeclareerd.",
     "app_backend_unavailable": "De backend van de app is niet beschikbaar.",
-    "app_backend_failed": "De backend van de app is mislukt."
+    "app_backend_failed": "De backend van de app is mislukt.",
+    "connection_not_configured": "Er is geen verbinding ingesteld voor deze dienst.",
+    "connection_credentials_unavailable": "De inloggegevens van de verbinding konden niet worden gelezen.",
+    "connection_rejected": "De dienst heeft de inloggegevens van de verbinding geweigerd.",
+    "connection_unavailable": "De dienst kon niet worden bereikt.",
+    "connection_error": "De dienst heeft een fout gemeld.",
+    "connection_request_refused": "Studio verstuurt dit verzoek niet.",
+    "timeseries_invalid": "De tijdreeks kan niet worden gelezen.",
+    "external_file_unavailable": "Het externe bestand kon niet worden opgehaald.",
+    "external_file_refused": "Studio haalt geen bestanden op van dit adres."
   },
   "admin": {
     "title": "Infrastructuren",
@@ -386,7 +395,80 @@
       "changeFeed": "De services melden wijzigingen, zodat Studio kan tonen wat er onlangs is gewijzigd.",
       "rebac": "De services controleren de toegang per gebruiker en AAS (relatiegebaseerde toegangscontrole), zodat AAS'en kunnen worden gedeeld."
     },
-    "probedAt": "Gecontroleerd {time}"
+    "probedAt": "Gecontroleerd {time}",
+    "connections": {
+      "title": "Verbindingen",
+      "help": "Diensten waarnaar inhoud van deze infrastructuur verwijst, maar die geen AAS-diensten zijn, zoals een tijdreeksdatabase. Studio bewaart hun inloggegevens en gebruikt ze alleen voor inhoud die uit deze infrastructuur is gelezen.",
+      "unnamed": "Nieuwe verbinding",
+      "add": "Verbinding toevoegen",
+      "remove": "Verwijderen",
+      "key": "Sleutel",
+      "keyHint": "Identificeert de verbinding binnen deze infrastructuur.",
+      "keyInvalid": "Gebruik kleine letters, cijfers en koppeltekens.",
+      "keyTaken": "Een andere verbinding heeft deze sleutel.",
+      "type": "Type",
+      "types": {
+        "influxdb2": "InfluxDB 2"
+      },
+      "typeHints": {
+        "influxdb2": "Tijdreeksen van de LinkedSegments van Time Series Data-submodellen (Flux)."
+      },
+      "url": "URL",
+      "urlHint": "Hoe Studio de dienst bereikt, bijv. in zijn containernetwerk.",
+      "aliases": "Aliassen",
+      "aliasesHint": "Andere adressen waaronder submodellen de dienst noemen. Studio neemt er nooit contact mee op.",
+      "organization": "Organisatie",
+      "organizationHint": "Vervangt de organisatie van de endpoints in submodellen. Laat leeg om die van hen te gebruiken.",
+      "scheme": "Authenticatie",
+      "schemes": {
+        "none": "Geen",
+        "token": "Token",
+        "bearer": "Bearer-token",
+        "header": "Eigen header",
+        "basic": "Gebruikersnaam en wachtwoord",
+        "oauth2ClientCredentials": "Clientgegevens (OAuth 2.0)",
+        "delegatedUser": "Aangemelde gebruiker"
+      },
+      "schemeHints": {
+        "none": "Studio stuurt geen inloggegevens.",
+        "token": "Studio stuurt \"Authorization: Token\" met het geheim, zoals InfluxDB verwacht.",
+        "bearer": "Studio stuurt \"Authorization: Bearer\" met het geheim.",
+        "header": "Studio stuurt het geheim in een header naar keuze.",
+        "basic": "Studio stuurt HTTP Basic-authenticatie.",
+        "oauth2ClientCredentials": "Studio haalt met deze clientgegevens een token op bij de uitgever.",
+        "delegatedUser": "Studio wisselt het token van de gebruiker in voor een token dat voor de dienst is uitgegeven (RFC 8693)."
+      },
+      "headerName": "Headernaam",
+      "username": "Gebruikersnaam",
+      "audience": "Audience",
+      "audienceHint": "De audience die de dienst in zijn tokens verwacht.",
+      "forwardUserToken": "Het token van de gebruiker ongewijzigd doorgeven in plaats van het in te wisselen",
+      "forwardUserTokenWarning": "De dienst ontvangt het token van de gebruiker en zou het ook tegenover de AAS-server kunnen gebruiken. Studio geeft het alleen door als het voor deze audience is uitgegeven.",
+      "secrets": {
+        "token": "Token",
+        "value": "Headerwaarde",
+        "password": "Wachtwoord",
+        "clientSecret": "Clientgeheim"
+      },
+      "secretStored": "Opgeslagen. Laat leeg om het te behouden.",
+      "secretValueHint": "Wordt versleuteld op deze computer opgeslagen.",
+      "secretRefHint": "env:VARIABELENAAM of file:/run/secrets/naam. Het geheim zelf bereikt nooit de interface van Studio.",
+      "secretRefInvalid": "Gebruik env:NAAM of file:/absoluut/pad.",
+      "timeout": "Time-out in seconden",
+      "timeoutHint": "Standaard: {seconds} s, hoogstens 120 s.",
+      "timeoutInvalid": "Gebruik een geheel getal van 1 tot 120.",
+      "test": "Verbinding testen",
+      "testAfterSave": "Sla de infrastructuur op om haar verbindingen te testen.",
+      "testOk": "De verbinding werkt.",
+      "testFailed": "De verbinding werkt niet.",
+      "checks": {
+        "token": "Inloggegevens",
+        "health": "Dienst antwoordt",
+        "query": "Leestoegang"
+      },
+      "required": "Verplicht",
+      "httpUrl": "Voer een http(s)-URL in."
+    }
   },
   "apps": {
     "title": "Apps",
@@ -426,7 +508,9 @@
       "studio_ui_navigation": "Het eigen paginaadres wijzigen, doelen openen en links in je browser openen",
       "studio_backend": "Code aan de serverkant uitvoeren (geïsoleerd)",
       "studio_ui_clipboard": "Tekst naar het klembord kopiëren wanneer je klikt",
-      "studio_containers": "Lokale BaSyx-instanties op Docker of Podman starten, stoppen, exporteren en verwijderen (alleen apps die met Studio worden meegeleverd)"
+      "studio_containers": "Lokale BaSyx-instanties op Docker of Podman starten, stoppen, exporteren en verwijderen (alleen apps die met Studio worden meegeleverd)",
+      "studio_timeseries_read": "Tijdreeksen lezen, ook uit de databases van de verbindingen van de infrastructuur (alleen apps die met Studio worden meegeleverd)",
+      "studio_ui_externalFiles": "Bestanden die de AAS bij andere hosts noemt in uw browser ophalen (die hosts zien uw adres)"
     },
     "bundled": "Meegeleverd",
     "bundledHint": "Meegeleverd met Studio en samen ermee bijgewerkt.",

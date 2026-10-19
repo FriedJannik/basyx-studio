@@ -25,7 +25,7 @@
             />
 
             <!-- Creating needs edit mode (UX-006): new, or from JSON. -->
-            <v-btn-group v-if="canWrite" density="compact">
+            <v-btn-group v-if="canWrite">
               <v-btn prepend-icon="mdi-plus" :text="xs ? undefined : t('cd.new')" @click="adding = true" />
 
               <v-menu>

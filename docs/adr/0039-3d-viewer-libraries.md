@@ -47,6 +47,12 @@ geometry kernel to turn into triangles.
 - The libraries need Eclipse IP review (dash-licenses could not verify any of
   them automatically); occt-import-js, as LGPL-2.1, needs the closest look.
 - Formats the libraries cannot read (JT, native CAD formats) still download.
+- occt-import-js is built with Emscripten's embind, which creates its
+  function wrappers with `new Function(...)`. App frames forbid that (no
+  `'unsafe-eval'`, ADR 0017), so the apps' build replaces those wrappers with
+  the closures Emscripten uses when built with `DYNAMIC_EXECUTION=0`
+  (`apps/shared/vite.ts`); a unit test reads STEP in a context without code
+  generation from strings. web-ifc needs no such change.
 
 ## Alternatives considered
 

@@ -156,7 +156,8 @@
 
   // The 3D view of a File element (STL, OBJ, glTF, IFC, STEP) in the
   // Visualization tab. Files of the target come through Studio; files at an
-  // http(s) address load from there when that server allows it (CORS).
+  // http(s) address load from there when that server allows it (CORS), else
+  // through Studio's server for the origins the deployment lists (ADR 0042).
   const props = defineProps<{
     targetId: string
     submodelKey: string
@@ -171,6 +172,7 @@
   const { t, n } = useI18n()
   const api = useStudioApi()
   const studioUrl = useStudioUrl()
+  const readExternalFile = useExternalFile()
   const theme = useTheme()
 
   const host = ref<HTMLElement | null>(null)
@@ -204,11 +206,7 @@
 
   async function download (): Promise<Uint8Array> {
     if (external.value) {
-      const response = await fetch(external.value, { credentials: 'omit', referrerPolicy: 'no-referrer' })
-      if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText}`)
-      }
-      return new Uint8Array(await response.arrayBuffer())
+      return (await readExternalFile(external.value, { targetId: props.targetId, submodelKey: props.submodelKey, elementKey: props.elementKey })).bytes
     }
     const blob = await api<Blob>(attachmentPath.value, { responseType: 'blob' })
     return new Uint8Array(await blob.arrayBuffer())

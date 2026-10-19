@@ -4,6 +4,7 @@ import type { z } from 'zod'
 import { Document, parseDocument } from 'yaml'
 import { infrastructureInputSchema, managedInfrastructureKeySchema } from '#shared/contract'
 import { ConfigurationError } from './config'
+import { exportConnection } from './connections/secrets'
 
 // The deployment's infrastructure file (ADR 0037): YAML with the fields of
 // the infrastructure API input plus a stable key per entry.
@@ -16,6 +17,11 @@ import { ConfigurationError } from './config'
 //       endpoints:
 //         - { type: aasEnvironment, url: https://basyx.example.org }
 //       security: { mode: unsecured }
+//       connections:
+//         - key: influx
+//           type: influxdb2
+//           url: http://influxdb:8086
+//           auth: { scheme: token, token: { ref: env:INFLUX_TOKEN } }
 
 export type ParsedInfrastructureInput = z.output<typeof infrastructureInputSchema>
 
@@ -199,6 +205,13 @@ export function exportInfrastructureFile (records: InfrastructureRecord[]): stri
         ...(record.clientCertificate.passphraseRef ? { passphraseRef: record.clientCertificate.passphraseRef } : {}),
       }
     }
+    const connections = record.connections.map(connection => {
+      const { entry, missing: secret } = exportConnection(connection)
+      if (secret) {
+        missing.push(secret)
+      }
+      return entry
+    })
     notes.push(missing)
     return {
       key: record.managedKey ?? keyFor(record.name, taken),
@@ -211,6 +224,7 @@ export function exportInfrastructureFile (records: InfrastructureRecord[]): stri
       security,
       ...(clientCertificate ? { clientCertificate } : {}),
       allowPrivateNetwork: record.allowPrivateNetwork,
+      ...(connections.length > 0 ? { connections } : {}),
     }
   })
 

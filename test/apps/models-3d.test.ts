@@ -1,7 +1,7 @@
 import type { JsonObject } from '@basyx/studio-sdk'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { latestVersion, parseModels3D, sortModels, versionTitle, viewerFormat } from '../../apps/models-3d/ui/src/models3d'
+import { externalModel, latestVersion, parseModels3D, sortModels, versionTitle, viewerFormat } from '../../apps/models-3d/ui/src/models3d'
 import { levelOfDetail, listValue, modelFacts, statusColor, technicalGroups } from '../../apps/models-3d/ui/src/presentation'
 
 // The 3D Models app's reading of IDTA 02026-1-0 (Provision of 3D Models).
@@ -62,6 +62,7 @@ describe('parseModels3D', () => {
     expect(glb.title).toEqual([{ language: 'en', text: 'L bracket' }, { language: 'de', text: 'Winkel' }])
     expect(glb.externalFiles).toEqual([{
       url: 'https://models.example.com/brk-60-40.glb',
+      urlPath: 'Model3D[0].File.FileVersion[1].ExternalFile[0].ExternalUrl',
       identifier: 'BRK-60-40-GLB',
       host: { name: 'Example Models', officialName: 'Example Models AG' },
       apis: [{ version: '1.0', documentationUrl: 'https://example.com/docs/model-library-api', specificationUrl: '' }],
@@ -92,6 +93,10 @@ describe('parseModels3D', () => {
     expect(external.versions[0]!.digital).toBeNull()
     expect(external.versions[0]!.externalFiles[0]!.url).toBe('https://models.example.com/motor.step')
     expect(viewerFormat(external.versions[0])).toBeNull()
+    // Studio's page fetches it for the viewer (studio.ui.readExternalFile); the format comes from the address.
+    expect(externalModel(external.versions[0])).toEqual({ file: expect.objectContaining({ url: 'https://models.example.com/motor.step', urlPath: 'Model3D[2].File.FileVersion[0].ExternalFile[0].ExternalUrl' }), format: 'step' })
+    // A version with a file of its own reads that one.
+    expect(externalModel(models[0]!.versions[1])).toBeNull()
     expect(external.positivePurposes).toEqual([])
     expect(external.lengthUnit).toBe('')
   })

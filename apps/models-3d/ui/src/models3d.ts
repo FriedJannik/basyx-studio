@@ -51,6 +51,8 @@ export interface Application {
 
 export interface ExternalFile {
   url: string
+  /** idShortPath of the `ExternalUrl` property, for `readExternalFile`. */
+  urlPath: string
   identifier: string
   host: Organization | null
   apis: Api[]
@@ -255,7 +257,7 @@ function parseVersion (node: Node, key: string): Model3DVersion {
     preview: fileRef(node, 'PreviewFile'),
     digital: fileRef(node, 'DigitalFile'),
     externalFiles: items(node, 'ExternalFile')
-      .map(entry => ({ url: text(entry, 'ExternalUrl'), identifier: text(entry, 'FileIdentifier'), host: organization(child(entry, 'HostOrganization')), apis: apis(entry) }))
+      .map(entry => ({ url: text(entry, 'ExternalUrl'), urlPath: child(entry, 'ExternalUrl')?.path ?? '', identifier: text(entry, 'FileIdentifier'), host: organization(child(entry, 'HostOrganization')), apis: apis(entry) }))
       .filter(entry => entry.url !== ''),
     sourceApplication: application(child(node, 'SourceApplication')),
     providingOrganization: organization(child(node, 'ProvidingOrganization')),
@@ -344,6 +346,19 @@ export function viewerFormat (version: Model3DVersion | undefined): ModelFormat 
   return detectModelFormat({ contentType: version.digital.contentType, fileName: version.digital.value })
     ?? detectModelFormat({ fileName: version.fileName })
     ?? formatFromName(version.format.name, version.format.qualifier)
+}
+
+/** The http(s) file of a version without a file of its own that the viewer could read, if any. */
+export function externalModel (version: Model3DVersion | undefined): { file: ExternalFile, format: ModelFormat } | null {
+  if (!version || version.digital) {
+    return null
+  }
+  const file = version.externalFiles.find(entry => /^https?:\/\//i.test(entry.url) && entry.urlPath)
+  const fileName = file ? (URL.parse(file.url)?.pathname.split('/').pop() ?? '') : ''
+  const format = file
+    ? detectModelFormat({ fileName }) ?? detectModelFormat({ fileName: version.fileName }) ?? formatFromName(version.format.name, version.format.qualifier)
+    : null
+  return file && format ? { file, format } : null
 }
 
 function formatFromName (name: string, qualifier: string): ModelFormat | null {

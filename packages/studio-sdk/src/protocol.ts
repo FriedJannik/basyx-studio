@@ -6,7 +6,7 @@
 export const protocolVersion = 'studio-sdk/0'
 
 /** Version of the Studio app API that manifests name in `studioApi`. */
-export const studioAppApiVersion = '0.1.1'
+export const studioAppApiVersion = '0.1.2'
 
 /** The largest file `studio.ui.readFile` hands to an app (200 MiB). */
 export const readFileMaxBytes = 200 * 1024 * 1024
@@ -18,9 +18,17 @@ export const permissions = [
   'studio.ui.navigation',
   /** Copying text to the user's clipboard after a click in the app. */
   'studio.ui.clipboard',
+  /**
+   * Reading files that AAS content names by an http(s) address at another
+   * host. The user's browser fetches them, without credentials or referrer,
+   * so that host learns the user's address and which file they view.
+   */
+  'studio.ui.externalFiles',
   'studio.backend',
   /** Desktop only, bundled first-party apps only: local BaSyx instances on Docker or Podman (ADR 0033). */
   'studio.containers',
+  /** Bundled first-party apps only: time series of IDTA Time Series Data submodels, also from databases (ADR 0040). */
+  'studio.timeseries.read',
 ] as const
 export type Permission = (typeof permissions)[number]
 
@@ -156,6 +164,39 @@ export interface Page<T> {
 
 /** Value of a Property (string or `null`) or of a MultiLanguageProperty. */
 export type ElementValue = string | null | { language: string, text: string }[]
+
+// Time series of IDTA 02008 Time Series Data submodels (`studio.timeseries.read`,
+// ADR 0040). Studio reads the submodel itself and, for a LinkedSegment, the
+// database of a connection of the target; the app names records only.
+
+export interface TimeSeriesReadParams {
+  submodelId: string
+  /** The idShort of the segment in `Segments`. */
+  segment: string
+  /** The idShort of the `Metadata.Record` entry that holds the time. */
+  time: string
+  /** The idShorts of the records to read, one series each (up to 20). */
+  values: string[]
+  /**
+   * RFC 3339 times. `anchor: 'latest'` moves the range to end at the latest
+   * point of an InternalSegment's or ExternalSegment's data; LinkedSegments
+   * are always read for the range as given.
+   */
+  range: { start: string, stop: string, anchor?: 'fixed' | 'latest' }
+  /** Points per series (10 to 20,000, default 5,000); more are thinned out evenly. */
+  maxPoints?: number
+}
+
+export type TimeSeriesWarningCode = 'value_missing' | 'time_missing' | 'points_skipped' | 'points_reduced'
+
+export interface TimeSeriesResult {
+  kind: 'internal' | 'linked' | 'external'
+  /** The range the series cover. */
+  range: { start: string, stop: string }
+  /** One per selected value, in order. */
+  series: { key: string, unit: string | null, points: [epochMs: number, value: number][] }[]
+  warnings: { code: TimeSeriesWarningCode, params: Record<string, string | number> }[]
+}
 
 // Local BaSyx instances (`studio.containers`, ADR 0033). Studio validates the
 // same shapes with the schemas in shared/contract/containers.ts.
@@ -324,6 +365,15 @@ export interface Methods {
    */
   'studio.ui.readFile': { params: { submodelId: string, idShortPath: string }, result: FileContent }
   /**
+   * Reads a file that an element of the active target names by an http(s)
+   * address at another host: a File whose value is such an address, or a
+   * Property holding one (IDTA 02026 `ExternalUrl`). Studio reads the element
+   * itself, so the app cannot name an address of its own, and Studio's page
+   * fetches the file without credentials or referrer; the host must allow it
+   * (CORS). Up to `readFileMaxBytes` (Studio app API 0.1.2).
+   */
+  'studio.ui.readExternalFile': { params: { submodelId: string, idShortPath: string }, result: FileContent }
+  /**
    * Opens the same view again in a full-screen dialog of Studio; ignored
    * inside that dialog. `state` (up to 4,000 characters) reaches the view
    * there as `context.viewState`, so it can show what the user had selected.
@@ -376,6 +426,8 @@ export interface Methods {
   'studio.containers.exportStack': { params: { stackId: string, fileHandle: string }, result: { fileName: string } }
   /** Reads an exported ZIP or `basyx-stack.json` chosen with `pickFiles` (`stack-import`). */
   'studio.containers.importStack': { params: { fileHandle: string }, result: StackImport }
+  /** Reads a segment of a Time Series Data submodel of the active target (Studio app API 0.1.2). */
+  'studio.timeseries.read': { params: TimeSeriesReadParams, result: TimeSeriesResult }
 }
 export type MethodName = keyof Methods
 
@@ -387,6 +439,7 @@ export const methodPermissions: Record<MethodName, Permission | null> = {
   'studio.ui.setHeight': null,
   'studio.ui.openFile': 'studio.aas.read',
   'studio.ui.readFile': 'studio.aas.read',
+  'studio.ui.readExternalFile': 'studio.ui.externalFiles',
   'studio.ui.openFullscreen': null,
   'studio.aas.listShells': 'studio.aas.read',
   'studio.aas.getShell': 'studio.aas.read',
@@ -416,6 +469,7 @@ export const methodPermissions: Record<MethodName, Permission | null> = {
   'studio.containers.pickFiles': 'studio.containers',
   'studio.containers.exportStack': 'studio.containers',
   'studio.containers.importStack': 'studio.containers',
+  'studio.timeseries.read': 'studio.timeseries.read',
 }
 
 /** A failed call, in the shape of Studio's problem details. */

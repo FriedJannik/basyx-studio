@@ -58,8 +58,10 @@
         ref="container"
         v-bind="gridMode ? { ...gridProps, class: [gridProps.class, rounded ? 'overview-rounded' : undefined] } : { class: 'd-flex flex-column ga-4' }"
       >
-        <!-- Where a dragged widget lands, at the size it gets there (ADR 0032). -->
-        <GridItem v-if="gridMode && dropPreview" v-bind="dropPreview" static>
+        <!-- Where a dragged widget lands, at the size it gets there (ADR 0032).
+             Grid items keep the gap to the widget below inside them (pb-4),
+             as the grid's rows have none, so they can be 4 px fine. -->
+        <GridItem v-if="gridMode && dropPreview" v-bind="dropPreview" class="pb-4" static>
           <v-card class="h-100" color="primary" :ripple="false" variant="tonal" />
         </GridItem>
 
@@ -67,6 +69,7 @@
           :is="gridMode ? GridItem : 'div'"
           v-for="entry in entries"
           :key="entry.widget.id"
+          :class="gridMode ? 'pb-4' : undefined"
           v-bind="gridMode ? itemProps(entry.box) : {}"
         >
           <OverviewWidget
@@ -170,7 +173,7 @@
   import type { LiveSignal } from '~/composables/useShellOverview'
   import { GridItem, GridLayout } from 'grid-layout-plus'
   import { useDisplay } from 'vuetify'
-  import { columnsAt, overviewBreakpoint, overviewHeaderHeight, overviewRows } from '#shared/overview'
+  import { columnsAt, overviewBreakpoint, overviewChromeHeight, overviewRows } from '#shared/overview'
   import { pinWidgetId } from '~/composables/useShellOverview'
 
   /** One widget of the Overview: an app's view of a submodel, the live values, or a pinned value. */
@@ -263,7 +266,7 @@
           // The submodel it shows, and the app only when the view's own title does not already name it.
           subtitle: app === title ? submodelLabel : t('overview.reason', { app, submodel: submodelLabel }),
           columns: Object.keys(contribution.columns).length > 0 ? contribution.columns : viewColumns,
-          h: overviewRows(defaultFrameHeight + overviewHeaderHeight),
+          h: overviewRows(defaultFrameHeight + overviewChromeHeight),
           view: { submodel, contribution },
         }
       }))
@@ -274,7 +277,7 @@
         title: t('overview.live'),
         subtitle: t('overview.liveSubtitle', { count: props.signals.length }),
         columns: { sm: 12 },
-        h: overviewRows(overviewHeaderHeight + 168),
+        h: overviewRows(overviewChromeHeight + 168),
       }]
       : []
     const pins = overview.layout.value.pins.map((pin): Widget => ({
@@ -283,7 +286,7 @@
       title: pin.title,
       subtitle: submodelName(pin.submodelKey),
       columns: { sm: 6, md: 4, lg: 3 },
-      h: overviewRows(overviewHeaderHeight + 128),
+      h: overviewRows(overviewChromeHeight + 128),
       pin,
     }))
     return [...live, ...pins, ...views]

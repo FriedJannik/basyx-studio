@@ -30,7 +30,7 @@ because every visitor is an administrator, with an embedded database in the
 `studio-data` volume. Keep the data key: it encrypts stored tokens and
 secrets, and a new key cannot read them.
 
-Two Compose examples go further:
+Three Compose examples go further:
 
 - [`examples/deployment/quickstart`](../../examples/deployment/quickstart):
   Studio without login and a BaSyx Go AAS environment, declared as a managed
@@ -39,6 +39,11 @@ Two Compose examples go further:
   Studio under `/studio/` behind Caddy with a separate apps origin, Keycloak
   login, PostgreSQL, the data key as a Docker secret, a read-only root file
   system, and BaSyx Go.
+- [`examples/deployment/time-series`](../../examples/deployment/time-series):
+  the quick start plus InfluxDB 2.7 with a simulated climate sensor, a Time
+  Series Data submodel, and an `influxdb2` connection with a read-only token
+  (see [Connections and time series](#connections-and-time-series)). Its
+  `smoke-test.mjs` checks the stack end to end and runs in CI.
 
 ## Image tags and verification
 
@@ -84,6 +89,7 @@ holds the value (for Docker and Kubernetes secrets); set one or the other.
 | `STUDIO_SESSION_TTL_HOURS` | `12` | Lifetime of a Studio session. |
 | `STUDIO_UPLOAD_MAX_BYTES` | 100 MiB | Largest AASX, JSON or XML file users may upload. |
 | `STUDIO_PRIVATE_NETWORK_TARGETS` | `deny` | `allow` lets infrastructures on private or loopback addresses be used (each also needs `allowPrivateNetwork`). Needed for services on the same Compose or cluster network. |
+| `STUDIO_EXTERNAL_FILE_ORIGINS` | none (desktop: `*`) | Origins, comma-separated, whose files Studio's server fetches when AAS content names a file there and the browser may not read it (no CORS headers), e.g. `https://c1.api.wago.com`. `*` allows any public HTTPS origin, never private addresses. See [ADR 0042](../adr/0042-external-files-through-studio.md). |
 
 ### Login
 
@@ -192,6 +198,70 @@ infrastructures:
 Administrators export infrastructures in this format (Infrastructures →
 *Export all* or *Copy as YAML*) and import them by pasting or dropping a file.
 Secrets stored in a Studio are left out of exports.
+
+## Connections and time series
+
+AAS content can refer to services that are not AAS services. The IDTA *Time
+Series Data* submodel's LinkedSegment, for example, names an InfluxDB query
+endpoint and a Flux query. An infrastructure declares such services as
+`connections`, and Studio uses their credentials only in the Studio Service
+([ADR 0040](../adr/0040-connections-on-infrastructures.md)):
+
+```yaml
+infrastructures:
+  - key: plant
+    # name, template, endpoints and security as above
+    connections:
+      - key: influx
+        type: influxdb2
+        url: http://influxdb:8086          # how Studio reaches the database
+        aliases: [http://localhost:8086]   # how submodels name it
+        auth: { scheme: token, token: { ref: env:STUDIO_PLANT_INFLUX_TOKEN } }
+        settings: { organization: basyx }
+        allowPrivateNetwork: true
+        timeoutSeconds: 15                 # optional, 1 to 120
+```
+
+- The bundled *Time Series Data* app shows submodels with the semantic ID
+  `https://admin-shell.io/idta/TimeSeries/1/1` in the details pane and on the
+  Overview. It reads InternalSegments from the submodel, ExternalSegments
+  from the File's attachment, and LinkedSegments from InfluxDB 2.
+- A LinkedSegment's `Endpoint` selects the connection by origin: it must be
+  the origin of `url` or of one of the `aliases` of a connection of the same
+  infrastructure. Studio then sends the query to `url`, never to the
+  address in the submodel, and keeps only the `org`/`orgID` of the endpoint
+  (`settings.organization` replaces it). An endpoint that no connection names
+  shows *Time series database not configured for …*.
+- Give Studio a **read-only token for the needed buckets**. That is the
+  boundary; Studio's check of the Flux query (imports of `strings`, `math`,
+  `date`, `array` and `experimental/aggregate` only, no `to()`) is defence in
+  depth.
+- `auth.scheme` is `none`, `token`, `bearer`, `header`, `basic`,
+  `oauth2ClientCredentials` or `delegatedUser`; each type accepts some of
+  them (`influxdb2`: `token`). Secrets are references (`env:`, `file:`) in
+  hosted Studio, as for infrastructures. The admin dialog's *Test connection*
+  checks the connection without showing the secret.
+- Private and loopback addresses need the entry's `allowPrivateNetwork` and
+  `STUDIO_PRIVATE_NETWORK_TARGETS=allow`.
+- Every query is audited (`timeseries.read`) with the user, the app, the
+  infrastructure, the connection and a digest of the query, never its text
+  or the answer.
+
+### Coming from the BaSyx AAS Web UI
+
+The Web UI has one `INFLUXDB_TOKEN` for the whole deployment, written into
+its JavaScript bundle and readable by every user. Studio has no such
+variable. Move the token to the infrastructure whose submodels name the
+database:
+
+1. Create a read-only token in InfluxDB (*Load Data → API Tokens → Custom
+   API Token*, read access to the bucket), or keep the Web UI's token if you
+   cannot.
+2. Pass it to Studio as a secret, e.g. `STUDIO_PLANT_INFLUX_TOKEN` or a file
+   under `/run/secrets`.
+3. Add an `influxdb2` connection to that infrastructure, with `url` as
+   Studio reaches InfluxDB and the address in the submodels' `Endpoint` (for
+   example `http://localhost:8086`) under `aliases`.
 
 ## Without login
 

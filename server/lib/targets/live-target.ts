@@ -561,6 +561,20 @@ export class LiveAasTarget implements AasTarget {
     }
   }
 
+  async download (url: string): Promise<BinaryContent> {
+    const parsed = URL.parse(url)
+    const endpoints = new Set(this.#record.endpoints.map(endpoint => new URL(endpoint.url).origin))
+    if (!parsed || !endpoints.has(parsed.origin)) {
+      throw new StudioProblem('connection_request_refused', `${parsed?.origin ?? url} is not an endpoint of this infrastructure, so Studio does not download from it.`)
+    }
+    const response = await this.#http.request({ url: parsed.origin }, `${parsed.pathname}${parsed.search}`, { headers: { Accept: '*/*' } })
+    return {
+      bytes: new Uint8Array(await response.arrayBuffer()),
+      contentType: response.headers.get('content-type') ?? 'application/octet-stream',
+      fileName: parsed.pathname.split('/').pop() || null,
+    }
+  }
+
   async replaceAttachment (submodelId: string, idShortPath: string, file: BinaryContent, revision: string): Promise<ElementSnapshot> {
     return this.#conditionalWrite(submodelId, idShortPath, revision, async (current, configuration) => {
       if (current.value.modelType !== 'File') {

@@ -313,7 +313,16 @@
     "app_backend_unavailable": "The app's backend is not available.",
     "app_backend_failed": "The app's backend failed.",
     "idshort_conflict": "An element with this name exists already here. Choose another idShort.",
-    "structure_conflict": "The elements here changed in the meantime. The list was reloaded; try again."
+    "structure_conflict": "The elements here changed in the meantime. The list was reloaded; try again.",
+    "connection_not_configured": "No connection is configured for this service.",
+    "connection_credentials_unavailable": "The credentials of the connection could not be read.",
+    "connection_rejected": "The service refused the connection's credentials.",
+    "connection_unavailable": "The service could not be reached.",
+    "connection_error": "The service reported an error.",
+    "connection_request_refused": "Studio does not send this request.",
+    "timeseries_invalid": "The time series cannot be read.",
+    "external_file_unavailable": "The external file could not be fetched.",
+    "external_file_refused": "Studio does not fetch files from this address."
   },
   "admin": {
     "title": "Infrastructures",
@@ -474,6 +483,79 @@
     "idSchemes": {
       "iri": "IRI: prefix, kind and UUID",
       "uuid": "URN: urn:uuid and a UUID"
+    },
+    "connections": {
+      "title": "Connections",
+      "help": "Services that content of this infrastructure refers to but that are not AAS services, such as a time series database. Studio keeps their credentials and uses them only for content read from this infrastructure.",
+      "unnamed": "New connection",
+      "add": "Add connection",
+      "remove": "Remove",
+      "key": "Key",
+      "keyHint": "Identifies the connection within this infrastructure.",
+      "keyInvalid": "Use lowercase letters, digits and hyphens.",
+      "keyTaken": "Another connection has this key.",
+      "type": "Type",
+      "types": {
+        "influxdb2": "InfluxDB 2"
+      },
+      "typeHints": {
+        "influxdb2": "Time series of the LinkedSegments of Time Series Data submodels (Flux)."
+      },
+      "url": "URL",
+      "urlHint": "How Studio reaches the service, e.g. in its container network.",
+      "aliases": "Aliases",
+      "aliasesHint": "Other addresses under which submodels name the service. Studio never contacts them.",
+      "organization": "Organization",
+      "organizationHint": "Replaces the organization of the endpoints in submodels. Leave empty to use theirs.",
+      "scheme": "Authentication",
+      "schemes": {
+        "none": "None",
+        "token": "Token",
+        "bearer": "Bearer token",
+        "header": "Custom header",
+        "basic": "User name and password",
+        "oauth2ClientCredentials": "Client credentials (OAuth 2.0)",
+        "delegatedUser": "Signed-in user"
+      },
+      "schemeHints": {
+        "none": "Studio sends no credentials.",
+        "token": "Studio sends \"Authorization: Token\" with the secret, as InfluxDB expects.",
+        "bearer": "Studio sends \"Authorization: Bearer\" with the secret.",
+        "header": "Studio sends the secret in a header of your choice.",
+        "basic": "Studio sends HTTP Basic authentication.",
+        "oauth2ClientCredentials": "Studio gets a token from the issuer with these client credentials.",
+        "delegatedUser": "Studio exchanges the user's token for one issued to the service (RFC 8693)."
+      },
+      "headerName": "Header name",
+      "username": "User name",
+      "audience": "Audience",
+      "audienceHint": "The audience the service expects in its tokens.",
+      "forwardUserToken": "Forward the user's token unchanged instead of exchanging it",
+      "forwardUserTokenWarning": "The service receives the user's token and could use it against the AAS server too. Studio forwards it only if it is issued for this audience.",
+      "secrets": {
+        "token": "Token",
+        "value": "Header value",
+        "password": "Password",
+        "clientSecret": "Client secret"
+      },
+      "secretStored": "Stored. Leave empty to keep it.",
+      "secretValueHint": "Stored encrypted on this computer.",
+      "secretRefHint": "env:VARIABLE_NAME or file:/run/secrets/name. The secret itself never reaches Studio's UI.",
+      "secretRefInvalid": "Use env:NAME or file:/absolute/path.",
+      "timeout": "Timeout in seconds",
+      "timeoutHint": "Default: {seconds} s, at most 120 s.",
+      "timeoutInvalid": "Use a whole number from 1 to 120.",
+      "test": "Test connection",
+      "testAfterSave": "Save the infrastructure to test its connections.",
+      "testOk": "The connection works.",
+      "testFailed": "The connection does not work.",
+      "checks": {
+        "token": "Credentials",
+        "health": "Service answers",
+        "query": "Read access"
+      },
+      "required": "Required",
+      "httpUrl": "Enter an http(s) URL."
     }
   },
   "apps": {
@@ -514,7 +596,9 @@
       "studio_ui_navigation": "Change its own page address, open targets and open links in your browser",
       "studio_backend": "Run server-side code (isolated)",
       "studio_ui_clipboard": "Copy text to your clipboard when you click",
-      "studio_containers": "Start, stop, export and delete local BaSyx instances on Docker or Podman (apps shipped with Studio only)"
+      "studio_containers": "Start, stop, export and delete local BaSyx instances on Docker or Podman (apps shipped with Studio only)",
+      "studio_timeseries_read": "Read time series, also from the databases of the infrastructure's connections (apps shipped with Studio only)",
+      "studio_ui_externalFiles": "Fetch files that the AAS names at other hosts, in your browser (those hosts see your address)"
     },
     "bundled": "Included",
     "bundledHint": "Shipped with Studio and kept up to date with it.",

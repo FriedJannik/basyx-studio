@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { displayBreakpoints } from '../overview'
 import { engineHostSchema, stackComponentIdSchema, stackSpecSchema } from './containers'
 import { langStringSchema, listQuerySchema } from './target'
+import { timeSeriesReadParamsSchema } from './timeseries'
 import { fileHandleSchema } from './workspace'
 
 // Runtime-installable apps (ADR 0004, MVP-3). The `studio-sdk/0` message
@@ -115,6 +116,20 @@ export function isExternalUrl (value: string): boolean {
   const url = URL.parse(value)
   return url?.protocol === 'https:' || (url?.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname))
 }
+/**
+ * The http(s) address of a file that an element names at another host: the
+ * value of a File, or of a Property holding the address (IDTA 02026
+ * `ExternalUrl`); `null` for anything else (`studio.ui.readExternalFile`).
+ */
+export function externalFileUrl (element: unknown): string | null {
+  const { modelType, value } = (element ?? {}) as { modelType?: unknown, value?: unknown }
+  if ((modelType !== 'File' && modelType !== 'Property') || typeof value !== 'string') {
+    return null
+  }
+  const url = URL.parse(value.trim())
+  return url && (url.protocol === 'https:' || url.protocol === 'http:') && !url.username && !url.password ? url.href : null
+}
+
 const stackId = z.string().regex(/^[\w-]{1,64}$/)
 const idShortPath = z.string().min(1).max(4000)
 
@@ -131,6 +146,7 @@ export const appMethodParamsSchemas = {
   'studio.ui.setHeight': z.object({ height: z.number().int().min(0).max(20_000) }).strict(),
   'studio.ui.openFile': z.object({ submodelId: identifier, idShortPath, download: z.boolean().default(false) }).strict(),
   'studio.ui.readFile': z.object({ submodelId: identifier, idShortPath }).strict(),
+  'studio.ui.readExternalFile': z.object({ submodelId: identifier, idShortPath }).strict(),
   'studio.ui.openFullscreen': z.object({ state: z.string().max(4000).optional() }).strict(),
   'studio.aas.listShells': listQuerySchema.strict(),
   'studio.aas.getShell': z.object({ shellId: identifier }).strict(),
@@ -176,6 +192,7 @@ export const appMethodParamsSchemas = {
   'studio.containers.pickFiles': z.object({ kind: z.enum(stackFileKinds), suggestedName: z.string().max(200).optional() }).strict(),
   'studio.containers.exportStack': z.object({ stackId, fileHandle: fileHandleSchema }).strict(),
   'studio.containers.importStack': z.object({ fileHandle: fileHandleSchema }).strict(),
+  'studio.timeseries.read': timeSeriesReadParamsSchema,
 } satisfies Record<MethodName, z.ZodType>
 
 export type AppMethodParams<M extends MethodName> = Methods[M]['params']

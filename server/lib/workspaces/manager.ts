@@ -63,6 +63,8 @@ class WorkspaceAasTarget implements AasTarget {
   setAccess = unsupported
   invite = unsupported
   acceptInvitation = unsupported
+  // A file has no endpoints to download from.
+  download = unsupported
 
   constructor (private readonly client: WorkspaceWorkerClient, private readonly workspaceId: string) {}
 

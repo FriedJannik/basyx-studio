@@ -1,0 +1,30 @@
+# Infrastructures declared by this deployment (ADR 0037), with a connection
+# to the time series database (ADR 0040). Studio applies the file at every
+# start; it is read-only in Studio.
+version: 1
+infrastructures:
+  - key: local-basyx
+    name: Local BaSyx
+    description: BaSyx Go AAS environment of the time series example
+    template: mono-all
+    endpoints:
+      - type: aasEnvironment
+        url: http://basyx:5004
+    security:
+      mode: unsecured
+    allowPrivateNetwork: true
+    connections:
+      - key: influx
+        type: influxdb2
+        # How Studio reaches InfluxDB on the compose network.
+        url: http://influxdb:8086
+        # How the submodel's LinkedSegment names it. Studio never contacts
+        # this address; it only selects the connection.
+        aliases: [http://localhost:8086]
+        auth:
+          scheme: token
+          # A read-only token for the basyx bucket, written by influx-read-token.
+          token: { ref: file:/run/influx/read-token }
+        settings:
+          organization: basyx
+        allowPrivateNetwork: true

@@ -119,20 +119,12 @@
           </v-sheet>
 
           <v-sheet class="pa-2 pointer-events-auto d-flex flex-column ga-2 flex-shrink-0" elevation="6" rounded="lg">
-            <v-btn-toggle
-              v-model="lens"
-              color="primary"
-              density="compact"
-              mandatory
-              rounded="lg"
-              variant="outlined"
-            >
+            <v-btn-toggle v-model="lens" mandatory>
               <v-btn
                 v-for="item in lenses"
                 :key="item.value"
                 :data-test="`lens-${item.value}`"
                 :prepend-icon="compact ? undefined : item.icon"
-                size="small"
                 :text="compact ? undefined : item.title"
                 :title="item.title"
                 :value="item.value"
@@ -141,19 +133,12 @@
               </v-btn>
             </v-btn-toggle>
 
-            <v-btn-toggle
-              v-model="grouping"
-              density="compact"
-              mandatory
-              rounded="lg"
-              variant="outlined"
-            >
+            <v-btn-toggle v-model="grouping" mandatory>
               <v-btn
                 v-for="item in groupings"
                 :key="item.value"
                 :data-test="`group-${item.value}`"
                 :prepend-icon="compact ? undefined : item.icon"
-                size="small"
                 :text="compact ? undefined : item.title"
                 :title="item.title"
                 :value="item.value"

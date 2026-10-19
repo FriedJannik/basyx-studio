@@ -1,0 +1,29 @@
+{
+  "modelType": "ConceptDescription",
+  "id": "https://example.org/basyx-studio/time-series/cd/Temperature",
+  "idShort": "Temperature",
+  "embeddedDataSpecifications": [
+    {
+      "dataSpecification": {
+        "type": "ExternalReference",
+        "keys": [
+          {
+            "type": "GlobalReference",
+            "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+          }
+        ]
+      },
+      "dataSpecificationContent": {
+        "modelType": "DataSpecificationIec61360",
+        "preferredName": [
+          {
+            "language": "en",
+            "text": "Temperature"
+          }
+        ],
+        "unit": "°C",
+        "dataType": "REAL_MEASURE"
+      }
+    }
+  ]
+}

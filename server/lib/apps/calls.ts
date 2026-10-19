@@ -32,7 +32,7 @@ export function authorizeAppCall (installation: AppInstallationRecord, method: A
   if (permission && !installation.manifest.permissions.includes(permission)) {
     throw new StudioProblem('app_permission_not_declared', `${method} needs the permission ${permission}, which ${installation.appId} did not declare.`)
   }
-  if (isContainerMethod(method) && !installation.bundled) {
+  if ((isContainerMethod(method) || method === 'studio.timeseries.read') && !installation.bundled) {
     throw new StudioProblem('app_permission_not_declared', `${method} is reserved for the apps shipped with Studio.`)
   }
 }

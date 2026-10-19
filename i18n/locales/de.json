@@ -313,7 +313,16 @@
     "app_backend_unavailable": "Das Backend der App ist nicht verfügbar.",
     "app_backend_failed": "Das Backend der App ist fehlgeschlagen.",
     "idshort_conflict": "Ein Element mit diesem Namen existiert hier bereits. Wählen Sie einen anderen idShort.",
-    "structure_conflict": "Die Elemente hier wurden zwischenzeitlich geändert. Die Liste wurde neu geladen; versuchen Sie es erneut."
+    "structure_conflict": "Die Elemente hier wurden zwischenzeitlich geändert. Die Liste wurde neu geladen; versuchen Sie es erneut.",
+    "connection_not_configured": "Für diesen Dienst ist keine Verbindung eingerichtet.",
+    "connection_credentials_unavailable": "Die Zugangsdaten der Verbindung konnten nicht gelesen werden.",
+    "connection_rejected": "Der Dienst hat die Zugangsdaten der Verbindung abgelehnt.",
+    "connection_unavailable": "Der Dienst konnte nicht erreicht werden.",
+    "connection_error": "Der Dienst hat einen Fehler gemeldet.",
+    "connection_request_refused": "Studio sendet diese Anfrage nicht.",
+    "timeseries_invalid": "Die Zeitreihe kann nicht gelesen werden.",
+    "external_file_unavailable": "Die externe Datei konnte nicht abgerufen werden.",
+    "external_file_refused": "Studio ruft Dateien von dieser Adresse nicht ab."
   },
   "admin": {
     "title": "Infrastrukturen",
@@ -474,6 +483,79 @@
     "idSchemes": {
       "iri": "IRI: Präfix, Art und UUID",
       "uuid": "URN: urn:uuid plus UUID"
+    },
+    "connections": {
+      "title": "Verbindungen",
+      "help": "Dienste, auf die Inhalte dieser Infrastruktur verweisen, die aber keine AAS-Dienste sind, etwa eine Zeitreihendatenbank. Studio verwahrt ihre Zugangsdaten und verwendet sie nur für Inhalte, die aus dieser Infrastruktur gelesen wurden.",
+      "unnamed": "Neue Verbindung",
+      "add": "Verbindung hinzufügen",
+      "remove": "Entfernen",
+      "key": "Schlüssel",
+      "keyHint": "Kennzeichnet die Verbindung innerhalb dieser Infrastruktur.",
+      "keyInvalid": "Verwenden Sie Kleinbuchstaben, Ziffern und Bindestriche.",
+      "keyTaken": "Eine andere Verbindung hat diesen Schlüssel.",
+      "type": "Typ",
+      "types": {
+        "influxdb2": "InfluxDB 2"
+      },
+      "typeHints": {
+        "influxdb2": "Zeitreihen der LinkedSegments von Time-Series-Data-Teilmodellen (Flux)."
+      },
+      "url": "URL",
+      "urlHint": "Wie Studio den Dienst erreicht, z. B. in seinem Container-Netzwerk.",
+      "aliases": "Aliasse",
+      "aliasesHint": "Weitere Adressen, unter denen Teilmodelle den Dienst nennen. Studio kontaktiert sie nie.",
+      "organization": "Organisation",
+      "organizationHint": "Ersetzt die Organisation der Endpunkte in Teilmodellen. Leer lassen, um deren zu verwenden.",
+      "scheme": "Authentifizierung",
+      "schemes": {
+        "none": "Keine",
+        "token": "Token",
+        "bearer": "Bearer-Token",
+        "header": "Eigener Header",
+        "basic": "Benutzername und Passwort",
+        "oauth2ClientCredentials": "Client Credentials (OAuth 2.0)",
+        "delegatedUser": "Angemeldete Person"
+      },
+      "schemeHints": {
+        "none": "Studio sendet keine Zugangsdaten.",
+        "token": "Studio sendet „Authorization: Token“ mit dem Geheimnis, wie InfluxDB es erwartet.",
+        "bearer": "Studio sendet „Authorization: Bearer“ mit dem Geheimnis.",
+        "header": "Studio sendet das Geheimnis in einem Header Ihrer Wahl.",
+        "basic": "Studio sendet HTTP-Basic-Authentifizierung.",
+        "oauth2ClientCredentials": "Studio holt mit diesen Client Credentials ein Token beim Aussteller.",
+        "delegatedUser": "Studio tauscht das Token der Person gegen eines, das für den Dienst ausgestellt ist (RFC 8693)."
+      },
+      "headerName": "Header-Name",
+      "username": "Benutzername",
+      "audience": "Audience",
+      "audienceHint": "Die Audience, die der Dienst in seinen Tokens erwartet.",
+      "forwardUserToken": "Token der Person unverändert weitergeben statt es zu tauschen",
+      "forwardUserTokenWarning": "Der Dienst erhält das Token der Person und könnte es auch gegenüber dem AAS-Server verwenden. Studio gibt es nur weiter, wenn es für diese Audience ausgestellt ist.",
+      "secrets": {
+        "token": "Token",
+        "value": "Header-Wert",
+        "password": "Passwort",
+        "clientSecret": "Client Secret"
+      },
+      "secretStored": "Gespeichert. Leer lassen, um es zu behalten.",
+      "secretValueHint": "Wird verschlüsselt auf diesem Computer gespeichert.",
+      "secretRefHint": "env:VARIABLENNAME oder file:/run/secrets/name. Das Geheimnis selbst erreicht nie die Oberfläche von Studio.",
+      "secretRefInvalid": "Verwenden Sie env:NAME oder file:/absoluter/pfad.",
+      "timeout": "Zeitlimit in Sekunden",
+      "timeoutHint": "Standard: {seconds} s, höchstens 120 s.",
+      "timeoutInvalid": "Verwenden Sie eine ganze Zahl von 1 bis 120.",
+      "test": "Verbindung testen",
+      "testAfterSave": "Speichern Sie die Infrastruktur, um ihre Verbindungen zu testen.",
+      "testOk": "Die Verbindung funktioniert.",
+      "testFailed": "Die Verbindung funktioniert nicht.",
+      "checks": {
+        "token": "Zugangsdaten",
+        "health": "Dienst antwortet",
+        "query": "Lesezugriff"
+      },
+      "required": "Erforderlich",
+      "httpUrl": "Geben Sie eine http(s)-URL ein."
     }
   },
   "apps": {
@@ -514,7 +596,9 @@
       "studio_ui_navigation": "Die eigene Seitenadresse ändern, Ziele öffnen und Links im Browser öffnen",
       "studio_backend": "Serverseitigen Code ausführen (isoliert)",
       "studio_ui_clipboard": "Text auf Klick in die Zwischenablage kopieren",
-      "studio_containers": "Lokale BaSyx-Instanzen mit Docker oder Podman starten, stoppen, exportieren und löschen (nur mit Studio ausgelieferte Apps)"
+      "studio_containers": "Lokale BaSyx-Instanzen mit Docker oder Podman starten, stoppen, exportieren und löschen (nur mit Studio ausgelieferte Apps)",
+      "studio_timeseries_read": "Zeitreihen lesen, auch aus den Datenbanken der Verbindungen der Infrastruktur (nur mit Studio ausgelieferte Apps)",
+      "studio_ui_externalFiles": "Dateien, die die Verwaltungsschale bei anderen Hosts nennt, in Ihrem Browser abrufen (diese Hosts sehen Ihre Adresse)"
     },
     "bundled": "Enthalten",
     "bundledHint": "Mit Studio ausgeliefert und mit ihm aktuell gehalten.",
