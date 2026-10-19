@@ -3,8 +3,15 @@ name: Repository Vulnerability Scan
 on:
   pull_request:
     branches: [main]
+    # Documentation alone needs no build, tests or scan.
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
   push:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
   schedule:
     - cron: "0 4 * * 1"
   workflow_dispatch:

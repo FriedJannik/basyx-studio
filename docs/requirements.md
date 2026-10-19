@@ -75,6 +75,35 @@ Priority terms follow this meaning:
 | APP-014 | Should | Pure TypeScript/JavaScript backend apps should run with deny-by-default permissions in an isolated runtime. Privileged Node/native apps shall be clearly classified as full-trust software. |
 | APP-015 | Could | A developer mode may allow local or forked app development while clearly separating unsigned development artifacts from marketplace installations. |
 | APP-016 | Must | Apps shall be able to contribute sandboxed visual-builder widgets through the versioned Studio SDK, including configuration schemas, binding inputs/outputs, semantic applicability, and requested capabilities. |
+| APP-017 | Must | Apps shall be able to change AAS structure through the capability API: create and delete shells, submodels and elements, replace submodels and elements, and read and write attachments. The same revision, validation, registry-sync, and edit-mode rules shall apply as in Studio's own editor. |
+| APP-018 | Should | Apps shall be able to search with the AAS Query Language, look up shells by asset ID, read the current user's rights on a shell, and open Studio's sharing dialog, without handling tokens or access-rule APIs themselves. |
+| APP-019 | Must | An app manifest shall be able to request images or media from declared third-party origins, in addition to the WebAssembly and worker extensions of ADR 0038. Each extension shall be off by default and shown on installation; third-party origins shall carry a data-egress note. |
+| APP-020 | Should | `@basyx/studio-sdk` shall separate the client API from its transport. It shall ship an in-memory test transport so apps can be developed and unit-tested without Studio. The HTTP binding of the capability protocol shall be documented as the normative wire format. |
+| APP-021 | Should | An app with write permission shall be able to ask for edit mode. Studio shall confirm with the user in its own dialog before switching, and leaving edit mode shall remain the user's choice. |
+
+## Standalone app products
+
+| ID | Priority | Requirement |
+| --- | --- | --- |
+| SAP-001 | Must | A Studio deployment shall be able to run in single-app mode. In single-app mode it shows one app under the deployment's brand, while Studio provides sign-in, sessions, infrastructures, credentials, capabilities, notifications, and dialogs. |
+| SAP-002 | Must | The same app package shall run unchanged in a full Studio and in single-app mode. |
+| SAP-003 | Must | A hosted deployment shall be able to declare the app packages it installs at startup. Declared packages are managed by the deployment and cannot be removed in the UI, like declared infrastructures. |
+| SAP-004 | Must | In single-app mode, Studio shall map the app's sub-paths to the deployment's root URL. Deep links, reloads, and browser back and forward shall keep the app's location. |
+| SAP-005 | Must | In single-app mode, the deployment shall be able to pin the infrastructure an app works on. With one infrastructure, Studio selects it without asking. |
+| SAP-006 | Should | A single-app deployment shall be able to allow Studio's own pages. When allowed, the app can open a shell or concept description in Studio, and the page links back to the app. When not allowed, those pages are absent. |
+| SAP-007 | Could | The desktop Studio may later be built as a branded single-app product. |
+
+## Third-party interfaces
+
+| ID | Priority | Requirement |
+| --- | --- | --- |
+| CON-001 | Must | An infrastructure shall be able to declare connections to third-party services. Each connection has a type, a URL, the alternative origins under which AAS content refers to it, authentication, and type-specific settings. Secrets follow SEC-007. |
+| CON-002 | Must | Studio shall use a connection only through a type-specific adapter or through operations that an administrator approved for an app. Neither apps nor AAS content shall choose the URL a credential is sent to. |
+| CON-003 | Must | A credential configured for one infrastructure shall be used only for content read from that infrastructure, and only for apps bound to the connection. |
+| CON-004 | Must | Time series in IDTA Time Series Data submodels shall be readable through a purpose-specific capability that does not depend on the database product. |
+| CON-005 | Should | Administrators shall be able to test a connection without seeing its secret. |
+| CON-006 | Must | Every use of a connection shall be audited with user, app, infrastructure, connection, and operation, and without request or response bodies. |
+| CON-007 | Should | Connections shall support these authentication schemes: none, static token or header, basic, client credentials, and the signed-in user's identity. The user's identity shall be passed by token exchange, or by forwarding the user's token only where an administrator allows it for a listed audience. |
 
 ## Graphical AAS views and dashboards
 
