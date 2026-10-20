@@ -133,7 +133,7 @@ describe.runIf(enabled)('local BaSyx instances on the container engine', () => {
     const copy = join(directory, 'nameplate.aasx')
     await copyFile(fixture, copy)
     const { handle: aasx } = await grants.grant(copy, 'stack-aasx')
-    const spec = presetSpec('quick', 'Integration quick')
+    const spec: StackSpec = { ...presetSpec('quick', 'Integration quick'), persistence: 'keep' }
     const plan = await manager.plan(spec)
     expect(plan.components).toEqual(['database', 'schema', 'environment'])
     expect(plan.spec.network.basePort).not.toBeNull()
