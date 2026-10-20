@@ -47,6 +47,12 @@ export default defineNuxtConfig({
     '@pinia/colada-nuxt',
   ],
 
+  // All application fonts are shipped by Studio or its dependencies. Keeping
+  // resolution local makes production and desktop builds network-independent.
+  fonts: {
+    provider: 'local',
+  },
+
   $env: {
     electron: {
       ssr: false,

@@ -5,6 +5,7 @@ import { randomBytes } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { appBlobs, appFiles, auditEvents } from '~~/server/database/schema'
+import { isRetiredBundledAppPackage } from '~~/server/lib/apps/bundled'
 import { contributionsFor } from '~~/server/lib/apps/contributions'
 import { getInstallation, installApp, installBundledApp, listInstallations, readAppFile, removeBundledApp, toAppInstallation, uninstallApp } from '~~/server/lib/apps/store'
 import { SecretCipher } from '~~/server/lib/crypto/cipher'
@@ -147,6 +148,12 @@ describe('app installations', () => {
     const own = await installApp(deps, admin, zipApp(manifestOf({ id: 'org.example.keep-own' })), 'r-own-retired')
     expect(await removeBundledApp(deps, own.appId)).toBe(false)
     expect(await getInstallation(deps, own.id)).toBeDefined()
+  })
+
+  it('ignores retired bundled app packages left by incremental builds', () => {
+    expect(isRetiredBundledAppPackage('basyx-docker.zip')).toBe(true)
+    expect(isRetiredBundledAppPackage('nested/basyx-docker.zip')).toBe(true)
+    expect(isRetiredBundledAppPackage('models-3d.zip')).toBe(false)
   })
 
   it('uninstalls and removes only blobs that no other installation uses', async () => {

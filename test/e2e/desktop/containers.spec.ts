@@ -77,7 +77,9 @@ test('creates, changes, exports, imports, retains and opens an instance through 
   await window.locator('[data-test="name"] input').fill('Desktop container regression')
   // Use a different block from the manager integration suite if both run locally.
   await window.locator('[data-test="advanced"]').getByRole('button').click()
-  await window.getByLabel('Fixed ports from', { exact: true }).check()
+  await window.getByLabel('Keep data in a Docker volume', { exact: true }).check()
+  await window.getByLabel('Ports', { exact: true }).click()
+  await window.getByRole('option').filter({ hasText: 'Fixed ports from' }).click()
   await window.getByLabel('First port', { exact: true }).fill('19100')
   await chooseFiles(app, fixture)
   await window.locator('[data-test="add-aasx"]').click()
@@ -113,7 +115,7 @@ test('creates, changes, exports, imports, retains and opens an instance through 
   await card.locator('[data-test="menu"]').click()
   await window.getByText('Delete', { exact: true }).click()
   // Keep the data: the entry must remain recoverable.
-  await card.locator('[data-test="remove-confirm-button"]').click()
+  await window.getByRole('dialog').locator('[data-test="remove-confirm-button"]').click()
   await expect(card.locator('[data-test="status"]')).toHaveText('Removed outside Studio', { timeout: 30_000 })
   await card.getByRole('button', { name: 'Create again', exact: true }).click()
   await expect(card.locator('[data-test="status"]')).toHaveText('Running', { timeout: 300_000 })
