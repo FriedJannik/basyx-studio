@@ -78,7 +78,7 @@ test('creates, changes, exports, imports, retains and opens an instance through 
   // Use a different block from the manager integration suite if both run locally.
   await window.locator('[data-test="advanced"]').getByRole('button').click()
   await window.getByLabel('Keep data in a Docker volume', { exact: true }).check()
-  await window.getByLabel('Ports', { exact: true }).click()
+  await window.getByLabel('Ports', { exact: true }).press('ArrowDown')
   await window.getByRole('option').filter({ hasText: 'Fixed ports from' }).click()
   await window.getByLabel('First port', { exact: true }).fill('19100')
   await chooseFiles(app, fixture)
