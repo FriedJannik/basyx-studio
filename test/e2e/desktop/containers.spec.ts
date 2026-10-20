@@ -76,7 +76,7 @@ test('creates, changes, exports, imports, retains and opens an instance through 
   await window.locator('[data-test="next"]').click()
   await window.locator('[data-test="name"] input').fill('Desktop container regression')
   // Use a different block from the manager integration suite if both run locally.
-  await window.locator('[data-test="advanced"]').getByRole('button', { name: 'Advanced', exact: true }).click()
+  await window.locator('[data-test="advanced"]').getByRole('button').click()
   await window.getByLabel('Fixed ports from', { exact: true }).check()
   await window.getByLabel('First port', { exact: true }).fill('19100')
   await chooseFiles(app, fixture)
