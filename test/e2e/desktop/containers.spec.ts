@@ -50,7 +50,7 @@ test.afterAll(async () => {
   }
 })
 
-test('creates, changes, exports, imports, retains and opens an instance through the sandboxed app', async () => {
+test('creates, changes, exports, imports, retains and opens an instance through the native Studio page', async () => {
   test.setTimeout(900_000)
   const launched = await launchStudio()
   app = launched.app
@@ -63,46 +63,45 @@ test('creates, changes, exports, imports, retains and opens an instance through 
     }
   })
   window.on('response', response => {
-    if (response.url().endsWith('/app-calls') && response.request().postDataJSON()?.method === 'studio.containers.createStack') {
+    if (response.url().endsWith('/containers/createStack')) {
       void response.json().then(body => {
-        if (body.result?.stack?.id) {
-          owned.add(body.result.stack.id)
+        if (body.stack?.id) {
+          owned.add(body.stack.id)
         }
       }).catch(() => {})
     }
   })
   await window.getByRole('link', { name: 'BaSyx Docker', exact: true }).click()
-  const frame = window.frameLocator('iframe[sandbox="allow-scripts"]')
-  await frame.locator('[data-test="new"]').click()
-  await frame.locator('[data-test="next"]').click()
-  await frame.locator('[data-test="name"] input').fill('Desktop container regression')
+  await window.locator('[data-test="new"]').click()
+  await window.locator('[data-test="next"]').click()
+  await window.locator('[data-test="name"] input').fill('Desktop container regression')
   // Use a different block from the manager integration suite if both run locally.
-  await frame.locator('[data-test="advanced"]').getByRole('button', { name: 'Advanced', exact: true }).click()
-  await frame.getByLabel('Fixed ports from', { exact: true }).check()
-  await frame.getByLabel('First port', { exact: true }).fill('19100')
+  await window.locator('[data-test="advanced"]').getByRole('button', { name: 'Advanced', exact: true }).click()
+  await window.getByLabel('Fixed ports from', { exact: true }).check()
+  await window.getByLabel('First port', { exact: true }).fill('19100')
   await chooseFiles(app, fixture)
-  await frame.locator('[data-test="add-aasx"]').click()
-  await frame.locator('[data-test="next"]').click()
-  await expect(frame.locator('[data-test="summary"]')).toContainText('Desktop container regression')
-  await frame.locator('[data-test="submit"]').click()
-  await expect(frame.locator('[data-test="wizard"]')).toHaveCount(0, { timeout: 15_000 })
-  const card = frame.locator('[data-test^="stack-"]').filter({ hasText: 'Desktop container regression' })
+  await window.locator('[data-test="add-aasx"]').click()
+  await window.locator('[data-test="next"]').click()
+  await expect(window.locator('[data-test="summary"]')).toContainText('Desktop container regression')
+  await window.locator('[data-test="submit"]').click()
+  await expect(window.locator('[data-test="wizard"]')).toHaveCount(0, { timeout: 15_000 })
+  const card = window.locator('[data-test^="stack-"]').filter({ hasText: 'Desktop container regression' })
   await expect(card.locator('[data-test="status"]')).toHaveText('Running', { timeout: 300_000 })
 
   await card.locator('[data-test="menu"]').click()
-  await frame.getByText('Change settings', { exact: true }).click()
-  await frame.locator('[data-test="next"]').click()
-  await frame.locator('[data-test="name"] input').fill('Desktop container regression renamed')
-  await frame.locator('[data-test="next"]').click()
-  await expect(frame.locator('[data-test="summary"]')).toContainText('renamed')
-  await frame.locator('[data-test="submit"]').click()
-  await expect(frame.locator('[data-test="wizard"]')).toHaveCount(0, { timeout: 15_000 })
+  await window.getByText('Change settings', { exact: true }).click()
+  await window.locator('[data-test="next"]').click()
+  await window.locator('[data-test="name"] input').fill('Desktop container regression renamed')
+  await window.locator('[data-test="next"]').click()
+  await expect(window.locator('[data-test="summary"]')).toContainText('renamed')
+  await window.locator('[data-test="submit"]').click()
+  await expect(window.locator('[data-test="wizard"]')).toHaveCount(0, { timeout: 15_000 })
   await expect(card.locator('[data-test="status"]')).toHaveText('Running', { timeout: 300_000 })
 
   const exported = join(directory, 'basyx-export.zip')
   await chooseFiles(app, fixture, exported)
   await card.locator('[data-test="menu"]').click()
-  await frame.getByText('Export', { exact: true }).click()
+  await window.getByText('Export', { exact: true }).click()
   await expect(card.getByText(/contains passwords and all instance data/)).toBeVisible()
   await card.getByRole('button', { name: 'Export', exact: true }).click()
   await expect.poll(async () => access(exported).then(() => true, () => false), { timeout: 30_000 }).toBe(true)
@@ -112,7 +111,7 @@ test('creates, changes, exports, imports, retains and opens an instance through 
   await card.locator('[data-test="start"]').click()
   await expect(card.locator('[data-test="status"]')).toHaveText('Running', { timeout: 300_000 })
   await card.locator('[data-test="menu"]').click()
-  await frame.getByText('Delete', { exact: true }).click()
+  await window.getByText('Delete', { exact: true }).click()
   // Keep the data: the entry must remain recoverable.
   await card.locator('[data-test="remove-confirm-button"]').click()
   await expect(card.locator('[data-test="status"]')).toHaveText('Removed outside Studio', { timeout: 30_000 })
@@ -120,9 +119,9 @@ test('creates, changes, exports, imports, retains and opens an instance through 
   await expect(card.locator('[data-test="status"]')).toHaveText('Running', { timeout: 300_000 })
 
   await chooseFiles(app, exported)
-  await frame.locator('[data-test="import"]').click()
-  await expect(frame.locator('[data-test="summary"]')).toContainText('renamed')
-  await frame.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await window.locator('[data-test="import"]').click()
+  await expect(window.locator('[data-test="summary"]')).toContainText('renamed')
+  await window.getByRole('button', { name: 'Cancel', exact: true }).click()
 
   // Keep screenshot evidence with the test report at the planned widths.
   for (const width of [1440, 768, 375]) {
@@ -130,16 +129,16 @@ test('creates, changes, exports, imports, retains and opens an instance through 
     await window.screenshot({ path: test.info().outputPath(`containers-${width}.png`), fullPage: true })
   }
   await window.setViewportSize({ width: 1440, height: 900 })
-  await expect(frame.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
+  await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
   await window.getByRole('button', { name: 'Toggle theme', exact: true }).click()
-  await expect(frame.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
+  await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
   await expect(card).toHaveCSS('background-color', 'rgb(33, 33, 33)')
   await window.screenshot({ path: test.info().outputPath('containers-dark.png'), fullPage: true })
   await card.locator('[data-test="open"]').click()
   await expect(window).toHaveURL(/\/targets\//)
 })
 
-test('keeps the bundled app visible when Studio changes theme', async () => {
+test('keeps the native page visible when Studio changes theme and viewport', async () => {
   const launched = await launchStudio()
   app = launched.app
   window = launched.window
@@ -150,18 +149,12 @@ test('keeps the bundled app visible when Studio changes theme', async () => {
     }
   })
   await window.getByRole('link', { name: 'BaSyx Docker', exact: true }).click()
-  const frame = window.frameLocator('iframe[sandbox="allow-scripts"]')
-  await expect(frame.locator('[data-test="new"]')).toBeVisible()
-  await window.locator('iframe[sandbox="allow-scripts"]').evaluate((element: HTMLIFrameElement) => {
-    const entry = element.src
-    element.src = entry
-  })
-  await expect(frame.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
+  await expect(window.locator('[data-test="new"]')).toBeVisible()
   for (const width of [768, 375, 1440]) {
     await window.setViewportSize({ width, height: 900 })
-    await expect(frame.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
+    await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
   }
   await window.getByRole('button', { name: 'Toggle theme', exact: true }).click()
   await window.screenshot({ path: test.info().outputPath('theme-change.png'), fullPage: true })
-  await expect(frame.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
+  await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
 })

@@ -335,7 +335,7 @@ export function presetSpec (preset: StackSpec['preset'], name: string): StackSpe
     preset,
     topology: preset === 'full' ? 'separate' : 'single',
     security: preset === 'secured' ? { mode: 'keycloak', access: 'roles' } : { mode: 'none' },
-    persistence: 'keep',
+    persistence: 'ephemeral',
     features: { history: true, eventFeed: true, registrySync: true, discoverySync: true },
     network: { exposure: 'local', basePort: null },
     images: { channel: 'tested' },

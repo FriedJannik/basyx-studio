@@ -22,7 +22,7 @@ export async function mountApp (app: Component, components: Record<string, Compo
   const client = await connect()
   const vuetify = createVuetify({
     components: { ...components, VBtn, VBtnGroup, VBtnToggle, VCard },
-    aliases: { VBtnPrimary: VBtn, VViewCard: VCard },
+    aliases: { VBtnPrimary: VBtn, VBtnSecondary: VBtn, VViewCard: VCard },
     defaults: appDefaults,
     icons: { defaultSet: 'mdi', aliases, sets: { mdi } },
   })

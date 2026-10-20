@@ -41,7 +41,7 @@ changes one, add a new ADR with `Supersedes` and mark the old record
 | [0030](0030-workspace-undo-log.md) | Accepted | Undo and redo log in the Workspace Worker |
 | [0031](0031-release-age-exceptions-for-aas-core-works-packages.md) | Accepted | Exact-version release-age exceptions extended to reviewed Eclipse AAS Core Works packages |
 | [0032](0032-overview-grid-layout.md) | Accepted | Overview widgets on a user-arranged 12-column grid, stored per shell |
-| [0033](0033-desktop-container-capability.md) | Proposed | Desktop-only `studio.containers` capability: BaSyx Go stacks from a fixed catalogue on Docker or Podman |
+| [0033](0033-desktop-container-capability.md) | Proposed | Native desktop feature for BaSyx Go stacks from a fixed catalogue on Docker or Podman |
 | [0034](0034-bom-viewer-graph-library.md) | Accepted | Vue Flow for the graph of the bundled BOM viewer app |
 | [0035](0035-container-image-and-base-path.md) | Accepted | One multi-arch container image, configured by environment, served under a runtime base path |
 | [0036](0036-anonymous-mode.md) | Accepted | Hosted Studio without login: per-browser sessions as the shared `anonymous` user |

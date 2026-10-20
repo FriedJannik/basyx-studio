@@ -522,6 +522,9 @@
   "nav": {
     "targets": "Destinos AAS",
     "targetsShort": "Destinos",
+    "docker": "BaSyx Docker",
+    "dockerShort": "Docker",
+    "dockerDesktopOnly": "Las instancias locales de BaSyx solo están disponibles en la aplicación de escritorio BaSyx Studio.",
     "dashboard": "Inicio",
     "dashboardShort": "Inicio",
     "shells": "AAS",

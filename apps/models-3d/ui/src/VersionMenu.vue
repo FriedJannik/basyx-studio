@@ -12,7 +12,7 @@
       />
     </template>
 
-    <v-list density="compact" min-width="240">
+    <v-list min-width="240">
       <v-list-item
         v-for="entry in sorted"
         :key="entry.version.key"

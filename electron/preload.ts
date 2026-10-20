@@ -12,7 +12,7 @@ export interface StudioFileGrant {
 export interface StudioDesktopBridge {
   chooseAasxFile: () => Promise<StudioFileGrant | null>
   chooseSaveLocation: (suggestedName: string) => Promise<StudioFileGrant | null>
-  /** Files for the BaSyx Docker app (ADR 0033); empty when cancelled. */
+  /** Files for local BaSyx instances (ADR 0033); empty when cancelled. */
   chooseStackFiles: (kind: StackFileKind, suggestedName?: string) => Promise<StudioFileGrant[]>
 }
 

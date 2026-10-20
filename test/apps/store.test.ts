@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { appBlobs, appFiles, auditEvents } from '~~/server/database/schema'
 import { contributionsFor } from '~~/server/lib/apps/contributions'
-import { getInstallation, installApp, installBundledApp, listInstallations, readAppFile, toAppInstallation, uninstallApp } from '~~/server/lib/apps/store'
+import { getInstallation, installApp, installBundledApp, listInstallations, readAppFile, removeBundledApp, toAppInstallation, uninstallApp } from '~~/server/lib/apps/store'
 import { SecretCipher } from '~~/server/lib/crypto/cipher'
 import { openDatabase } from '~~/server/lib/database/client'
 import { applyMigrations, loadMigrationsFromDirectory } from '~~/server/lib/database/migrate'
@@ -136,6 +136,17 @@ describe('app installations', () => {
     const own = await installApp(deps, admin, zipApp(manifestOf({ id: 'org.example.own' }), { 'ui/index.html': '<p>own</p>' }), 'r-own')
     expect(await installBundledApp(deps, zipApp(manifestOf({ id: 'org.example.own', version: '9.0.0' }), { 'ui/index.html': '<p>bundled</p>' }))).toBe('skipped')
     expect((await getInstallation(deps, own.id)).bundled).toBe(false)
+  })
+
+  it('removes a retired bundled app without removing an administrator installation', async () => {
+    const retired = zipApp(manifestOf({ id: 'org.example.retired' }), { 'ui/index.html': '<p>retired</p>' })
+    expect(await installBundledApp(deps, retired)).toBe('installed')
+    expect(await removeBundledApp(deps, 'org.example.retired')).toBe(true)
+    expect((await listInstallations(deps)).some(record => record.appId === 'org.example.retired')).toBe(false)
+
+    const own = await installApp(deps, admin, zipApp(manifestOf({ id: 'org.example.keep-own' })), 'r-own-retired')
+    expect(await removeBundledApp(deps, own.appId)).toBe(false)
+    expect(await getInstallation(deps, own.id)).toBeDefined()
   })
 
   it('uninstalls and removes only blobs that no other installation uses', async () => {

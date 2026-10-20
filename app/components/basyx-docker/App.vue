@@ -1,92 +1,119 @@
 <template>
-  <v-app>
-    <div class="pa-4 d-flex flex-column ga-4">
-      <div class="d-flex flex-wrap align-center ga-3">
-        <v-icon color="primary" icon="mdi-docker" size="36" />
+  <div class="d-flex flex-column ga-3">
+    <PageHeader :subtitle="t('app.subtitle')" :title="t('app.title')">
+      <template v-if="engines && engineRunning && list && !wizard" #actions>
+        <EngineStatus :engines="engines" @select="selectEngine" />
+        <v-btn-secondary data-test="import" prepend-icon="mdi-import" :text="t('list.import')" @click="importStack" />
+        <v-btn-primary data-test="new" prepend-icon="mdi-plus" :text="t('list.new')" @click="openWizard()" />
+      </template>
+    </PageHeader>
 
-        <div class="flex-grow-1">
-          <div class="text-h6">{{ t('app.title') }}</div>
-          <div class="text-body-2 text-medium-emphasis">{{ t('app.subtitle') }}</div>
-        </div>
+    <v-progress-linear v-if="!engines" />
 
-        <EngineStatus v-if="engines" :engines="engines" @select="selectEngine" />
-      </div>
+    <template v-else-if="!engineRunning">
+      <ErrorAlert v-if="engineError" closable :error="engineError" @close="engineError = null">
+        <template #actions>
+          <v-btn :text="t('problem.retry')" @click="checkEngines(true)" />
+        </template>
+      </ErrorAlert>
 
-      <v-progress-linear v-if="!engines" />
+      <EngineMissing :checking="checking" :engines="engines" @check="checkEngines(true)" />
+    </template>
 
-      <EngineMissing v-else-if="!engineRunning" :checking="checking" :engines="engines" @check="checkEngines(true)" />
+    <NewInstanceWizard
+      v-else-if="wizard"
+      :key="wizard.key"
+      :existing="existingNames"
+      :import-info="wizard.importInfo"
+      :stack="wizard.stack"
+      @cancel="closeWizard"
+      @done="onWizardDone"
+    />
 
-      <NewInstanceWizard
-        v-else-if="wizard"
-        :key="wizard.key"
-        :existing="existingNames"
-        :import-info="wizard.importInfo"
-        :stack="wizard.stack"
-        @cancel="closeWizard"
-        @done="onWizardDone"
+    <template v-else-if="list">
+      <ErrorAlert
+        v-if="actionError"
+        closable
+        :error="actionError"
+        @close="actionError = null"
       />
 
-      <template v-else-if="list">
-        <div class="d-flex flex-wrap align-center ga-2">
-          <div class="text-subtitle-1 flex-grow-1">{{ t('list.title') }}</div>
-          <v-btn data-test="import" prepend-icon="mdi-import" :text="t('list.import')" @click="importStack" />
-          <v-btn-primary data-test="new" prepend-icon="mdi-plus" :text="t('list.new')" @click="openWizard()" />
-        </div>
+      <ErrorAlert
+        v-if="listError"
+        closable
+        :error="listError"
+        @close="listError = null"
+      >
+        <template #actions>
+          <v-btn :text="t('problem.retry')" @click="refresh" />
+        </template>
+      </ErrorAlert>
 
-        <v-alert
-          v-if="actionError"
-          closable
-          :text="actionError"
-          type="error"
-          @click:close="actionError = null"
-        />
+      <v-card v-if="list.items.length === 0" class="pa-4 text-center">
+        <v-icon color="medium-emphasis" icon="mdi-server-plus-outline" size="40" />
+        <div class="text-title-medium font-weight-medium mt-2">{{ t('list.emptyTitle') }}</div>
+        <div class="text-body-medium text-medium-emphasis mt-1 mb-4">{{ t('list.emptyText') }}</div>
+        <v-btn-primary prepend-icon="mdi-plus" :text="t('list.new')" @click="openWizard()" />
+      </v-card>
 
-        <v-empty-state
-          v-if="list.items.length === 0"
-          :headline="t('list.emptyTitle')"
-          icon="mdi-server-plus-outline"
-          :text="t('list.emptyText')"
-        >
-          <template #actions>
-            <v-btn-primary prepend-icon="mdi-plus" size="large" :text="t('list.new')" @click="openWizard()" />
-          </template>
-        </v-empty-state>
-
-        <InstanceCard
+      <v-row v-else density="compact">
+        <v-col
           v-for="stack in list.items"
           :key="stack.id"
-          :job="jobs.get(stack.id) ?? null"
-          :stack="stack"
-          @change="openWizard(stack)"
-          @dismiss-job="dismissJob(stack.id)"
-          @job="track"
-        />
+          cols="12"
+          sm="6"
+        >
+          <InstanceCard
+            :job="jobs.get(stack.id) ?? null"
+            :stack="stack"
+            @change="openWizard(stack)"
+            @dismiss-job="dismissJob(stack.id)"
+            @job="track"
+          />
+        </v-col>
+      </v-row>
+    </template>
+
+    <ErrorAlert
+      v-else-if="listError"
+      closable
+      :error="listError"
+      @close="listError = null"
+    >
+      <template #actions>
+        <v-btn :text="t('problem.retry')" @click="refresh" />
       </template>
-    </div>
-  </v-app>
+    </ErrorAlert>
+
+    <v-progress-linear v-else-if="engineRunning" />
+  </div>
 </template>
 
 <script lang="ts" setup>
-  import type { Engines, Job, Stack, StackImport, StackList, StudioClient } from '@basyx/studio-sdk'
+  import type { DockerClient } from './support'
+  import type { Engines, Job, Stack, StackImport, StackList } from '@basyx/studio-sdk'
   import { computed, onBeforeUnmount, onMounted, provide, reactive, ref } from 'vue'
   import EngineMissing from './EngineMissing.vue'
   import EngineStatus from './EngineStatus.vue'
+  import ErrorAlert from './ErrorAlert.vue'
   import { provideI18n } from './i18n'
   import InstanceCard from './InstanceCard.vue'
   import NewInstanceWizard from './NewInstanceWizard.vue'
-  import { clientKey, problemOf, problemText } from './support'
+  import { clientKey, problemOf } from './support'
 
   // BaSyx Docker (ADR 0033): finds Docker or Podman, lists the instances,
   // and follows their jobs. All work happens in the Studio Service.
-  const props = defineProps<{ client: StudioClient }>()
+  const props = defineProps<{ client: DockerClient }>()
   provide(clientKey, props.client)
-  const { t } = provideI18n(props.client)
+  const { t } = provideI18n()
   const containers = props.client.containers
 
   const engines = ref<Engines | null>(null)
   const checking = ref(false)
   const list = ref<StackList | null>(null)
-  const actionError = ref<string | null>(null)
+  const engineError = ref<unknown | null>(null)
+  const actionError = ref<unknown | null>(null)
+  const listError = ref<unknown | null>(null)
   /** The running or last finished job per stack. */
   const jobs = reactive(new Map<string, Job>())
   const wizard = ref<{ key: number, stack: Stack | null, importInfo: StackImport | null } | null>(null)
@@ -98,7 +125,9 @@
     checking.value = true
     try {
       engines.value = fresh || !engines.value ? await containers.listEngines() : engines.value
-    } catch {
+      engineError.value = null
+    } catch (error) {
+      engineError.value = error
       engines.value = { selected: null, candidates: [], configured: null }
     } finally {
       checking.value = false
@@ -110,7 +139,7 @@
       engines.value = await containers.selectEngine(host)
       await refresh()
     } catch (error) {
-      actionError.value = problemText(t, problemOf(error))
+      actionError.value = error
     }
   }
 
@@ -120,6 +149,7 @@
     }
     try {
       list.value = await containers.listStacks()
+      listError.value = null
       for (const stack of list.value.items) {
         if (stack.jobId && jobs.get(stack.id)?.id !== stack.jobId) {
           jobs.set(stack.id, await containers.getJob(stack.jobId))
@@ -131,6 +161,8 @@
     } catch (error) {
       if (problemOf(error)?.code === 'container_engine_unavailable') {
         await checkEngines(true)
+      } else {
+        listError.value = error
       }
     }
   }
@@ -163,7 +195,8 @@
           }
           await refresh()
         }
-      } catch {
+      } catch (error) {
+        actionError.value = error
         jobs.delete(stackId)
       }
     }
@@ -191,7 +224,7 @@
         openWizard(null, imported)
       }
     } catch (error) {
-      actionError.value = problemText(t, problemOf(error))
+      actionError.value = error
     }
   }
 

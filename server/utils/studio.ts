@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path'
 import { useRuntimeConfig } from 'nuxt/server'
 import { apiBasePath } from '#shared/contract'
 import { BackendRunner } from '../lib/apps/runner'
-import { installBundledApp } from '../lib/apps/store'
+import { installBundledApp, removeBundledApp } from '../lib/apps/store'
 import { capabilityTokenKey } from '../lib/apps/tokens'
 import { configurationWarnings, loadStudioConfig } from '../lib/config'
 import { systemDiscoveryEnvironment } from '../lib/containers/discovery'
@@ -35,7 +35,7 @@ export interface StudioRuntime extends StudioDeps {
   backends: BackendRunner | null
   /** Signs the capability tokens of backend app calls. */
   capabilityKey: Buffer
-  /** Files the user chose in native dialogs for the BaSyx Docker app (desktop). */
+  /** Files the user chose in native dialogs for local BaSyx instances (desktop). */
   fileGrants: FileGrantStore
   /** Local BaSyx instances on Docker or Podman (ADR 0033); `null` when hosted. */
   containers: ContainerManager | null
@@ -55,6 +55,12 @@ function workspaceWorkerEntry (configured: string): string | null {
 
 /** Installs or updates the apps shipped with this build; a broken package never blocks startup. */
 async function installBundledApps (deps: StudioDeps): Promise<void> {
+  // BaSyx Docker became a native Studio feature. Its stack records live in a
+  // separate table and remain intact; only the obsolete iframe installation
+  // and its immutable UI blobs are removed.
+  if (await removeBundledApp(deps, 'org.eclipse.basyx.studio.docker')) {
+    console.info('[studio] retired bundled app org.eclipse.basyx.studio.docker removed')
+  }
   for (const { name, bytes } of await loadBundledApps()) {
     try {
       const outcome = await installBundledApp(deps, bytes)

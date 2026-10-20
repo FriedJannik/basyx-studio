@@ -7,7 +7,7 @@
       <p v-if="subtitle" class="text-body-medium text-medium-emphasis mb-0 mt-1">{{ subtitle }}</p>
     </div>
 
-    <div v-if="$slots.actions" class="d-flex flex-wrap ga-2">
+    <div v-if="$slots.actions" class="d-flex flex-wrap align-center ga-2">
       <slot name="actions" />
     </div>
   </div>

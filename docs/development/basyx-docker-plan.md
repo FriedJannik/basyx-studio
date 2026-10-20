@@ -3,14 +3,13 @@
 - Status: Implemented; engine and OS qualification (phase G) open, so
   [ADR 0033](../adr/0033-desktop-container-capability.md) stays *Proposed*
 - Date: 2026-10-17
-- Depends on: the app platform of [MVP-3](mvp-3-plan.md) and bundled apps
-  ([ADR 0023](../adr/0023-bundled-first-party-apps.md)), infrastructure
-  templates ([ADR 0020](../adr/0020-infrastructure-templates-registries-and-sync.md)),
+- Depends on: infrastructure templates
+  ([ADR 0020](../adr/0020-infrastructure-templates-registries-and-sync.md)),
   file grants ([ADR 0015](../adr/0015-desktop-native-bridge-and-file-grants.md))
   and the new container capability
   ([ADR 0033](../adr/0033-desktop-container-capability.md))
 - Scope decision gate: BaSyx Go only; Docker and Podman through the Engine
-  REST API; a bundled app on a desktop-only capability; v1 with the
+  REST API; a native desktop-only Studio feature; v1 with the
   *Secured* preset (ABAC and ReBAC), registration as an infrastructure, export
   and import
 
@@ -20,9 +19,9 @@ A desktop user with no container knowledge gets a running BaSyx server and
 opens it in Studio within a few clicks, and can hand the same setup to a
 colleague as a compose project.
 
-> on the desktop, a user opens *Apps → BaSyx Docker* → Studio says that it
+> on the desktop, a user opens *BaSyx Docker* → Studio says that it
 > found Docker Desktop (or Podman, or explains how to get one) → *New BaSyx*
-> → picks *Quick start*, *Full setup* or *Secured* → gives it a name, keeps
+> → picks *Quick start* or *Secured* → gives it a name, keeps
 > the defaults, optionally adds AASX files → *Start* and watches download,
 > start and health check → *Open in Studio* opens the new infrastructure
 > with the AASX files loaded → later stops, starts, reads logs, exports it as
@@ -64,15 +63,15 @@ not discussed individually; they hold unless changed.
 | --- | --- | --- |
 | S1 | Implementation | BaSyx Go images only (`eclipsebasyx/*-go`), as in the test environment. The BaSyx Java server is out of scope. |
 | S2 | Engines | Docker (Docker Desktop, Docker Engine) and Podman (Podman Desktop, `podman machine`, rootless and rootful on Linux) through the Docker Engine REST API; no compose CLI ([ADR 0033](../adr/0033-desktop-container-capability.md)). |
-| S3 | Placement | A bundled first-party app `apps/basyx-docker` (`org.eclipse.basyx.studio.docker`), `runtimes: ["desktop"]`, one module `context: global`, route `docker`, icon `mdi-docker`, permissions `studio.containers` and `studio.ui.navigation`. |
-| S4 | v1 features | Presets *Quick start*, *Full setup*, *Secured* with ABAC or ReBAC; registration as an infrastructure; export; import. The AAS Web UI container is not offered. |
+| S3 | Placement | A native desktop-only page at `/docker`, with its UI in `app/components/basyx-docker/` and a fixed navigation item. |
+| S4 | v1 features | Presets *Quick start* and *Secured* with ABAC or ReBAC; the separate-service topology remains under *Advanced* for existing and expert configurations. Registration as an infrastructure; export; import. The AAS Web UI container is not offered. |
 
 ### Presets and configuration
 
 | # | Topic | Decision |
 | --- | --- | --- |
 | P1 | Quick start | Postgres, configuration service (one-shot schema setup) and one AAS environment with registry integration, history and event feed, unsecured. Infrastructure template `mono-all`. |
-| P2 | Full setup | Postgres, configuration service, one AAS environment for the three repositories, and separate AAS registry, submodel registry and discovery services sharing the database. Repositories sync their registries. Template `mono-repo`. |
+| P2 | Separate services (Advanced) | Postgres, configuration service, one AAS environment for the three repositories, and separate AAS registry, submodel registry and discovery services sharing the database. Repositories sync their registries. Template `mono-repo`. This is not a top-level preset. |
 | P3 | Secured | The *Quick start* topology (or *Full*, under *Advanced*) with Keycloak and BaSyx security on every service: OIDC trust list for the stack's realm and an access model. Template as its topology, security `delegated_user`. |
 | P4 | Access model | Chosen in the *Secured* step as two cards. *Roles (ABAC)*: generated access rules, `admin` may read and write, `viewer` may read. *Sharing (ReBAC)*: ABAC plus `REBAC_ENABLED=true` on every service, group `operators` as ReBAC administrators; users own what they create and share shells with Studio's *Share* dialog. |
 | P5 | Users | The realm `basyx` gets a public PKCE client `basyx-studio` and users with generated passwords: with *Roles*, `admin` and `viewer`; with *Sharing*, `admin` (group `operators`) and the users `alice` and `bob`, so sharing between two people can be tried. The instance card shows them under *Sign-in details* with reveal and copy. |
@@ -92,7 +91,7 @@ not discussed individually; they hold unless changed.
 | E3 | Start | One job: create network and volumes, pull missing images with progress per image, create containers, copy configuration files in, start in dependency order (Postgres → configuration service finished → Keycloak ready → BaSyx services), then wait for readiness. |
 | E4 | Readiness | The service probes each BaSyx endpoint's `/description` and Keycloak's `/realms/basyx/.well-known/openid-configuration` from the host, independent of engine health checks, with a 5-minute limit and the failing component named. |
 | E5 | Stop, start, delete | Stop and start keep containers. Delete removes containers and network and asks "Also delete the data?" (volume) and "Also remove the infrastructure from Studio?" (UX-003). |
-| E6 | Reconcile | On opening the app and every 5 s while visible, the list is rebuilt from the engine's labelled objects and the stored specs: *Running*, *Starting*, *Stopped*, *Partly running*, *Error* (with the component), *Removed outside Studio* (offer *Recreate*), *Found on this computer* (labelled but not stored, offer *Remove*). |
+| E6 | Reconcile | On opening the page and every 5 s while visible, the list is rebuilt from the engine's labelled objects and the stored specs: *Running*, *Starting*, *Stopped*, *Partly running*, *Error* (with the component), *Removed outside Studio* (offer *Recreate*), *Found on this computer* (labelled but not stored, offer *Remove*). |
 | E7 | Logs | Per component, the last 500 lines (`studio.containers.getLogs`, demultiplexed), refreshed on demand, with copy and *Save to file*. |
 | E8 | Updates | When the catalogue pins newer digests than a stack uses, the card offers *Update*, which pulls and recreates the containers and keeps the volume. |
 
@@ -101,7 +100,7 @@ not discussed individually; they hold unless changed.
 | # | Topic | Decision |
 | --- | --- | --- |
 | I1 | Infrastructure | Created after the first successful start (ADR 0020 template from P1–P3, endpoints from the ports, list source `registry` where a registry exists). It is linked to the stack; ports changed under *Advanced* update its endpoints. |
-| I2 | Open in Studio | Opens the linked infrastructure as a target (`studio.ui.navigation`); for *Secured*, Studio's sign-in starts against the stack's Keycloak. |
+| I2 | Open in Studio | Opens the linked infrastructure as a target through the Studio router; for *Secured*, Studio's sign-in starts against the stack's Keycloak. |
 | I3 | Issuer | The issuer is `http://127.0.0.1:<port>/realms/basyx`. Keycloak uses `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`; the trust list discovers keys through `http://keycloak:8080` inside the network. No hosts-file entry or host gateway is required. |
 | I4 | Redirect URI | Studio's desktop callback uses a random loopback port. The realm client allows the loopback callback; if Keycloak does not accept a port-independent loopback URI (phase 0), the service sets the current URI through Keycloak's admin API on each Studio start. |
 
@@ -120,7 +119,7 @@ not discussed individually; they hold unless changed.
 | --- | --- | --- |
 | U1 | Language | No container jargon on the main path: "BaSyx instance" instead of stack, "download" instead of pull, "address" instead of endpoint; technical names appear only under *Advanced*, *Logs* and in the export. All strings in all seven locales ([ADR 0026](../adr/0026-ui-translation.md)). |
 | U2 | Errors | Each known failure has a sentence and an action: port in use (*Use port … instead*), engine stopped (*Check again*), image download failed (*Try again*, with the registry named), no disk space, a component did not get ready (*Show logs*). Unknown errors show the engine's message under *Details*. |
-| U3 | Components | The app is a separate Vite and Vue app like the other bundled apps, mounted with `mountApp` from `apps/shared/app.ts` (Studio's theme, aliases and defaults), and built only from Vuetify components: `v-stepper` for the wizard, `v-item-group` with cards for presets and access models, `v-expansion-panels` for *Advanced*, `v-progress-linear` per image, cards with `v-chip` status for instances. No custom CSS (AGENTS.md). |
+| U3 | Components | The feature is a lazy-loaded Nuxt page using Studio's Vuetify instance, aliases and defaults. It is built only from Vuetify components and utility classes: radio choices for presets and access models, `v-expansion-panels` for *Advanced*, `v-progress-linear` per image, cards with `v-chip` status for instances. No custom CSS (AGENTS.md). |
 | U4 | Accessibility | Status is never colour alone (chip text and icon); progress is announced; every action is reachable by keyboard. |
 
 ## Design
@@ -156,12 +155,12 @@ not discussed individually; they hold unless changed.
 
 ```text
  ① What do you need?   ② Name and data   ③ Check and start
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│ ⚡ Quick start│ │ 🧩 Full setup │ │ 🔒 Secured    │
-│ One server,  │ │ Repositories,│ │ Sign-in with │
-│ no sign-in.  │ │ registries,  │ │ users and    │
-│ Best to try. │ │ discovery.   │ │ permissions. │
-└──────────────┘ └──────────────┘ └──────────────┘
+┌──────────────────┐ ┌──────────────────┐
+│ ⚡ Quick start    │ │ 🔒 Secured        │
+│ One server,      │ │ Sign-in with     │
+│ no sign-in.      │ │ users and        │
+│ Best to try.     │ │ permissions.     │
+└──────────────────┘ └──────────────────┘
   (Secured)  Who may do what?  [Roles (ABAC)]  [Sharing (ReBAC)]
 
  ② Name [Demo line]   ◉ Keep my data  ○ Start empty every time
@@ -177,12 +176,13 @@ not discussed individually; they hold unless changed.
 
 ### Code structure
 
-- `apps/basyx-docker/`: manifest, `ui/src/` with `App.vue` (engine check and
+- `app/pages/docker.vue` and `app/components/basyx-docker/`: native page and
+  `App.vue` (engine check and
   instance list), `EngineStatus.vue`, `EngineMissing.vue`, `InstanceCard.vue`,
   `NewInstanceWizard.vue`, `JobProgress.vue`, `LogsPanel.vue`,
   `SignInDetails.vue`.
-- `packages/studio-sdk/`: permission `studio.containers`, the
-  `studio.containers.*` methods and the `basyx-stack/1` types; schema update.
+- `app/composables/useDockerClient.ts`: typed adapter for the native API,
+  Studio navigation, notifications, clipboard and desktop file dialogs.
 - `shared/contract/containers.ts`: Zod schemas for the stack spec, engine
   info, stack status, jobs and capability parameters.
 - `server/lib/containers/`: `engine.ts` (REST client, quirks),
@@ -195,29 +195,22 @@ not discussed individually; they hold unless changed.
   (archive limits of DATA-006), `tar.ts`. No `nuxt/server` imports (AGENTS.md).
 - `server/database/schema.ts`, migration `0005_container_stacks.sql`: stacks
   with spec, encrypted secrets and the linked infrastructure.
-- `server/utils/containers.ts`: desktop-only capability dispatcher, called
-  through the existing `/app-calls` route.
-- `app/composables/useAppBridge.ts`: forwards `studio.containers.*` to
-  Studio and, once Studio has authorized `studio.containers.pickFiles`,
-  shows the native dialog.
+- `server/utils/containers.ts`: desktop-only operation dispatcher, called
+  through `POST /api/studio/v1/containers/{operation}`.
 - `shared/file-grant-kinds.ts`, `electron/main.ts`, `electron/preload.ts`,
   `server/api/studio/v1/desktop/file-grants.post.ts`: grant kinds
   `stack-export` (`.zip`), `stack-import` (`.zip` or `.json`), `stack-logs`
   (`.txt`) and multiple `stack-aasx` files per dialog, listed once in the SDK.
-- `server/lib/apps/store.ts`: refuses `studio.containers` for apps that
-  are not bundled.
 
-## Capability transport
+## Native transport
 
-The bundled app calls `studio.containers.*` through the existing
-`POST /api/studio/v1/app-calls` endpoint. There are no dedicated `/containers`
-HTTP routes. Studio authorizes the installed manifest and the bundled flag,
-validates parameters, and dispatches to the desktop-only manager. Hosted
-calls are unavailable. Progress uses `getJob` polling rather than push events.
-Files are chosen with `pickFiles(kind)`, which Studio authorizes before the
-host shows the dialog; export, import and log saving then receive the single-
-use handle. Lifecycle calls are audited when their job ends, with its outcome.
-The SDK and [endpoint overview](../api/endpoints.md) list the methods.
+The native page calls `POST /api/studio/v1/containers/{operation}` with the
+Studio session and CSRF token. Studio validates operation parameters and
+dispatches to the desktop-only manager; hosted calls are unavailable.
+Progress uses `getJob` polling rather than push events. Files are chosen with
+the Electron preload bridge; export, import and log saving then receive the
+single-use handle. Lifecycle calls are audited when their job ends, with its
+outcome. The [endpoint overview](../api/endpoints.md) lists the operations.
 
 Exports contain `data/database.dump`, a consistent PostgreSQL snapshot,
 in addition to settings, secrets, configuration, startup AASX files and the
@@ -239,7 +232,7 @@ Engine and rootless Podman).
 2. **Quick start.** From an empty engine, a *Quick start* instance with one
    AASX file is created with defaults, gets ready, appears as an
    infrastructure and opens in Studio with the shells of the file.
-3. **Full setup.** All services start, registries list the shells written
+3. **Separate services (Advanced).** All services start, registries list the shells written
    through the repositories, and Studio lists shells from the registry.
 4. **Secured, ABAC.** Studio signs in as `admin` and writes, signs in as
    `viewer` and only reads.
@@ -254,8 +247,7 @@ Engine and rootless Podman).
 8. **Export and import.** The exported ZIP starts with `docker compose up -d`
    and with `podman compose up -d` on a machine without Studio and serves the
    same data; importing it into Studio recreates an equivalent instance.
-9. **Boundaries.** The app is absent in hosted Studio; an uploaded app that
-   requests `studio.containers` is refused; objects without the Studio label
+9. **Boundaries.** The page is absent from hosted Studio navigation; objects without the Studio label
    are never listed or changed; ports are bound to `127.0.0.1` unless chosen
    otherwise.
 10. **Look.** The pages hold at 1440, 768 and 375 px in light and dark, in all
@@ -269,7 +261,7 @@ Engine and rootless Podman).
 | A. Engine and catalogue | `engine.ts`, discovery, `catalog.ts`, `plan.ts`, unit tests with a recorded API; integration test against a real engine behind `STUDIO_CONTAINER_TESTS` | *Quick start* starts from a test |
 | B. Lifecycle and API | Runner, jobs, readiness, reconcile, migration, routes, contract, desktop guard, audit | DoD 1, 6 by API |
 | C. Security presets | Keycloak realm, users, trust list, access rules, ReBAC, redirect URI, sign-in details | DoD 4, 5 by API |
-| D. App and SDK | Permission and methods in SDK and bridge, manifest check, `apps/basyx-docker` UI, file grant kinds | DoD 2, 3, 7, 10 |
+| D. Native Studio UI | Desktop route and navigation, native API adapter, `app/components/basyx-docker` UI, file grant kinds | DoD 2, 3, 7, 10 |
 | E. Integration | Infrastructure registration and *Open in Studio* | DoD 2–5 end to end |
 | F. Export and import | ZIP, compose, README, spec, import review | DoD 8 |
 | G. Wrap-up | Runs on the engine and OS matrix, e2e desktop test (skipped without an engine), screenshots, `openapi.yaml`, ADR 0033 to *Accepted* | DoD 9, all criteria recorded |
@@ -284,7 +276,7 @@ C and D can run in parallel after B; E needs C and D; F needs A.
 | `keycloak.localhost` does not resolve on some hosts, or the host gateway is unavailable | Phase 0; fall back to `localhost` with a host alias written into the containers, and say so in the instance card |
 | Mutable `SNAPSHOT` images change behaviour | The catalogue pins digests (*Tested with this Studio*); *Latest snapshot* is opt-in under *Advanced* |
 | The first download is large and slow | Size shown before *Start* (wizard step 3); progress per image; downloads resume on *Try again* |
-| Engine access is root-equivalent | Catalogue only, labels, loopback ports, bundled apps only ([ADR 0033](../adr/0033-desktop-container-capability.md)) |
+| Engine access is root-equivalent | Catalogue only, labels, loopback ports, native authenticated desktop route only ([ADR 0033](../adr/0033-desktop-container-capability.md)) |
 | Exports contain passwords | Warning on export; only generated, stack-specific passwords; README tells how to change them |
 | Users delete data by accident | Delete asks about data separately and names the instance (UX-003); *Keep my data* is the default |
 
@@ -293,8 +285,8 @@ C and D can run in parallel after B; E needs C and D; F needs A.
 The BaSyx Java server and the starter kit's Java components; the AAS Web UI
 container; remote engines (SSH, TCP with TLS) and Kubernetes; MQTT; custom
 images, environment variables or additional containers; reading hand-edited
-compose files back; observability stack (Grafana, OpenTelemetry); third-party
-apps with `studio.containers`; hosted Studio.
+compose files back; observability stack (Grafana, OpenTelemetry); container
+access for third-party apps; hosted Studio.
 
 ## Verification record (2026-10-17)
 

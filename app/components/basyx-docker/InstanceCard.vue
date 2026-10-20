@@ -1,11 +1,21 @@
 <template>
-  <v-card :data-test="`stack-${stack.id}`">
-    <v-card-item :prepend-icon="stack.spec ? presetIcons[stack.spec.preset] : 'mdi-help-box-outline'">
-      <v-card-title class="text-wrap">{{ stack.name }}</v-card-title>
+  <v-card class="d-flex flex-column h-100" :data-test="`stack-${stack.id}`">
+    <v-card-item class="py-3">
+      <template #prepend>
+        <v-avatar color="primary" variant="tonal">
+          <v-icon :icon="stack.spec ? presetIcons[stack.spec.preset] : 'mdi-help-box-outline'" />
+        </v-avatar>
+      </template>
+
+      <v-card-title class="text-title-medium text-wrap">{{ stack.name }}</v-card-title>
 
       <v-card-subtitle class="d-flex flex-wrap align-center ga-2 text-wrap">
         <span>{{ subtitle }}</span>
-        <v-chip :color="statusLook.color" data-test="status" :prepend-icon="statusLook.icon" :text="t(`status.${stack.status}`)" />
+
+        <span class="d-inline-flex align-center ga-1" data-test="status">
+          <v-icon :color="statusLook.color" icon="mdi-circle" size="8" />
+          {{ t(`status.${stack.status}`) }}
+        </span>
       </v-card-subtitle>
 
       <template #append>
@@ -14,10 +24,11 @@
             <template #activator="{ props: activator }">
               <v-btn
                 v-bind="activator"
-                :aria-label="t('card.change')"
+                :aria-label="t('card.actions')"
                 data-test="menu"
                 icon="mdi-dots-vertical"
                 size="small"
+                :title="t('card.actions')"
               />
             </template>
 
@@ -59,73 +70,74 @@
       </template>
     </v-card-item>
 
-    <v-card-text class="d-flex flex-column ga-3">
-      <v-alert
+    <v-card-text class="d-flex flex-column flex-grow-1 ga-2 pt-0 pb-2">
+      <ErrorAlert
         v-if="error"
         closable
-        :text="error"
-        type="error"
-        @click:close="error = null"
+        :error="error"
+        @close="error = null"
       />
 
       <template v-if="job">
         <div v-if="job.state === 'running'" class="text-subtitle-2">{{ t(`job.${job.kind}`) }}</div>
 
-        <v-alert
+        <ErrorAlert
           v-else-if="job.state === 'failed'"
           closable
           data-test="job-failed"
-          type="error"
-          @click:close="emit('dismiss-job')"
+          :error="job.problem"
+          @close="emit('dismiss-job')"
         >
-          {{ problemText(t, job.problem) }}
-
-          <v-expansion-panels v-if="job.problem?.detail" class="mt-2" flat>
-            <v-expansion-panel :title="t('problem.details')">
-              <v-expansion-panel-text>
-                <div class="text-caption text-pre-wrap">{{ job.problem.detail }}</div>
-              </v-expansion-panel-text>
-            </v-expansion-panel>
-          </v-expansion-panels>
-
-          <template #append>
+          <template #actions>
             <v-btn :text="t('card.logs')" @click="toggle('logs')" />
           </template>
-        </v-alert>
+        </ErrorAlert>
 
         <JobProgress v-if="job.state !== 'succeeded'" :job="job" />
       </template>
 
-      <v-alert v-if="stack.status === 'orphan'" :text="t('card.orphanText')" type="info" />
+      <v-alert v-if="stack.status === 'orphan'" density="compact" :text="t('card.orphanText')" type="info" />
 
-      <v-alert v-else-if="stack.status === 'missing' && !busy" :text="t('card.missingText')" type="warning">
+      <v-alert v-else-if="stack.status === 'missing' && !busy" density="compact" :text="t('card.missingText')" type="warning">
         <template #append>
           <v-btn :text="t('card.recreate')" @click="run(() => containers.startStack(stack.id))" />
         </template>
       </v-alert>
 
-      <v-alert v-if="stack.updateAvailable && !busy" :text="t('card.updateAvailable')" type="info">
+      <v-alert v-if="stack.updateAvailable && !busy" density="compact" :text="t('card.updateAvailable')" type="info">
         <template #append>
           <v-btn :text="t('card.update')" @click="run(() => containers.updateStack(stack.id))" />
         </template>
       </v-alert>
 
       <template v-if="stack.status === 'running'">
-        <v-list class="py-0" density="compact" :lines="false">
-          <v-list-subheader>{{ t('card.addresses') }}</v-list-subheader>
+        <div class="text-label-medium text-medium-emphasis">{{ t('card.addresses') }}</div>
 
-          <v-list-item v-for="address in addresses" :key="address.url" :subtitle="address.url" :title="address.title">
-            <template #append>
-              <v-btn :aria-label="t('card.copy')" icon="mdi-content-copy" size="small" @click="client.ui.copyText(address.url)" />
-            </template>
-          </v-list-item>
-        </v-list>
+        <v-row density="compact">
+          <v-col
+            v-for="address in addresses"
+            :key="address.url"
+            cols="12"
+          >
+            <v-list-item class="px-0" :subtitle="address.url" :title="address.title">
+              <template #append>
+                <v-btn
+                  :aria-label="t('card.copy')"
+                  icon="mdi-content-copy"
+                  size="small"
+                  :title="t('card.copy')"
+                  @click="copy(address.url)"
+                />
+              </template>
+            </v-list-item>
+          </v-col>
+        </v-row>
 
-        <v-alert v-if="!stack.infrastructureId" :text="t('card.notInStudio')" type="info" />
+        <v-alert v-if="!stack.infrastructureId" density="compact" :text="t('card.notInStudio')" type="info" />
       </template>
 
       <v-expand-transition>
-        <v-alert v-if="panel === 'export'" :text="t('card.exportWarning')" type="warning">
+        <v-alert v-if="panel === 'export'" density="compact" :text="t('card.exportWarning')" type="warning">
           <template #append>
             <v-btn :text="t('remove.cancel')" @click="panel = null" />
             <v-btn-primary :text="t('card.export')" @click="exportStack" />
@@ -141,40 +153,11 @@
         <SignInDetails v-if="panel === 'signIn'" :stack="stack" @close="panel = null" />
       </v-expand-transition>
 
-      <v-expand-transition>
-        <v-alert v-if="panel === 'remove'" data-test="remove-confirm" :title="t('remove.title', { name: stack.name })" type="warning">
-          <div>{{ t('remove.text') }}</div>
-
-          <v-checkbox
-            v-model="deleteData"
-            data-test="remove-data"
-            hide-details
-            :label="t('remove.data')"
-          />
-
-          <v-checkbox
-            v-if="stack.infrastructureId"
-            v-model="removeInfrastructure"
-            hide-details
-            :label="t('remove.infrastructure')"
-          />
-
-          <div class="d-flex justify-end ga-2 mt-2">
-            <v-btn :text="t('remove.cancel')" @click="panel = null" />
-
-            <v-btn
-              color="error"
-              data-test="remove-confirm-button"
-              :text="t('remove.confirm')"
-              variant="flat"
-              @click="remove"
-            />
-          </div>
-        </v-alert>
-      </v-expand-transition>
     </v-card-text>
 
-    <v-card-actions v-if="stack.spec && stack.status !== 'missing'">
+    <v-divider v-if="stack.spec && stack.status !== 'missing'" />
+
+    <div v-if="stack.spec && stack.status !== 'missing'" class="d-flex flex-wrap align-center ga-2 px-3 py-2">
       <v-btn-primary
         v-if="stack.infrastructureId"
         data-test="open"
@@ -203,18 +186,55 @@
         :text="t('card.stop')"
         @click="run(() => containers.stopStack(stack.id))"
       />
-    </v-card-actions>
+    </div>
+
+    <v-dialog max-width="520" :model-value="panel === 'remove'" @update:model-value="panel = null">
+      <v-card data-test="remove-confirm">
+        <v-card-item prepend-icon="mdi-delete-outline">
+          <v-card-title>{{ t('remove.title', { name: stack.name }) }}</v-card-title>
+        </v-card-item>
+
+        <v-card-text>
+          <p class="mt-0">{{ t('remove.text') }}</p>
+
+          <v-checkbox
+            v-model="deleteData"
+            data-test="remove-data"
+            :label="t('remove.data')"
+          />
+
+          <v-checkbox
+            v-if="stack.infrastructureId"
+            v-model="removeInfrastructure"
+            :label="t('remove.infrastructure')"
+          />
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn :text="t('remove.cancel')" @click="panel = null" />
+
+          <v-btn-primary
+            color="error"
+            data-test="remove-confirm-button"
+            :text="t('remove.confirm')"
+            @click="remove"
+          />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-card>
 </template>
 
 <script lang="ts" setup>
   import type { Job, Stack } from '@basyx/studio-sdk'
   import { computed, ref } from 'vue'
+  import ErrorAlert from './ErrorAlert.vue'
   import { useI18n } from './i18n'
   import JobProgress from './JobProgress.vue'
   import LogsPanel from './LogsPanel.vue'
   import SignInDetails from './SignInDetails.vue'
-  import { presetIcons, problemOf, problemText, useClient } from './support'
+  import { presetIcons, useClient } from './support'
 
   const props = defineProps<{ stack: Stack, job: Job | null }>()
   const emit = defineEmits<{ 'job': [job: Job], 'change': [], 'dismiss-job': [] }>()
@@ -223,7 +243,7 @@
   const containers = client.containers
 
   const panel = ref<'logs' | 'signIn' | 'remove' | 'export' | null>(null)
-  const error = ref<string | null>(null)
+  const error = ref<unknown | null>(null)
   const deleteData = ref(false)
   const removeInfrastructure = ref(true)
 
@@ -231,14 +251,14 @@
   const secured = computed(() => props.stack.spec?.security.mode === 'keycloak')
 
   const statusLook = computed(() => ({
-    running: { color: 'success', icon: 'mdi-check-circle-outline' },
-    busy: { color: 'info', icon: 'mdi-progress-clock' },
-    partial: { color: 'warning', icon: 'mdi-alert-outline' },
-    stopped: { color: undefined, icon: 'mdi-stop-circle-outline' },
-    error: { color: 'error', icon: 'mdi-alert-circle-outline' },
-    missing: { color: 'warning', icon: 'mdi-help-circle-outline' },
-    orphan: { color: undefined, icon: 'mdi-help-circle-outline' },
-    unknown: { color: 'warning', icon: 'mdi-lan-disconnect' },
+    running: { color: 'success' },
+    busy: { color: 'info' },
+    partial: { color: 'warning' },
+    stopped: { color: undefined },
+    error: { color: 'error' },
+    missing: { color: 'warning' },
+    orphan: { color: undefined },
+    unknown: { color: 'warning' },
   })[props.stack.status])
 
   const subtitle = computed(() => {
@@ -272,12 +292,17 @@
     void client.ui.openExternal(url)
   }
 
+  async function copy (value: string) {
+    await client.ui.copyText(value)
+    await client.ui.notify(t('card.copied'), 'success')
+  }
+
   async function run (action: () => Promise<Job>) {
     error.value = null
     try {
       emit('job', await action())
     } catch (error_) {
-      error.value = problemText(t, problemOf(error_))
+      error.value = error_
     }
   }
 
@@ -295,7 +320,7 @@
         void client.ui.notify(saved.fileName, 'success')
       }
     } catch (error_) {
-      error.value = problemText(t, problemOf(error_))
+      error.value = error_
     }
   }
 </script>

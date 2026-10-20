@@ -522,6 +522,9 @@
   "nav": {
     "targets": "AAS 目标",
     "targetsShort": "目标",
+    "docker": "BaSyx Docker",
+    "dockerShort": "Docker",
+    "dockerDesktopOnly": "本地 BaSyx 实例仅在 BaSyx Studio 桌面应用中可用。",
     "dashboard": "首页",
     "dashboardShort": "首页",
     "shells": "管理壳",

@@ -1,7 +1,7 @@
 import type { StackFileKind } from '@basyx/studio-sdk/protocol'
 import { stackFileKinds } from '@basyx/studio-sdk/protocol'
 
-// Kinds of the single-use file grants of the BaSyx Docker app (ADR 0033):
+// Kinds of the single-use file grants for local BaSyx instances (ADR 0033):
 // AASX files to load, an export to import, where to save an export or logs.
 // The SDK names them; this module adds what the Electron main process, the
 // contract and the Studio Service need. It has no runtime dependencies, so

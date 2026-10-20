@@ -9,6 +9,9 @@ export function sectionOf (path: string): string | null {
   if (path === '/') {
     return 'targets'
   }
+  if (path === '/docker') {
+    return 'docker'
+  }
   const app = /^(?:\/targets\/([^/]+))?\/apps\/([^/]+)\/([^/]+)/.exec(path)
   if (app) {
     return `app:${app[1] ?? ''}:${app[2]}:${app[3]}`

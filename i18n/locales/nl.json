@@ -522,6 +522,9 @@
   "nav": {
     "targets": "AAS-doelen",
     "targetsShort": "Doelen",
+    "docker": "BaSyx Docker",
+    "dockerShort": "Docker",
+    "dockerDesktopOnly": "Lokale BaSyx-instanties zijn alleen beschikbaar in de BaSyx Studio-desktopapp.",
     "dashboard": "Start",
     "dashboardShort": "Start",
     "shells": "AAS'en",

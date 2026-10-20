@@ -1,5 +1,5 @@
 <template>
-  <v-list class="py-0" density="compact" :lines="false">
+  <v-list class="py-0" :lines="false">
     <v-list-item v-for="step in job.steps" :key="step.id" :data-test="`step-${step.id}`">
       <template #prepend>
         <v-progress-circular

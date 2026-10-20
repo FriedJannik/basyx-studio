@@ -19,7 +19,7 @@
           <div class="text-body-medium text-medium-emphasis">{{ reference }}</div>
         </v-card-text>
 
-        <v-list class="px-2" density="compact">
+        <v-list class="px-2">
           <v-list-item
             v-for="phase in phases"
             :key="phase.path"

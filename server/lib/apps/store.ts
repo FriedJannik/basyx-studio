@@ -143,6 +143,21 @@ export async function installBundledApp (deps: StudioDeps, bytes: Uint8Array): P
   })
 }
 
+/** Removes a first-party app retired from Studio; user-installed apps are never touched. */
+export async function removeBundledApp (deps: Pick<StudioDeps, 'db'>, appId: string): Promise<boolean> {
+  return deps.db.transaction(async tx => {
+    const [existing] = await tx.select({ id: appInstallations.id, bundled: appInstallations.bundled }).from(appInstallations).where(eq(appInstallations.appId, appId))
+    if (!existing?.bundled) {
+      return false
+    }
+    await tx.delete(appInstallations).where(eq(appInstallations.id, existing.id))
+    await tx.delete(appBlobs).where(notExists(
+      tx.select({ one: sql`1` }).from(appFiles).where(eq(appFiles.digest, appBlobs.digest)),
+    ))
+    return true
+  })
+}
+
 export async function listInstallations (deps: Pick<StudioDeps, 'db'>): Promise<AppInstallationRecord[]> {
   return deps.db.select().from(appInstallations).orderBy(appInstallations.installedAt)
 }

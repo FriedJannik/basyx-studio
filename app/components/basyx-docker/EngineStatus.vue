@@ -1,14 +1,16 @@
 <template>
   <v-menu :close-on-content-click="false">
     <template #activator="{ props: activator }">
-      <v-chip
+      <v-btn
         v-bind="activator"
         append-icon="mdi-menu-down"
-        :color="engines.selected?.running ? 'success' : 'warning'"
         data-test="engine"
-        :prepend-icon="engines.selected?.running ? 'mdi-check-circle-outline' : 'mdi-alert-circle-outline'"
         :text="label"
-      />
+      >
+        <template #prepend>
+          <v-icon :color="engines.selected?.running ? 'success' : 'warning'" icon="mdi-circle" size="8" />
+        </template>
+      </v-btn>
     </template>
 
     <v-list :lines="false" min-width="320">

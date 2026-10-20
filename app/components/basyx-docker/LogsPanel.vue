@@ -1,5 +1,5 @@
 <template>
-  <v-sheet border class="pa-3" data-test="logs" rounded="lg">
+  <v-card class="pa-3" data-test="logs">
     <div class="d-flex flex-wrap align-center ga-2 mb-2">
       <v-select
         v-model="component"
@@ -18,7 +18,8 @@
         :disabled="!text"
         icon="mdi-content-copy"
         size="small"
-        @click="client.ui.copyText(text)"
+        :title="t('card.copy')"
+        @click="copy"
       />
 
       <v-btn :disabled="!text" prepend-icon="mdi-content-save-outline" :text="t('logs.save')" @click="save" />
@@ -26,7 +27,11 @@
       <v-btn :aria-label="t('remove.cancel')" icon="mdi-close" size="small" @click="emit('close')" />
     </div>
 
-    <v-alert v-if="error" :text="error" type="error" />
+    <ErrorAlert v-if="error" :error="error">
+      <template v-if="retry" #actions>
+        <v-btn :text="t('problem.retry')" @click="retry" />
+      </template>
+    </ErrorAlert>
 
     <div v-else-if="!text && !loading" class="text-body-2 text-medium-emphasis">{{ t('logs.empty') }}</div>
 
@@ -37,14 +42,15 @@
       max-height="360"
       rounded
     >{{ text }}</v-sheet>
-  </v-sheet>
+  </v-card>
 </template>
 
 <script lang="ts" setup>
   import type { Stack, StackComponentId } from '@basyx/studio-sdk'
   import { computed, ref, watch } from 'vue'
+  import ErrorAlert from './ErrorAlert.vue'
   import { useI18n } from './i18n'
-  import { problemOf, problemText, useClient } from './support'
+  import { useClient } from './support'
 
   const props = defineProps<{ stack: Stack }>()
   const emit = defineEmits<{ close: [] }>()
@@ -58,7 +64,8 @@
   const component = ref<StackComponentId | undefined>(initial)
   const text = ref('')
   const loading = ref(false)
-  const error = ref<string | null>(null)
+  const error = ref<unknown | null>(null)
+  const retry = ref<(() => Promise<void>) | null>(null)
 
   async function load () {
     if (!component.value) {
@@ -66,10 +73,12 @@
     }
     loading.value = true
     error.value = null
+    retry.value = null
     try {
       text.value = (await client.containers.getLogs(props.stack.id, component.value, 500)).text
     } catch (error_) {
-      error.value = problemText(t, problemOf(error_))
+      error.value = error_
+      retry.value = load
     } finally {
       loading.value = false
     }
@@ -82,7 +91,20 @@
     try {
       await client.containers.saveLogs(props.stack.id, component.value)
     } catch (error_) {
-      error.value = problemText(t, problemOf(error_))
+      error.value = error_
+      retry.value = save
+    }
+  }
+
+  async function copy () {
+    error.value = null
+    retry.value = null
+    try {
+      await client.ui.copyText(text.value)
+      await client.ui.notify(t('card.copied'), 'success')
+    } catch (error_) {
+      error.value = error_
+      retry.value = copy
     }
   }
 

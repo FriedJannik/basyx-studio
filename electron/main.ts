@@ -360,7 +360,7 @@ function registerDesktopBridge (): void {
 }
 
 /**
- * Native dialogs of the BaSyx Docker app (ADR 0033): AASX files to load,
+ * Native dialogs for local BaSyx instances (ADR 0033): AASX files to load,
  * an export to import, and where to save an export. Each chosen path becomes
  * a single-use grant; the renderer only sees the handles.
  */

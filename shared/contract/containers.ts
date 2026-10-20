@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { problemSchema } from './problem'
 
 // Local BaSyx instances on the user's Docker or Podman engine (ADR 0033).
-// The BaSyx Docker app sends declarative stack specs; the Studio Service maps
+// The Studio UI sends declarative stack specs; the Studio Service maps
 // them onto a fixed catalogue and never accepts images, commands or mounts.
 
 export const stackSpecFormat = 'basyx-stack/1'
@@ -88,7 +88,7 @@ export const stackSpecSchema = z.object({
 })
 export type StackSpec = z.infer<typeof stackSpecSchema>
 
-/** The defaults of a preset; the wizard starts from these. Defined in the SDK, which the BaSyx Docker app uses too. */
+/** The defaults of a preset; the wizard starts from these. Kept in sync with the compatibility SDK contract. */
 export const presetSpec: (preset: StackPreset, name: string) => StackSpec = sdkPresetSpec
 
 // ---------------------------------------------------------------------------

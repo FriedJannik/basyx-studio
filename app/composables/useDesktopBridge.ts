@@ -5,7 +5,7 @@ import type { StackFileKind } from '#shared/file-grant-kinds'
 export interface DesktopBridge {
   chooseAasxFile: () => Promise<FileGrant | null>
   chooseSaveLocation: (suggestedName: string) => Promise<FileGrant | null>
-  /** Files for the BaSyx Docker app (ADR 0033); empty when cancelled. Absent in older desktop builds. */
+  /** Files for local BaSyx instances (ADR 0033); empty when cancelled. Absent in older desktop builds. */
   chooseStackFiles?: (kind: StackFileKind, suggestedName?: string) => Promise<FileGrant[]>
 }
 

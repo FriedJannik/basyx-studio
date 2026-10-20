@@ -1,5 +1,5 @@
 <template>
-  <v-sheet border class="pa-3" data-test="sign-in" rounded="lg">
+  <v-card class="pa-3" data-test="sign-in">
     <div class="d-flex align-center ga-2 mb-2">
       <div class="text-body-2 flex-grow-1">{{ t('signIn.text') }}</div>
       <v-btn :aria-label="t('remove.cancel')" icon="mdi-close" size="small" @click="emit('close')" />
@@ -7,7 +7,11 @@
 
     <v-progress-linear v-if="!details && !error" />
 
-    <v-alert v-else-if="error" :text="error" type="error" />
+    <ErrorAlert v-else-if="error" :error="error">
+      <template #actions>
+        <v-btn :text="t('problem.retry')" @click="load" />
+      </template>
+    </ErrorAlert>
 
     <template v-else-if="details">
       <v-table density="compact">
@@ -27,7 +31,13 @@
             <td class="text-mono">{{ show ? user.password : '••••••••••••' }}</td>
 
             <td class="text-end">
-              <v-btn :aria-label="t('card.copy')" icon="mdi-content-copy" size="small" @click="client.ui.copyText(user.password)" />
+              <v-btn
+                :aria-label="t('card.copy')"
+                icon="mdi-content-copy"
+                size="small"
+                :title="t('card.copy')"
+                @click="copy(user.password)"
+              />
             </td>
           </tr>
         </tbody>
@@ -46,14 +56,15 @@
         <v-chip prepend-icon="mdi-account-cog-outline" :text="`${details.console.username} · ${show ? details.console.password : '••••••••••••'}`" />
       </div>
     </template>
-  </v-sheet>
+  </v-card>
 </template>
 
 <script lang="ts" setup>
   import type { Stack, StackSignIn } from '@basyx/studio-sdk'
   import { computed, onMounted, ref } from 'vue'
+  import ErrorAlert from './ErrorAlert.vue'
   import { useI18n } from './i18n'
-  import { problemOf, problemText, useClient } from './support'
+  import { useClient } from './support'
 
   const props = defineProps<{ stack: Stack }>()
   const emit = defineEmits<{ close: [] }>()
@@ -61,16 +72,29 @@
   const client = useClient()
 
   const details = ref<StackSignIn | null>(null)
-  const error = ref<string | null>(null)
+  const error = ref<unknown | null>(null)
   const show = ref(false)
   const sharing = computed(() => props.stack.spec?.security.mode === 'keycloak' && props.stack.spec.security.access === 'sharing')
   const roleKeys = { admin: 'signIn.roleAdmin', viewer: 'signIn.roleViewer', user: 'signIn.roleUser' } as const
 
-  onMounted(async () => {
+  async function copy (value: string) {
+    error.value = null
+    try {
+      await client.ui.copyText(value)
+      await client.ui.notify(t('card.copied'), 'success')
+    } catch (error_) {
+      error.value = error_
+    }
+  }
+
+  async function load () {
+    error.value = null
     try {
       details.value = await client.containers.getSignIn(props.stack.id)
     } catch (error_) {
-      error.value = problemText(t, problemOf(error_))
+      error.value = error_
     }
-  })
+  }
+
+  onMounted(load)
 </script>

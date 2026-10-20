@@ -24,7 +24,7 @@ import { openDatabase } from '~~/server/lib/database/client'
 import { applyMigrations, loadMigrationsFromDirectory } from '~~/server/lib/database/migrate'
 import { FileGrantStore } from '~~/server/lib/desktop/grants'
 import { appMethodParamsSchemas, isExternalUrl, presetSpec, stackSpecSchema } from '#shared/contract'
-import { cloneSpec } from '../../apps/basyx-docker/ui/src/support'
+import { cloneSpec } from '../../app/components/basyx-docker/support'
 import { manifestOf, zipApp } from '../apps/support'
 
 vi.mock('~~/server/lib/containers/discovery', () => ({
@@ -150,7 +150,7 @@ describe('container regressions', () => {
   })
 
   it('keeps persistent resource names independent of the display name', () => {
-    const spec = { ...presetSpec('quick', 'Before'), network: { basePort: 18_100, exposure: 'local' as const } }
+    const spec = { ...presetSpec('quick', 'Before'), persistence: 'keep' as const, network: { basePort: 18_100, exposure: 'local' as const } }
     const secrets = generateSecrets(null)
     const before = planStack({ id: 'unique-id', slug: 'before' }, spec, secrets)
     const after = planStack({ id: 'unique-id', slug: 'after' }, { ...spec, name: 'After' }, secrets)
@@ -159,7 +159,7 @@ describe('container regressions', () => {
   })
 
   it('adopts a legacy labelled volume after a rename', async () => {
-    const created = await manager.create({ spec: presetSpec('quick', 'Before') }, actor, 'create')
+    const created = await manager.create({ spec: { ...presetSpec('quick', 'Before'), persistence: 'keep' } }, actor, 'create')
     await finish(created.job)
     volumes[0]!.Name = 'basyx-before-legacy-database'
     vi.mocked(EngineClient.prototype.createVolume).mockClear()
@@ -170,7 +170,7 @@ describe('container regressions', () => {
   })
 
   it('keeps a recoverable record and credentials when removing containers but keeping data', async () => {
-    const created = await manager.create({ spec: presetSpec('secured', 'Retained') }, actor, 'create')
+    const created = await manager.create({ spec: { ...presetSpec('secured', 'Retained'), persistence: 'keep' } }, actor, 'create')
     await finish(created.job)
     const signIn = await manager.signIn(created.stack.id, actor, 'reveal')
     await finish(await manager.remove({ stackId: created.stack.id, deleteData: false, removeInfrastructure: true }, actor, 'remove'))

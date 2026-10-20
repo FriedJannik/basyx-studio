@@ -255,31 +255,25 @@ New problem codes: `idshort_conflict`, `structure_conflict`,
 
 ## Local BaSyx instances (desktop, ADR 0033)
 
-The bundled app uses `POST /app-calls` with the `studio.containers`
-permission. There are no separate `/containers` HTTP routes. Uploaded apps with
-this permission are rejected; backend apps must not call it. In hosted mode,
-the manager is not available.
+The native Studio page uses `POST /containers/{operation}`. Each call requires
+the user's Studio session and CSRF token; in hosted mode the manager is not
+available. Container access is not exposed to installed apps.
 
-| Capability method (`studio.containers.*`) | Purpose |
+| Operation | Purpose |
 | --- | --- |
 | `listEngines`, `selectEngine` | Detects the local engine or selects the socket/pipe |
 | `listStacks`, `getStack`, `planStack` | Inventory, status and start plan |
 | `createStack`, `changeStack`, `startStack`, `stopStack`, `updateStack`, `removeStack` | Lifecycle as jobs; only labeled objects |
 | `getJob` | Progress and errors by polling |
-| `getLogs`, `saveLogs` | Reads the latest log lines or saves them to a file chosen with `pickFiles` |
+| `getLogs`, `saveLogs` | Reads the latest log lines or saves them to a native file location |
 | `getSignIn` | Shows generated credentials after an explicit user action |
-| `pickFiles` | Native file dialogs after a check by Studio; returns single-use handles |
-| `exportStack`, `importStack` | Export or import with a handle from `pickFiles`; the export contains passwords and a database snapshot |
+| `exportStack`, `importStack` | Export or import through native file dialogs; the export contains passwords and a database snapshot |
 
-The parameters and results are in `shared/contract/apps.ts`,
-`shared/contract/containers.ts` and in the Studio SDK. Tested images are pinned
+The parameters and results are in `shared/contract/containers.ts`; the
+compatibility operation schemas are in `shared/contract/apps.ts`. Tested images are pinned
 by digest; a missing digest is not replaced by SNAPSHOT. When a stack is
 removed without deleting data, the spec and the encrypted secrets are kept for
 restoring it.
 
-`studio.ui.openTarget` and `studio.ui.openExternal` require
-`studio.ui.navigation`; `openExternal` opens only https addresses or http
-addresses of this computer. `studio.ui.copyText` requires the new
-`studio.ui.clipboard` permission. The host bridge runs `copyText` and
-`openExternal` only directly after a click or key press in the app. Lifecycle
-calls are audited with their result when their job ends.
+External links and clipboard writes run from an explicit action on the native
+page. Lifecycle calls are audited with their result when their job ends.

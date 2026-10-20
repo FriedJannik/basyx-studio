@@ -1,21 +1,28 @@
 <template>
-  <v-empty-state
-    data-test="engine-missing"
-    :headline="selected ? t('engine.stoppedTitle', { name: selected.name }) : t('engine.missingTitle')"
-    icon="mdi-docker"
-    :text="selected ? t('engine.stoppedText', { name: selected.name }) : t('engine.missingText')"
-  >
-    <template #actions>
+  <v-card class="pa-4 mx-auto w-100" data-test="engine-missing" max-width="720">
+    <div class="d-flex flex-column align-center text-center ga-3">
+      <v-icon color="medium-emphasis" icon="mdi-docker" size="40" />
+
+      <div>
+        <div class="text-title-medium font-weight-medium">
+          {{ selected ? t('engine.stoppedTitle', { name: selected.name }) : t('engine.missingTitle') }}
+        </div>
+
+        <div class="text-body-medium text-medium-emphasis mt-1">
+          {{ selected ? t('engine.stoppedText', { name: selected.name }) : t('engine.missingText') }}
+        </div>
+      </div>
+
       <div class="d-flex flex-wrap justify-center ga-2">
         <template v-if="!selected">
           <v-btn-primary append-icon="mdi-open-in-new" :text="t('engine.getDocker')" @click="open('https://www.docker.com/products/docker-desktop/')" />
-          <v-btn append-icon="mdi-open-in-new" :text="t('engine.getPodman')" variant="outlined" @click="open('https://podman-desktop.io/')" />
+          <v-btn-secondary append-icon="mdi-open-in-new" :text="t('engine.getPodman')" @click="open('https://podman-desktop.io/')" />
         </template>
 
         <v-btn :loading="checking" prepend-icon="mdi-refresh" :text="t('engine.checkAgain')" @click="emit('check')" />
       </div>
-    </template>
-  </v-empty-state>
+    </div>
+  </v-card>
 </template>
 
 <script lang="ts" setup>

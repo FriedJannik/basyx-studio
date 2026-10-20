@@ -613,6 +613,9 @@
   "nav": {
     "targets": "AAS-Ziele",
     "targetsShort": "Ziele",
+    "docker": "BaSyx Docker",
+    "dockerShort": "Docker",
+    "dockerDesktopOnly": "Lokale BaSyx-Instanzen sind nur in der BaSyx-Studio-Desktop-App verfügbar.",
     "dashboard": "Startseite",
     "dashboardShort": "Start",
     "shells": "Verwaltungsschalen",
